@@ -1,0 +1,426 @@
+[
+  {
+    "item": "BECFLEX CANTONEIRA 28X28 (660X435) C.V",
+    "maquina": "C.V. PLANA",
+    "vendido": 1200,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "DUBON CX. LOVERS 12 UND. C.V.",
+    "maquina": "C.V. PLANA",
+    "vendido": 1500,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "FAUSI CELULARES CX. CAPAS (200X95X27) FACA 39.366",
+    "maquina": "C.V. PLANA",
+    "vendido": 2000,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "PRIMATTO CANTONEIRA NOVA C.V",
+    "maquina": "C.V. PLANA",
+    "vendido": 1000,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "PRIMATTO CANTONEIRA NOVA C.V",
+    "maquina": "C.V. PLANA",
+    "vendido": 1000,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "RELLER CX. KIT BERÇO EVOLUTION (545X75X65) C.V",
+    "maquina": "C.V. PLANA",
+    "vendido": 800,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "RELLER CX. KIT COM SAP ELFE (570X160X40) C.V.",
+    "maquina": "C.V. PLANA",
+    "vendido": 600,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "RELLER CX. KIT COM. SAP. GAV. RETRO THEO/CLASSIC ",
+    "maquina": "C.V. PLANA",
+    "vendido": 600,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "ROSSIGNOLO TABULEIRO ACOPLADO 4 UN 16 FUROS",
+    "maquina": "C.V. PLANA",
+    "vendido": 5500,
+    "estoque": 0,
+    "produzir": 5600,
+    "status": "producao"
+  },
+  {
+    "item": "SHOT JOÃO MINEIRO COLMÉIAS P. 20UNID (320X250X80) C.V",
+    "maquina": "C.V. PLANA",
+    "vendido": 2000,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "ZAM PERES CX. FRISO SMART 1 (70X40X1000) ",
+    "maquina": "C.V. PLANA",
+    "vendido": 3600,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "GRAN VALLE CX. (222X213X140)",
+    "maquina": "DIGITAL",
+    "vendido": 3000,
+    "estoque": 0,
+    "produzir": 2950,
+    "status": "producao"
+  },
+  {
+    "item": "TRES BARRAS DESINFETANTE 6X2 (280X235X305) ",
+    "maquina": "DIGITAL",
+    "vendido": 2036,
+    "estoque": 0,
+    "produzir": 1990,
+    "status": "producao"
+  },
+  {
+    "item": "LANZA - ROUP. ENNA DIVISÃO VOL-4 C/ BUP 40.0748",
+    "maquina": "MAQUINA 01",
+    "vendido": 130,
+    "estoque": 120,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "LANZA - ROUP. ENNA LATERAL VOL-2 C/ BUP 40.0745",
+    "maquina": "MAQUINA 01",
+    "vendido": 130,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "LANZA - ROUP. ENNA PORTAS MADEIRA C/ BUP 40.0746",
+    "maquina": "MAQUINA 01",
+    "vendido": 380,
+    "estoque": 300,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "LANZA 10.0005-1/2 - COM. MESSINA C/ BUP 40.0145",
+    "maquina": "MAQUINA 01",
+    "vendido": 600,
+    "estoque": 404,
+    "produzir": 740,
+    "status": "producao"
+  },
+  {
+    "item": "LANZA 10.0005-2/2 - COM. MESSINA 40.0146",
+    "maquina": "MAQUINA 01",
+    "vendido": 600,
+    "estoque": 1236,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "LANZA 10.0017-3/5 - ROUP. ANTARES 6P C/BUP 40.0149",
+    "maquina": "MAQUINA 01",
+    "vendido": 300,
+    "estoque": 355,
+    "produzir": 360,
+    "status": "producao"
+  },
+  {
+    "item": "LANZA 10.0017-4/5 - ROUP. ANTARES 6P C/BUP 40.0150",
+    "maquina": "MAQUINA 01",
+    "vendido": 280,
+    "estoque": 366,
+    "produzir": 370,
+    "status": "producao"
+  },
+  {
+    "item": "LANZA 10.0104-1/2 - COM PARIS C/ BUP",
+    "maquina": "MAQUINA 01",
+    "vendido": 600,
+    "estoque": 704,
+    "produzir": 730,
+    "status": "producao"
+  },
+  {
+    "item": "PRIMATTO COLOR ENVOLTORIO 1,20 MT (1110X505X612)",
+    "maquina": "MAQUINA 01",
+    "vendido": 100,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "PRIMATTO COLOR ENVOLTORIO 1,50 MT (1410X505X612)",
+    "maquina": "MAQUINA 01",
+    "vendido": 100,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "CARTONAGEM JAUENSE CX COLETIVA (550X315X255)",
+    "maquina": "MAQUINA 02",
+    "vendido": 305,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "CARTONAGEM JAUENSE CX COLETIVA (570X495X210)",
+    "maquina": "MAQUINA 02",
+    "vendido": 45,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "CARTONAGEM JAUENSE CX COLETIVA (605X335X310)  ",
+    "maquina": "MAQUINA 02",
+    "vendido": 350,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "GRAFICA SUPREMA CX COLETIVA (520X460X190)",
+    "maquina": "MAQUINA 02",
+    "vendido": 15,
+    "estoque": 15,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "FORT LAR 0304074 CFE LAYOUT PP 4.50 (385X230X220)",
+    "maquina": "MAQUINA 04",
+    "vendido": 1000,
+    "estoque": 1019,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "FORT LAR 0305041 P.P 10LTS (530X415X527) KRAF",
+    "maquina": "MAQUINA 04",
+    "vendido": 300,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "INDEL BAURU CX. 100 EFC20C5 JOONGWON (345X337X205)",
+    "maquina": "MAQUINA 04",
+    "vendido": 100,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "INDEL BAURU CX. 500 EFC10C50 (605X411X215)",
+    "maquina": "MAQUINA 04",
+    "vendido": 300,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "INDEL BAURU CX. 600 EFC30C20INAEL BR (460X390X235)",
+    "maquina": "MAQUINA 04",
+    "vendido": 300,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "INDEL BAURU CX. 600 EFC6C100BR NOVA T1 (545X425X235)",
+    "maquina": "MAQUINA 04",
+    "vendido": 1000,
+    "estoque": 0,
+    "produzir": 990,
+    "status": "producao"
+  },
+  {
+    "item": "LSG SKY CX. 01 (580X250X100)",
+    "maquina": "MAQUINA 04",
+    "vendido": 2200,
+    "estoque": 0,
+    "produzir": 4400,
+    "status": "producao"
+  },
+  {
+    "item": "PRIMATTO CX. LUCA 45 (455X335X415)",
+    "maquina": "MAQUINA 04",
+    "vendido": 50,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "PRIMATTO CX. SAVONA 60 (570X340X550)",
+    "maquina": "MAQUINA 04",
+    "vendido": 50,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "PRINT BALLON CX. M (500X400X320)",
+    "maquina": "MAQUINA 04",
+    "vendido": 800,
+    "estoque": 0,
+    "produzir": 800,
+    "status": "producao"
+  },
+  {
+    "item": "PRINT BALLON CX. M S/ IMPRESSÃO (500X400X320)",
+    "maquina": "MAQUINA 04",
+    "vendido": 50,
+    "estoque": 0,
+    "produzir": 50,
+    "status": "producao"
+  },
+  {
+    "item": "WAMA DIAGNOSTICOS CX. 12 (675X465X480)",
+    "maquina": "MAQUINA 04",
+    "vendido": 1000,
+    "estoque": 98,
+    "produzir": 960,
+    "status": "producao"
+  },
+  {
+    "item": "CARTONAGEM JAUENSE CX 2A (560X490X260) ",
+    "maquina": "MAQUINA 05",
+    "vendido": 0,
+    "estoque": 1622,
+    "produzir": 3900,
+    "status": "producao"
+  },
+  {
+    "item": "CARTONAGEM JAUENSE CX 2B (600X470X360) ",
+    "maquina": "MAQUINA 05",
+    "vendido": 0,
+    "estoque": 788,
+    "produzir": 4000,
+    "status": "producao"
+  },
+  {
+    "item": "CASA DO PAO - RIO PRETO CX. G (580X380X170)",
+    "maquina": "MAQUINA 05",
+    "vendido": 350,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "CASA DO PAO CX. GRANDE (580X380X170) - KRAFT",
+    "maquina": "MAQUINA 05",
+    "vendido": 5500,
+    "estoque": 355,
+    "produzir": 5295,
+    "status": "producao"
+  },
+  {
+    "item": "DIVINETTO - CX. C-71 (150X105X305) C.V.",
+    "maquina": "MAQUINA 05",
+    "vendido": 5000,
+    "estoque": 0,
+    "produzir": 5000,
+    "status": "producao"
+  },
+  {
+    "item": "SHOT JOÃO MINEIRO CX. COPINHOS (320X250X80) C.V.R.",
+    "maquina": "MAQUINA 05",
+    "vendido": 2000,
+    "estoque": 0,
+    "produzir": 1970,
+    "status": "producao"
+  },
+  {
+    "item": "DOCERIA DA MATA CX. 02 (250X210X120)",
+    "maquina": "MAQUINA 06",
+    "vendido": 3000,
+    "estoque": 0,
+    "produzir": 3000,
+    "status": "producao"
+  },
+  {
+    "item": "INTERCOFFEE CX. 02 S/ IMPRESSÃO (405X275X225)",
+    "maquina": "MAQUINA 06",
+    "vendido": 3000,
+    "estoque": 0,
+    "produzir": 2980,
+    "status": "producao"
+  },
+  {
+    "item": "LANZA KIT PÉS ASSIS/ZURIQUE (240X125X80)",
+    "maquina": "MAQUINA 06",
+    "vendido": 1000,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "SAC SERVICE CX. PÃO LEITE (320X250X230)",
+    "maquina": "MAQUINA 06",
+    "vendido": 1700,
+    "estoque": 0,
+    "produzir": 1750,
+    "status": "producao"
+  },
+  {
+    "item": "SILVANA SALGADOS CX.04 (370X220X90)",
+    "maquina": "MAQUINA 06",
+    "vendido": 340,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "SILVANA SALGADOS CX.05 (380X305X90)",
+    "maquina": "MAQUINA 06",
+    "vendido": 340,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "SILVANA SALGADOS CX.10 (315X190X90)",
+    "maquina": "MAQUINA 06",
+    "vendido": 340,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  },
+  {
+    "item": "BIJU ACESSÓRIO SEPARADOR PARA CX. CROUTON/PÃO ",
+    "maquina": "RISCADOR",
+    "vendido": 500,
+    "estoque": 0,
+    "produzir": 0,
+    "status": "producao"
+  }
+]
