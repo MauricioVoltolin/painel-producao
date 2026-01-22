@@ -5,36 +5,31 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
+
+// Render define a porta via variável de ambiente
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
 app.use(express.json());
 app.use(express.static('public'));
 
-// Upload config
+// Configuração do upload
 const upload = multer({ dest: 'uploads/' });
 
-// Arquivo de dados
+// Pasta e arquivo de dados
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'producao.json');
 
-// Garante pasta e arquivo
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR);
-}
-
-if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify([]));
-}
+// Garante que a pasta e arquivo existam
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify([]));
 
 // ================= ROTAS =================
 
 // Upload do XLS
 app.post('/upload', upload.single('file'), (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Arquivo não enviado' });
-    }
+    if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
 
     const workbook = XLSX.readFile(req.file.path);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -42,7 +37,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
 
     const itens = [];
 
-    // Linha 6 para baixo (índice 5)
+    // Linha 6 em diante (índice 5)
     for (let i = 5; i < rows.length; i++) {
       const row = rows[i];
       if (!row || !row[0]) continue;
@@ -57,6 +52,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
       });
     }
 
+    // Salva os dados
     fs.writeFileSync(DATA_FILE, JSON.stringify(itens, null, 2));
     fs.unlinkSync(req.file.path);
 
@@ -79,7 +75,11 @@ app.post('/salvar', (req, res) => {
   res.json({ ok: true });
 });
 
-// Start
+// =================================================
+// Serve index.html e front-end
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Start do servidor
 app.listen(PORT, () => {
-  console.log('Servidor rodando na porta', PORT);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
