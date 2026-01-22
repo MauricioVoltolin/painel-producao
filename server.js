@@ -1,50 +1,38 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const multer = require('multer');
 const XLSX = require('xlsx');
-const fs = require('fs');
+const cors = require('cors');
 const path = require('path');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
-// Render define a porta via variável de ambiente
-const PORT = process.env.PORT || 3000;
-
-// Middlewares
+app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public'))); // pasta para o index.html
 
-// Configuração do upload
+let dados = []; // dados carregados do XLS
+
+// Configuração do multer
 const upload = multer({ dest: 'uploads/' });
-
-// Pasta e arquivo de dados
-const DATA_DIR = path.join(__dirname, 'data');
-const DATA_FILE = path.join(DATA_DIR, 'producao.json');
-
-// Garante que a pasta e arquivo existam
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
-if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify([]));
-
-// ================= ROTAS =================
 
 // Upload do XLS
 app.post('/upload', upload.single('file'), (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
-
     const workbook = XLSX.readFile(req.file.path);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-    const itens = [];
-
-    // Linha 6 em diante (índice 5)
+    const items = [];
     for (let i = 5; i < rows.length; i++) {
       const row = rows[i];
       if (!row || !row[0]) continue;
-
-      itens.push({
+      items.push({
         item: row[0],
-        maquina: row[7] || '',
+        maquina: row[7] || "Sem Máquina",
         vendido: row[10] || 0,
         estoque: row[12] || 0,
         produzir: row[16] || 0,
@@ -52,34 +40,27 @@ app.post('/upload', upload.single('file'), (req, res) => {
       });
     }
 
-    // Salva os dados
-    fs.writeFileSync(DATA_FILE, JSON.stringify(itens, null, 2));
-    fs.unlinkSync(req.file.path);
-
-    res.json({ ok: true, total: itens.length });
+    dados = items;
+    io.emit('atualizarDados', dados); // atualiza todos os clientes
+    res.json({ ok: true, total: dados.length });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Erro ao processar XLS' });
+    res.json({ ok: false, error: err.message });
   }
 });
 
-// Buscar dados
+// Endpoint para dados
 app.get('/dados', (req, res) => {
-  const data = JSON.parse(fs.readFileSync(DATA_FILE));
-  res.json(data);
+  res.json(dados);
 });
 
-// Salvar alterações
+// Salvar alterações (não obrigatório, mas mantido)
 app.post('/salvar', (req, res) => {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(req.body, null, 2));
+  dados = req.body;
+  io.emit('atualizarDados', dados);
   res.json({ ok: true });
 });
 
-// =================================================
-// Serve index.html e front-end
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Start do servidor
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+// Iniciar servidor
+const PORT = 3000;
+server.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));

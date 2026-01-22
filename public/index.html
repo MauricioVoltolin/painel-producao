@@ -5,84 +5,48 @@
 <title>Painel de Produção - BF Box</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0 10px;
-  background: #f7f7f7;
-}
+body { font-family: Arial,sans-serif; margin:0; padding:0 10px; background:#f7f7f7; }
 
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px;
-  background: #fff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-header img { height: 50px; }
-header .tabs-wrapper { flex-grow: 1; display: flex; justify-content: center; }
-header .data-hora { font-weight: bold; }
+header { display:flex; align-items:center; justify-content:space-between; padding:10px; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.1); position:sticky; top:0; z-index:10; }
+header img { height:50px; }
+header .tabs-wrapper { flex-grow:1; display:flex; justify-content:center; }
+header .data-hora { font-weight:bold; }
 
 /* Tabs */
-.tabs { display: flex; margin-top: 10px; }
-.tab {
-  flex: 1; padding: 10px; text-align: center;
-  background: #ddd; cursor: pointer; border-radius: 5px 5px 0 0; margin: 0 2px;
-}
-.tab.active { background: #4CAF50; color: #fff; font-weight: bold; }
+.tab { flex:1; padding:10px; text-align:center; background:#ddd; cursor:pointer; border-radius:5px 5px 0 0; margin:0 2px; }
+.tab.active { background:#4CAF50; color:#fff; font-weight:bold; }
 
 /* Filtro de máquinas */
-#filtroMaquina { margin: 10px 0; padding: 8px; width: 100%; max-width: 300px; }
+#filtroMaquina { margin:10px 0; padding:8px; width:100%; max-width:300px; }
 
 /* Bloco de máquina */
-.machine-block {
-  background: #fff;
-  padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 5px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
-.machine-block h3 { margin-top: 0; }
+.machine-block { background:#fff; padding:10px; margin-bottom:15px; border-radius:5px; box-shadow:0 1px 2px rgba(0,0,0,0.1); }
+.machine-block h3 { margin-top:0; }
 
 /* Item */
-.item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 5px 0;
-  padding: 5px 0;
-  border-bottom: 1px solid #eee;
-}
-.item:last-child { border-bottom: none; }
-.item-left { flex: 1; }
-.item-right { display: flex; flex-direction: column; align-items: flex-end; min-width: 120px; }
+.item { display:flex; justify-content:space-between; align-items:center; margin:5px 0; padding:5px 0; border-bottom:1px solid #eee; }
+.item:last-child { border-bottom:none; }
+.item-left { flex:1; }
+.item-right { display:flex; gap:15px; align-items:center; justify-content:flex-end; }
 
 /* Footer upload */
-#controls { margin: 20px 0; text-align: center; }
-button { padding: 8px 12px; margin: 5px; cursor: pointer; }
+#controls { margin:20px 0; text-align:center; }
+button { padding:8px 12px; margin:5px; cursor:pointer; }
 
 /* Status colors */
-.producao { background: #fff; }
-.producao-finalizada { background: #c8e6c9; } 
-.acabamento { background: #fff9c4; }
-.acabamento-finalizado { background: #b3e5fc; }
+.producao { background:#fff; }
+.producao-finalizada { background:#c8e6c9; }
+.acabamento { background:#fff9c4; }
+.acabamento-finalizado { background:#b3e5fc; }
 
 /* ================= MOBILE ================= */
-@media(max-width: 768px) {
-  .item {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .item-left { flex: 1; }
-  .item-right { flex: 1; display: flex; flex-direction: column; align-items: flex-end; }
-  .quant { display: flex; gap: 5px; justify-content: flex-end; margin-bottom: 4px; font-size: 12px; }
-  .quant div { min-width: 30px; text-align: right; }
-  .item-right select { width: 100%; }
+@media(max-width:768px){
+  .item { flex-direction:row; align-items:flex-start; }
+  .item-left { flex:1; }
+  .item-right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+  .quant { display:flex; gap:5px; justify-content:flex-end; font-size:12px; }
+  .quant div { min-width:25px; text-align:right; }
+  .item-right select { width:50%; padding:3px; }
 }
 </style>
 </head>
@@ -110,81 +74,54 @@ button { padding: 8px 12px; margin: 5px; cursor: pointer; }
   <button onclick="gerarRelatorio()">Gerar Relatório</button>
 </div>
 
+<script src="/socket.io/socket.io.js"></script>
 <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 <script>
+const socket = io();
 let dados = [];
 let filtroAtivo = "";
 
-function atualizarDataHora() {
-  const now = new Date();
-  document.getElementById('dataHora').innerText = now.toLocaleString();
-}
-setInterval(atualizarDataHora, 1000);
-atualizarDataHora();
+function atualizarDataHora(){ document.getElementById('dataHora').innerText=new Date().toLocaleString(); }
+setInterval(atualizarDataHora,1000); atualizarDataHora();
 
-function showTab(tab) {
-  document.getElementById('producaoTab').style.display = tab==='producao'?'block':'none';
-  document.getElementById('cargasTab').style.display = tab==='cargas'?'block':'none';
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+function showTab(tab){
+  document.getElementById('producaoTab').style.display=tab==='producao'?'block':'none';
+  document.getElementById('cargasTab').style.display=tab==='cargas'?'block':'none';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   if(tab==='producao') document.querySelector('.tab:nth-child(1)').classList.add('active');
   else document.querySelector('.tab:nth-child(2)').classList.add('active');
 }
 
-async function carregarDados() {
-  const res = await fetch('/dados');
-  dados = await res.json();
+// Recebe dados do servidor em tempo real
+socket.on('atualizarDados', (novosDados) => {
+  dados = novosDados;
   popularFiltro();
   renderizar();
-}
+});
 
-function popularFiltro() {
-  const maquinas = [...new Set(dados.map(i => i.maquina).filter(m => m))];
+function popularFiltro(){
+  const maquinas = [...new Set(dados.map(i=>i.maquina).filter(m=>m))];
   const select = document.getElementById('filtroMaquina');
-  select.innerHTML = '<option value="">Todas as máquinas</option>';
-  maquinas.forEach(m => {
-    const option = document.createElement('option');
-    option.value = m;
-    option.innerText = m;
-    select.appendChild(option);
-  });
+  select.innerHTML='<option value="">Todas as máquinas</option>';
+  maquinas.forEach(m=>{ const option=document.createElement('option'); option.value=m; option.innerText=m; select.appendChild(option); });
 }
 
-function filtrarMaquina() {
-  filtroAtivo = document.getElementById('filtroMaquina').value;
-  renderizar();
-}
+function filtrarMaquina(){ filtroAtivo=document.getElementById('filtroMaquina').value; renderizar(); }
 
-function renderizar() {
-  const tab = document.getElementById('producaoTab');
-  tab.innerHTML = '';
-
-  let lista = dados;
-  if(filtroAtivo) lista = lista.filter(i => i.maquina === filtroAtivo);
-
-  const grupos = {};
-  lista.forEach(i => {
-    const m = i.maquina || "Sem Máquina";
-    if(!grupos[m]) grupos[m] = [];
-    grupos[m].push(i);
-  });
-
-  Object.keys(grupos).forEach(maquina => {
-    const block = document.createElement('div');
-    block.className = 'machine-block';
-
-    const statusCount = {};
-    grupos[maquina].forEach(i => statusCount[i.status] = (statusCount[i.status]||0)+1);
-    const statusPredominante = Object.keys(statusCount).reduce((a,b)=>statusCount[a]>statusCount[b]?a:b);
+function renderizar(){
+  const tab=document.getElementById('producaoTab'); tab.innerHTML='';
+  let lista=dados; if(filtroAtivo) lista=lista.filter(i=>i.maquina===filtroAtivo);
+  const grupos={};
+  lista.forEach(i=>{ const m=i.maquina||"Sem Máquina"; if(!grupos[m]) grupos[m]=[]; grupos[m].push(i); });
+  Object.keys(grupos).forEach(maquina=>{
+    const block=document.createElement('div'); block.className='machine-block';
+    const statusCount={}; grupos[maquina].forEach(i=>statusCount[i.status]=(statusCount[i.status]||0)+1);
+    const statusPredominante=Object.keys(statusCount).reduce((a,b)=>statusCount[a]>statusCount[b]?a:b);
     block.classList.add(statusPredominante);
-
-    const titulo = document.createElement('h3');
-    titulo.innerText = maquina;
-    block.appendChild(titulo);
-
-    grupos[maquina].forEach((i, idx) => {
-      const div = document.createElement('div');
-      div.className = 'item';
-      div.innerHTML = `
+    const titulo=document.createElement('h3'); titulo.innerText=maquina; block.appendChild(titulo);
+    grupos[maquina].forEach((i,idx)=>{
+      const div=document.createElement('div'); div.className='item';
+      div.innerHTML=`
         <div class="item-left">${i.item}</div>
         <div class="item-right">
           <div class="quant">
@@ -198,61 +135,33 @@ function renderizar() {
             <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
             <option value="acabamento-finalizado" ${i.status==='acabamento-finalizado'?'selected':''}>Acabamento Finalizado</option>
           </select>
-        </div>
-      `;
+        </div>`;
       block.appendChild(div);
     });
-
     tab.appendChild(block);
   });
 }
 
-async function upload() {
-  const file = document.getElementById('file').files[0];
-  if (!file) { alert('Selecione um arquivo XLS'); return; }
+function alterarStatusPorBloco(maquina, idx, status){ socket.emit('alterarStatus',{maquina,idx,status}); }
 
-  const form = new FormData();
-  form.append('file', file);
-
-  const res = await fetch('/upload', { method: 'POST', body: form });
-  const json = await res.json();
-  if (json.ok) {
-    alert(`Arquivo carregado: ${json.total} itens`);
-    carregarDados();
-  } else {
-    alert('Erro no upload');
-  }
+async function upload(){
+  const file=document.getElementById('file').files[0];
+  if(!file){ alert('Selecione um arquivo XLS'); return; }
+  const form=new FormData(); form.append('file',file);
+  const res=await fetch('/upload',{ method:'POST', body:form });
+  const json=await res.json();
+  if(json.ok){ alert(`Arquivo carregado: ${json.total} itens`); }
+  else alert('Erro no upload');
 }
 
-async function alterarStatusPorBloco(maquina, idx, status) {
-  let cont = -1;
-  for(let i=0;i<dados.length;i++){
-    if(dados[i].maquina === maquina) cont++;
-    if(cont===idx){
-      dados[i].status = status;
-      break;
-    }
-  }
-
-  await fetch('/salvar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(dados)
-  });
-
-  renderizar();
+function gerarRelatorio(){
+  const wb=XLSX.utils.book_new();
+  const ws_data=[['Item','Máquina','V','E','P','Status']];
+  dados.forEach(i=>ws_data.push([i.item,i.maquina,i.vendido,i.estoque,i.produzir,i.status]));
+  const ws=XLSX.utils.aoa_to_sheet(ws_data);
+  XLSX.utils.book_append_sheet(wb,ws,'Relatorio');
+  XLSX.writeFile(wb,'relatorio_mudancas.xlsx');
 }
-
-function gerarRelatorio() {
-  const wb = XLSX.utils.book_new();
-  const ws_data = [['Item','Máquina','V','E','P','Status']];
-  dados.forEach(i => ws_data.push([i.item,i.maquina,i.vendido,i.estoque,i.produzir,i.status]));
-  const ws = XLSX.utils.aoa_to_sheet(ws_data);
-  XLSX.utils.book_append_sheet(wb, ws, 'Relatorio');
-  XLSX.writeFile(wb, 'relatorio_mudancas.xlsx');
-}
-
-carregarDados();
 </script>
 </body>
 </html>
