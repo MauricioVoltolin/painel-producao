@@ -12,14 +12,12 @@ const io = new Server(server);
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public'))); // pasta para o index.html
+app.use(express.static(path.join(__dirname, 'public')));
 
-let dados = []; // dados carregados do XLS
+let dados = [];
 
-// Configuração do multer
 const upload = multer({ dest: 'uploads/' });
 
-// Upload do XLS
 app.post('/upload', upload.single('file'), (req, res) => {
   try {
     const workbook = XLSX.readFile(req.file.path);
@@ -41,7 +39,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
     }
 
     dados = items;
-    io.emit('atualizarDados', dados); // atualiza todos os clientes
+    io.emit('atualizarDados', dados);
     res.json({ ok: true, total: dados.length });
   } catch (err) {
     console.error(err);
@@ -49,18 +47,26 @@ app.post('/upload', upload.single('file'), (req, res) => {
   }
 });
 
-// Endpoint para dados
-app.get('/dados', (req, res) => {
-  res.json(dados);
+app.get('/dados', (req, res) => res.json(dados));
+
+io.on('connection', socket => {
+  console.log('Cliente conectado');
+  socket.emit('atualizarDados', dados);
+
+  socket.on('alterarStatus', ({maquina, idx, status}) => {
+    let cont = -1;
+    for (let i=0;i<dados.length;i++){
+      if (dados[i].maquina===maquina) cont++;
+      if (cont===idx){
+        dados[i].status=status;
+        break;
+      }
+    }
+    io.emit('atualizarDados', dados);
+  });
+
+  socket.on('disconnect', () => console.log('Cliente desconectado'));
 });
 
-// Salvar alterações (não obrigatório, mas mantido)
-app.post('/salvar', (req, res) => {
-  dados = req.body;
-  io.emit('atualizarDados', dados);
-  res.json({ ok: true });
-});
-
-// Iniciar servidor
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
