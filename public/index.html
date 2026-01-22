@@ -68,39 +68,47 @@ header .data-hora {
   max-width: 300px;
 }
 
-/* Itens em bloco */
-.item {
+/* Bloco de máquina */
+.machine-block {
   background: #fff;
   padding: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   border-radius: 5px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
-.item div {
-  margin: 3px 0;
+.machine-block h3 {
+  margin-top: 0;
 }
 
-.item select {
-  margin-top: 5px;
-  padding: 5px;
-  width: 100%;
+/* Itens dentro do bloco */
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 5px 0;
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
 }
 
-/* Desktop */
-@media(min-width: 768px) {
-  .item {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 15px;
-  }
-  .item div {
-    width: 150px;
-  }
-  .item select {
-    width: 200px;
-  }
+.item:last-child {
+  border-bottom: none;
+}
+
+.item-left {
+  flex: 1;
+}
+
+.item-right {
+  display: flex;
+  gap: 10px;
+  min-width: 200px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.item-right select {
+  padding: 4px;
 }
 
 /* Footer upload */
@@ -115,13 +123,19 @@ button {
   cursor: pointer;
 }
 
+/* Status colors */
+.producao { background: #fff; }
+.producao-finalizada { background: #c8e6c9; } /* verde claro */
+.acabamento { background: #fff9c4; } /* amarelo claro */
+.acabamento-finalizado { background: #b3e5fc; } /* azul claro */
+
 </style>
 </head>
 <body>
 
 <header>
   <img src="https://site.siteargus.com.br/sendThumb.asp?idcliente=543&path=parceiro&file=27_6_543_458_13510820_510120865837737_6061197160572500699_n.jpg&width=280" alt="BF Box">
-
+  
   <div class="tabs-wrapper">
     <div class="tab active" onclick="showTab('producao')">Produção</div>
     <div class="tab" onclick="showTab('cargas')">Cargas</div>
@@ -164,7 +178,8 @@ function showTab(tab) {
   document.getElementById('producaoTab').style.display = tab==='producao'?'block':'none';
   document.getElementById('cargasTab').style.display = tab==='cargas'?'block':'none';
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelector(`.tab:contains(${tab==='producao'?'Produção':'Cargas'})`)?.classList.add('active');
+  if(tab==='producao') document.querySelector('.tab:nth-child(1)').classList.add('active');
+  else document.querySelector('.tab:nth-child(2)').classList.add('active');
 }
 
 // ================= Dados =================
@@ -194,7 +209,7 @@ function filtrarMaquina() {
   renderizar();
 }
 
-// Renderizar itens
+// Renderizar itens por máquina
 function renderizar() {
   const tab = document.getElementById('producaoTab');
   tab.innerHTML = '';
@@ -202,25 +217,51 @@ function renderizar() {
   let lista = dados;
   if(filtroAtivo) lista = lista.filter(i => i.maquina === filtroAtivo);
 
-  lista.forEach((i, idx) => {
-    const div = document.createElement('div');
-    div.className = 'item';
-    div.innerHTML = `
-      <div><strong>${i.item}</strong></div>
-      <div>Máquina: ${i.maquina}</div>
-      <div>Vendido: ${i.vendido}</div>
-      <div>Estoque: ${i.estoque}</div>
-      <div>Produzir: ${i.produzir}</div>
-      <div>Status:
-        <select onchange="alterarStatus(${idx}, this.value)">
-          <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
-          <option value="producao-finalizada" ${i.status==='producao-finalizada'?'selected':''}>Produção Finalizada</option>
-          <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
-          <option value="acabamento-finalizado" ${i.status==='acabamento-finalizado'?'selected':''}>Acabamento Finalizado</option>
-        </select>
-      </div>
-    `;
-    tab.appendChild(div);
+  // Agrupar por máquina
+  const grupos = {};
+  lista.forEach(i => {
+    const m = i.maquina || "Sem Máquina";
+    if(!grupos[m]) grupos[m] = [];
+    grupos[m].push(i);
+  });
+
+  Object.keys(grupos).forEach(maquina => {
+    const block = document.createElement('div');
+    block.className = 'machine-block';
+
+    // Cor do bloco baseada no status predominante
+    const statusCount = {};
+    grupos[maquina].forEach(i => {
+      statusCount[i.status] = (statusCount[i.status]||0)+1;
+    });
+    const statusPredominante = Object.keys(statusCount).reduce((a,b)=>statusCount[a]>statusCount[b]?a:b);
+    block.classList.add(statusPredominante);
+
+    const titulo = document.createElement('h3');
+    titulo.innerText = maquina;
+    block.appendChild(titulo);
+
+    grupos[maquina].forEach((i, idx) => {
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `
+        <div class="item-left">${i.item}</div>
+        <div class="item-right">
+          <div>Vendido: ${i.vendido}</div>
+          <div>Estoque: ${i.estoque}</div>
+          <div>Produzir: ${i.produzir}</div>
+          <select onchange="alterarStatusPorBloco('${maquina}', ${idx}, this.value)">
+            <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
+            <option value="producao-finalizada" ${i.status==='producao-finalizada'?'selected':''}>Produção Finalizada</option>
+            <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
+            <option value="acabamento-finalizado" ${i.status==='acabamento-finalizado'?'selected':''}>Acabamento Finalizado</option>
+          </select>
+        </div>
+      `;
+      block.appendChild(div);
+    });
+
+    tab.appendChild(block);
   });
 }
 
@@ -243,13 +284,24 @@ async function upload() {
 }
 
 // ================= Alterar status =================
-async function alterarStatus(idx, status) {
-  dados[idx].status = status;
+async function alterarStatusPorBloco(maquina, idx, status) {
+  // encontra o índice real no array principal
+  let cont = -1;
+  for(let i=0;i<dados.length;i++){
+    if(dados[i].maquina === maquina) cont++;
+    if(cont===idx){
+      dados[i].status = status;
+      break;
+    }
+  }
+
   await fetch('/salvar', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(dados)
   });
+
+  renderizar();
 }
 
 // ================= Relatório =================
