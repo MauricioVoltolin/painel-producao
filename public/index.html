@@ -12,7 +12,6 @@ body {
   background: #f7f7f7;
 }
 
-/* Header */
 header {
   display: flex;
   align-items: center;
@@ -50,13 +49,17 @@ header .data-hora { font-weight: bold; }
 .machine-block h3 { margin-top: 0; }
 
 /* Item */
-.item { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; padding: 5px 0; border-bottom: 1px solid #eee; }
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 5px 0;
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
+}
 .item:last-child { border-bottom: none; }
 .item-left { flex: 1; }
-
-/* Quantidades e status */
-.item-right { display: flex; gap: 10px; justify-content: flex-end; align-items: center; min-width: 200px; }
-.item-right select { padding: 4px; }
+.item-right { display: flex; flex-direction: column; align-items: flex-end; min-width: 120px; }
 
 /* Footer upload */
 #controls { margin: 20px 0; text-align: center; }
@@ -70,12 +73,16 @@ button { padding: 8px 12px; margin: 5px; cursor: pointer; }
 
 /* ================= MOBILE ================= */
 @media(max-width: 768px) {
-  .item { flex-direction: column; align-items: flex-start; }
-  .item-right { flex-direction: column; align-items: flex-end; min-width: auto; }
-  .item-right div { font-size: 12px; }
-  .item-right div span { font-weight: bold; }
-  .item-right select { width: 100%; margin-bottom: 5px; }
-  .item-right .quant { display: flex; gap: 5px; justify-content: flex-end; width: 100%; }
+  .item {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .item-left { flex: 1; }
+  .item-right { flex: 1; display: flex; flex-direction: column; align-items: flex-end; }
+  .quant { display: flex; gap: 5px; justify-content: flex-end; margin-bottom: 4px; font-size: 12px; }
+  .quant div { min-width: 30px; text-align: right; }
+  .item-right select { width: 100%; }
 }
 </style>
 </head>
@@ -180,17 +187,17 @@ function renderizar() {
       div.innerHTML = `
         <div class="item-left">${i.item}</div>
         <div class="item-right">
+          <div class="quant">
+            <div>V: ${i.vendido}</div>
+            <div>E: ${i.estoque}</div>
+            <div>P: ${i.produzir}</div>
+          </div>
           <select onchange="alterarStatusPorBloco('${maquina}', ${idx}, this.value)">
             <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
             <option value="producao-finalizada" ${i.status==='producao-finalizada'?'selected':''}>Produção Finalizada</option>
             <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
             <option value="acabamento-finalizado" ${i.status==='acabamento-finalizado'?'selected':''}>Acabamento Finalizado</option>
           </select>
-          <div class="quant">
-            <div>V: ${i.vendido}</div>
-            <div>E: ${i.estoque}</div>
-            <div>P: ${i.produzir}</div>
-          </div>
         </div>
       `;
       block.appendChild(div);
