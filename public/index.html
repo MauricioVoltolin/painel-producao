@@ -28,12 +28,17 @@ header img {
   height: 50px;
 }
 
-header .data-hora {
-  text-align: center;
+header .tabs-wrapper {
   flex-grow: 1;
+  display: flex;
+  justify-content: center;
+}
+
+header .data-hora {
   font-weight: bold;
 }
 
+/* Aba Produção / Carga */
 .tabs {
   display: flex;
   margin-top: 10px;
@@ -45,6 +50,8 @@ header .data-hora {
   text-align: center;
   background: #ddd;
   cursor: pointer;
+  border-radius: 5px 5px 0 0;
+  margin: 0 2px;
 }
 
 .tab.active {
@@ -53,21 +60,25 @@ header .data-hora {
   font-weight: bold;
 }
 
-#controls {
+/* Filtro de máquinas */
+#filtroMaquina {
   margin: 10px 0;
+  padding: 8px;
+  width: 100%;
+  max-width: 300px;
 }
 
-button {
-  padding: 8px 12px;
-  margin: 5px;
-  cursor: pointer;
-}
-
+/* Itens em bloco */
 .item {
   background: #fff;
   padding: 10px;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
   border-radius: 5px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.item div {
+  margin: 3px 0;
 }
 
 .item select {
@@ -91,32 +102,56 @@ button {
     width: 200px;
   }
 }
+
+/* Footer upload */
+#controls {
+  margin: 20px 0;
+  text-align: center;
+}
+
+button {
+  padding: 8px 12px;
+  margin: 5px;
+  cursor: pointer;
+}
+
 </style>
 </head>
 <body>
 
 <header>
   <img src="https://site.siteargus.com.br/sendThumb.asp?idcliente=543&path=parceiro&file=27_6_543_458_13510820_510120865837737_6061197160572500699_n.jpg&width=280" alt="BF Box">
+
+  <div class="tabs-wrapper">
+    <div class="tab active" onclick="showTab('producao')">Produção</div>
+    <div class="tab" onclick="showTab('cargas')">Cargas</div>
+  </div>
+
   <div class="data-hora" id="dataHora"></div>
 </header>
 
-<div class="tabs">
-  <div class="tab active" onclick="showTab('producao')">Produção</div>
-  <div class="tab" onclick="showTab('cargas')">Cargas</div>
-</div>
+<!-- Filtro de máquinas -->
+<select id="filtroMaquina" onchange="filtrarMaquina()">
+  <option value="">Todas as máquinas</option>
+</select>
 
+<!-- Tabs -->
+<div id="producaoTab"></div>
+<div id="cargasTab" style="display:none"></div>
+
+<!-- Footer: Upload XLS -->
 <div id="controls">
   <input type="file" id="file">
   <button onclick="upload()">Carregar XLS</button>
   <button onclick="gerarRelatorio()">Gerar Relatório</button>
 </div>
 
-<div id="producaoTab"></div>
-<div id="cargasTab" style="display:none"></div>
-
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 <script>
 let dados = [];
+let filtroAtivo = "";
 
+// ================= Data e hora =================
 function atualizarDataHora() {
   const now = new Date();
   document.getElementById('dataHora').innerText = now.toLocaleString();
@@ -124,6 +159,7 @@ function atualizarDataHora() {
 setInterval(atualizarDataHora, 1000);
 atualizarDataHora();
 
+// ================= Tabs =================
 function showTab(tab) {
   document.getElementById('producaoTab').style.display = tab==='producao'?'block':'none';
   document.getElementById('cargasTab').style.display = tab==='cargas'?'block':'none';
@@ -131,19 +167,42 @@ function showTab(tab) {
   document.querySelector(`.tab:contains(${tab==='producao'?'Produção':'Cargas'})`)?.classList.add('active');
 }
 
-// ================= FUNÇÕES =================
-
+// ================= Dados =================
 async function carregarDados() {
   const res = await fetch('/dados');
   dados = await res.json();
+  popularFiltro();
   renderizar();
 }
 
+// Popular filtro de máquinas
+function popularFiltro() {
+  const maquinas = [...new Set(dados.map(i => i.maquina).filter(m => m))];
+  const select = document.getElementById('filtroMaquina');
+  select.innerHTML = '<option value="">Todas as máquinas</option>';
+  maquinas.forEach(m => {
+    const option = document.createElement('option');
+    option.value = m;
+    option.innerText = m;
+    select.appendChild(option);
+  });
+}
+
+// Filtrar por máquina
+function filtrarMaquina() {
+  filtroAtivo = document.getElementById('filtroMaquina').value;
+  renderizar();
+}
+
+// Renderizar itens
 function renderizar() {
   const tab = document.getElementById('producaoTab');
   tab.innerHTML = '';
 
-  dados.forEach((i, idx) => {
+  let lista = dados;
+  if(filtroAtivo) lista = lista.filter(i => i.maquina === filtroAtivo);
+
+  lista.forEach((i, idx) => {
     const div = document.createElement('div');
     div.className = 'item';
     div.innerHTML = `
@@ -165,6 +224,7 @@ function renderizar() {
   });
 }
 
+// ================= Upload =================
 async function upload() {
   const file = document.getElementById('file').files[0];
   if (!file) { alert('Selecione um arquivo XLS'); return; }
@@ -182,6 +242,7 @@ async function upload() {
   }
 }
 
+// ================= Alterar status =================
 async function alterarStatus(idx, status) {
   dados[idx].status = status;
   await fetch('/salvar', {
@@ -191,8 +252,7 @@ async function alterarStatus(idx, status) {
   });
 }
 
-// ================= GERAR RELATÓRIO =================
-
+// ================= Relatório =================
 function gerarRelatorio() {
   const wb = XLSX.utils.book_new();
   const ws_data = [
@@ -209,12 +269,8 @@ function gerarRelatorio() {
   XLSX.writeFile(wb, 'relatorio_mudancas.xlsx');
 }
 
-// ================= INICIAR =================
 carregarDados();
 </script>
-
-<!-- Biblioteca XLSX -->
-<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 
 </body>
 </html>
