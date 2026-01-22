@@ -2,95 +2,219 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel de Produção</title>
+<title>Painel de Produção - BF Box</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <style>
 body {
   font-family: Arial, sans-serif;
-  padding: 15px;
+  margin: 0;
+  padding: 0 10px;
+  background: #f7f7f7;
 }
-.item {
-  border-bottom: 1px solid #ddd;
-  padding: 8px 0;
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
-select {
-  padding: 5px;
+
+header img {
+  height: 50px;
 }
+
+header .data-hora {
+  text-align: center;
+  flex-grow: 1;
+  font-weight: bold;
+}
+
+.tabs {
+  display: flex;
+  margin-top: 10px;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  background: #ddd;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #4CAF50;
+  color: #fff;
+  font-weight: bold;
+}
+
+#controls {
+  margin: 10px 0;
+}
+
 button {
   padding: 8px 12px;
-  margin-top: 10px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+.item {
+  background: #fff;
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+}
+
+.item select {
+  margin-top: 5px;
+  padding: 5px;
+  width: 100%;
+}
+
+/* Desktop */
+@media(min-width: 768px) {
+  .item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px;
+  }
+  .item div {
+    width: 150px;
+  }
+  .item select {
+    width: 200px;
+  }
 }
 </style>
 </head>
 <body>
 
-<h2>Painel de Produção</h2>
+<header>
+  <img src="https://site.siteargus.com.br/sendThumb.asp?idcliente=543&path=parceiro&file=27_6_543_458_13510820_510120865837737_6061197160572500699_n.jpg&width=280" alt="BF Box">
+  <div class="data-hora" id="dataHora"></div>
+</header>
 
-<input type="file" id="file">
-<br>
-<button onclick="upload()">Enviar XLS</button>
+<div class="tabs">
+  <div class="tab active" onclick="showTab('producao')">Produção</div>
+  <div class="tab" onclick="showTab('cargas')">Cargas</div>
+</div>
 
-<hr>
+<div id="controls">
+  <input type="file" id="file">
+  <button onclick="upload()">Carregar XLS</button>
+  <button onclick="gerarRelatorio()">Gerar Relatório</button>
+</div>
 
-<div id="lista"></div>
+<div id="producaoTab"></div>
+<div id="cargasTab" style="display:none"></div>
 
 <script>
-async function carregar() {
+let dados = [];
+
+function atualizarDataHora() {
+  const now = new Date();
+  document.getElementById('dataHora').innerText = now.toLocaleString();
+}
+setInterval(atualizarDataHora, 1000);
+atualizarDataHora();
+
+function showTab(tab) {
+  document.getElementById('producaoTab').style.display = tab==='producao'?'block':'none';
+  document.getElementById('cargasTab').style.display = tab==='cargas'?'block':'none';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab:contains(${tab==='producao'?'Produção':'Cargas'})`)?.classList.add('active');
+}
+
+// ================= FUNÇÕES =================
+
+async function carregarDados() {
   const res = await fetch('/dados');
-  const data = await res.json();
+  dados = await res.json();
+  renderizar();
+}
 
-  const lista = document.getElementById('lista');
-  lista.innerHTML = '';
+function renderizar() {
+  const tab = document.getElementById('producaoTab');
+  tab.innerHTML = '';
 
-  data.forEach((i, idx) => {
-    lista.innerHTML += `
-      <div class="item">
-        <strong>${i.item}</strong><br>
-        Máquina: ${i.maquina}<br>
-        Vendido: ${i.vendido} | Produzir: ${i.produzir}<br>
-        Status:
-        <select onchange="alterar(${idx}, this.value)">
+  dados.forEach((i, idx) => {
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.innerHTML = `
+      <div><strong>${i.item}</strong></div>
+      <div>Máquina: ${i.maquina}</div>
+      <div>Vendido: ${i.vendido}</div>
+      <div>Estoque: ${i.estoque}</div>
+      <div>Produzir: ${i.produzir}</div>
+      <div>Status:
+        <select onchange="alterarStatus(${idx}, this.value)">
           <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
-          <option value="finalizado" ${i.status==='finalizado'?'selected':''}>Finalizado</option>
+          <option value="producao-finalizada" ${i.status==='producao-finalizada'?'selected':''}>Produção Finalizada</option>
+          <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
+          <option value="acabamento-finalizado" ${i.status==='acabamento-finalizado'?'selected':''}>Acabamento Finalizado</option>
         </select>
       </div>
     `;
+    tab.appendChild(div);
   });
 }
 
 async function upload() {
   const file = document.getElementById('file').files[0];
-  if (!file) {
-    alert('Selecione um arquivo XLS');
-    return;
-  }
+  if (!file) { alert('Selecione um arquivo XLS'); return; }
 
   const form = new FormData();
   form.append('file', file);
 
-  await fetch('/upload', {
-    method: 'POST',
-    body: form
-  });
-
-  carregar();
+  const res = await fetch('/upload', { method: 'POST', body: form });
+  const json = await res.json();
+  if (json.ok) {
+    alert(`Arquivo carregado: ${json.total} itens`);
+    carregarDados();
+  } else {
+    alert('Erro no upload');
+  }
 }
 
-async function alterar(idx, status) {
-  const res = await fetch('/dados');
-  const data = await res.json();
-  data[idx].status = status;
-
+async function alterarStatus(idx, status) {
+  dados[idx].status = status;
   await fetch('/salvar', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(dados)
   });
 }
 
-carregar();
+// ================= GERAR RELATÓRIO =================
+
+function gerarRelatorio() {
+  const wb = XLSX.utils.book_new();
+  const ws_data = [
+    ['Item','Máquina','Vendido','Estoque','Produzir','Status']
+  ];
+
+  dados.forEach(i => {
+    ws_data.push([i.item,i.maquina,i.vendido,i.estoque,i.produzir,i.status]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  XLSX.utils.book_append_sheet(wb, ws, 'Relatorio');
+
+  XLSX.writeFile(wb, 'relatorio_mudancas.xlsx');
+}
+
+// ================= INICIAR =================
+carregarDados();
 </script>
+
+<!-- Biblioteca XLSX -->
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 
 </body>
 </html>
