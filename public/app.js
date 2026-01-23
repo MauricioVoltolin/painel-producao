@@ -2,12 +2,10 @@ const socket = io();
 
 /* ===== TABS ===== */
 function openTab(i){
-  var tabs = document.querySelectorAll('.tabs button');
-  var contents = document.querySelectorAll('.tab');
-  for(var j=0;j<tabs.length;j++){
-    tabs[j].classList.remove('active');
-    contents[j].classList.remove('active');
-  }
+  const tabs = document.querySelectorAll('.tabs button');
+  const contents = document.querySelectorAll('.tab');
+  tabs.forEach(t=>t.classList.remove('active'));
+  contents.forEach(c=>c.classList.remove('active'));
   tabs[i].classList.add('active');
   contents[i].classList.add('active');
 }
@@ -23,15 +21,13 @@ document.getElementById('xls').addEventListener('change', function(e){
     const data = XLSX.utils.sheet_to_json(ws,{header:1});
     const linhas = data.slice(5);
     let maquinas = {};
-    for(let i=0;i<linhas.length;i++){
-      const l = linhas[i];
+    for(const l of linhas){
       const item = l[0];
       const maquina = l[7];
       const prioridade = l[6];
-      const produzir = l[16];
-      if(!maquina || !item) continue;
+      if(!item || !maquina) continue;
       if(!maquinas[maquina]) maquinas[maquina]=[];
-      maquinas[maquina].push({ item, prioridade, produzir });
+      maquinas[maquina].push({ item, prioridade });
     }
     producaoData = maquinas;
     socket.emit('atualizaProducao', producaoData);
@@ -40,7 +36,7 @@ document.getElementById('xls').addEventListener('change', function(e){
   reader.readAsBinaryString(e.target.files[0]);
 });
 
-socket.on('atualizaProducao', (data)=>{
+socket.on('atualizaProducao', data=>{
   producaoData = data;
   renderProducao(producaoData);
 });
@@ -50,7 +46,7 @@ function renderProducao(maquinas){
   const div = document.getElementById('producao');
   filtro.innerHTML = '<option value="">Todas</option>';
   div.innerHTML = '';
-  for(let m in maquinas){
+  for(const m in maquinas){
     filtro.innerHTML += `<option>${m}</option>`;
     const box = document.createElement('div');
     box.className='maquina';
@@ -66,8 +62,8 @@ function renderProducao(maquinas){
 /* ===== ABA CARGAS ===== */
 let cargas = [];
 
-socket.on('initCargas', (data)=>{ cargas=data; renderCargas(cargas); });
-socket.on('atualizaCargas', (data)=>{ cargas=data; renderCargas(cargas); });
+socket.on('initCargas', data=>{ cargas=data; renderCargas(cargas); });
+socket.on('atualizaCargas', data=>{ cargas=data; renderCargas(cargas); });
 
 function novaCarga(){
   const carga = { titulo:'Carga '+(cargas.length+1), status:'pendente', itens:[] };
@@ -82,19 +78,21 @@ function renderCargas(data){
     card.className='card';
     card.innerHTML = `
       <div class="card-header">
-        <div class="card-header-left"><strong>${carga.titulo}</strong></div>
-        <div class="card-header-right">
-          <select class="status-select" onchange="atualizaStatus(this, ${index})">
-            <option value="pendente">Pendente</option>
-            <option value="carregando">Carregando</option>
-            <option value="pronto">Pronto</option>
-          </select>
+        <div class="card-header-left">
           <span class="menu">⋮
             <div class="dropdown">
               <button onclick="editarCarga(this)">Editar itens</button>
               <button onclick="excluirCarga(${index})">Excluir carga</button>
             </div>
           </span>
+          <strong>${carga.titulo}</strong>
+        </div>
+        <div class="card-header-right">
+          <select class="status-select" onchange="atualizaStatus(this, ${index})">
+            <option value="pendente">Pendente</option>
+            <option value="carregando">Carregando</option>
+            <option value="pronto">Pronto</option>
+          </select>
         </div>
       </div>
       <div class="itens"></div>
@@ -115,7 +113,7 @@ function addItem(btn,index){
   socket.emit('editarCarga', cargas);
 }
 
-function addItemRender(container, item){
+function addItemRender(container,item){
   const div = document.createElement('div');
   div.className='item';
   div.innerHTML = `${item.nome} 
@@ -179,6 +177,6 @@ function atualizaStatus(sel,index){
 
 /* ===== ABA TV ===== */
 function atualizarTV(){
-  var tv=document.getElementById('tv');
+  const tv=document.getElementById('tv');
   tv.innerHTML='<div class="tv-box">Resumo geral de máquinas e cargas (próximo passo)</div>';
 }
