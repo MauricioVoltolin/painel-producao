@@ -1,40 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel BF BOX</title>
+
+<style>
 body {
-  font-family: Arial, sans-serif;
-  background: #f4f4f4;
   margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
 }
 
+/* HEADER */
 header {
-  background: #222;
-  color: #fff;
-  padding: 10px;
-}
-
-#cargas {
-  padding: 15px;
-}
-
-.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   background: #fff;
-  border-radius: 8px;
+  padding: 10px 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+header img { height: 45px; }
+
+.tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.tab {
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: #e0e0e0;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #198754;
+  color: #fff;
+}
+
+#hora { font-weight: bold; }
+
+/* CARGAS */
+#cargasContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   padding: 10px;
-  margin-bottom: 10px;
+}
+
+.carga-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px;
+  flex: 1 1 calc(50% - 10px);
+  min-width: 280px;
   position: relative;
 }
 
-.card-header {
+.carga-topo {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.status {
-  padding: 4px 8px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 12px;
+.carga-topo h3 {
+  margin: 0;
 }
 
+/* STATUS CARGA */
+.status-carga {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+.status-carga.pendente {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.status-carga.carregando {
+  background: #fff3cd;
+  color: #664d03;
+}
+
+.status-carga.pronto {
+  background: #198754;
+  color: #fff;
+}
+
+/* MENU */
 .menu {
   cursor: pointer;
   font-size: 20px;
@@ -43,32 +103,207 @@ header {
 .menu-content {
   display: none;
   position: absolute;
-  right: 10px;
   top: 35px;
+  right: 10px;
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 6px;
   z-index: 10;
 }
 
-.menu-content.show {
-  display: block;
-}
-
-.menu-content button {
-  display: block;
-  width: 100%;
-  padding: 8px;
-  border: none;
-  background: none;
+.menu-content div {
+  padding: 8px 12px;
   cursor: pointer;
 }
 
-.item {
+.menu-content div:hover {
+  background: #eee;
+}
+
+/* ITENS */
+.carga-itens {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.carga-item {
+  background: #f9f9f9;
+  border-radius: 6px;
+  padding: 6px 10px;
   display: flex;
   justify-content: space-between;
-  margin-top: 5px;
-  padding: 5px;
-  background: #eee;
-  border-radius: 5px;
+  align-items: center;
 }
+
+.status-item {
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+.status-item.aguardando {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.status-item.faturado {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+/* BOTÕES */
+.add-item-btn {
+  margin-top: 8px;
+  padding: 6px;
+  border-radius: 50%;
+  border: none;
+  background: #198754;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+#addCarga {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  border-radius: 50%;
+  width: 55px;
+  height: 55px;
+  font-size: 26px;
+  border: none;
+  background: #198754;
+  color: #fff;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<img src="https://site.siteargus.com.br/sendThumb.asp?idcliente=543&path=parceiro&file=27_6_543_458_13510820_510120865837737_6061197160572500699_n.jpg">
+<div class="tabs">
+  <div class="tab active">Cargas</div>
+</div>
+<div id="hora"></div>
+</header>
+
+<div id="cargas">
+  <div id="cargasContainer"></div>
+  <button id="addCarga">+</button>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+let contador = 1;
+
+// HORA
+setInterval(() => {
+  document.getElementById('hora').innerText = new Date().toLocaleString();
+}, 1000);
+
+// ADICIONAR CARGA
+document.getElementById('addCarga').onclick = () => {
+  socket.emit('addCarga', { title: `Carga ${String(contador).padStart(2,'0')}` });
+  contador++;
+};
+
+// RENDER
+function renderCargas(cargas) {
+  const container = document.getElementById('cargasContainer');
+  container.innerHTML = '';
+  contador = cargas.length + 1;
+
+  cargas.forEach(carga => {
+    const card = document.createElement('div');
+    card.className = 'carga-card';
+
+    card.innerHTML = `
+      <div class="carga-topo">
+        <h3>${carga.title}</h3>
+        <select class="status-carga ${carga.status}">
+          <option value="pendente">Pendente</option>
+          <option value="carregando">Carregando</option>
+          <option value="pronto">Pronto</option>
+        </select>
+        <div class="menu">⋮</div>
+      </div>
+
+      <div class="menu-content">
+        <div class="gerenciar">Gerenciar</div>
+        <div class="excluir">Excluir</div>
+      </div>
+
+      <div class="carga-itens"></div>
+      <button class="add-item-btn">+</button>
+    `;
+
+    const menu = card.querySelector('.menu');
+    const menuContent = card.querySelector('.menu-content');
+
+    menu.onclick = (e) => {
+      e.stopPropagation();
+      menuContent.style.display =
+        menuContent.style.display === 'block' ? 'none' : 'block';
+    };
+
+    document.body.onclick = () => menuContent.style.display = 'none';
+
+    const statusCarga = card.querySelector('.status-carga');
+    statusCarga.value = carga.status;
+    statusCarga.onchange = () => {
+      statusCarga.className = `status-carga ${statusCarga.value}`;
+      socket.emit('updateCargaStatus', { id: carga.id, status: statusCarga.value });
+    };
+
+    card.querySelector('.excluir').onclick = () => {
+      socket.emit('deleteCarga', carga.id);
+    };
+
+    const itensDiv = card.querySelector('.carga-itens');
+    carga.itens.forEach(it => {
+      const div = document.createElement('div');
+      div.className = 'carga-item';
+
+      div.innerHTML = `
+        <span>${it.name}</span>
+        <select class="status-item ${it.status}">
+          <option value="aguardando">Aguardando</option>
+          <option value="faturado">Faturado</option>
+        </select>
+      `;
+
+      const sel = div.querySelector('select');
+      sel.value = it.status;
+      sel.onchange = () => {
+        sel.className = `status-item ${sel.value}`;
+        socket.emit('updateItem', {
+          cargaId: carga.id,
+          itemId: it.id,
+          status: sel.value
+        });
+      };
+
+      itensDiv.appendChild(div);
+    });
+
+    card.querySelector('.add-item-btn').onclick = () => {
+      const nome = prompt('Nome do item');
+      if (nome) socket.emit('addItem', { cargaId: carga.id, itemName: nome });
+    };
+
+    container.appendChild(card);
+  });
+}
+
+socket.on('updateCargas', renderCargas);
+</script>
+
+</body>
+</html>
