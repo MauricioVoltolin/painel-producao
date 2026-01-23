@@ -4,8 +4,13 @@ const XLSX = require("xlsx");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
@@ -13,29 +18,29 @@ app.use(express.static("public"));
 const upload = multer({ dest: "uploads/" });
 const DATA_FILE = path.join(__dirname, "data.json");
 
-// Carrega ou cria arquivo de dados
 let producao = [];
 if (fs.existsSync(DATA_FILE)) {
   producao = JSON.parse(fs.readFileSync(DATA_FILE));
 }
 
-// Salva dados no arquivo
+// Salvar dados
 function salvarDados() {
   fs.writeFileSync(DATA_FILE, JSON.stringify(producao, null, 2));
+  io.emit("atualizar", producao); // Atualiza TV em tempo real
 }
 
-// Upload XLS e leitura
+// Upload XLS
 app.post("/upload", upload.single("file"), (req, res) => {
   try {
     const workbook = XLSX.readFile(req.file.path);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-    // Limpa dados atuais e insere novos
     producao = [];
-    for (let i = 5; i < jsonData.length; i++) {
+    for (let i = 5; i < jsonData.length; i++) { // linha 6+
       const row = jsonData[i];
-      if (!row || !row[0]) continue; // pular linhas vazias
+      if (!row || !row[0]) continue;
+
       producao.push({
         item: row[0] || "",
         maquina: row[7] || "",
@@ -55,12 +60,11 @@ app.post("/upload", upload.single("file"), (req, res) => {
   }
 });
 
-// CRUD básico
+// CRUD
 app.get("/producao", (req, res) => res.json(producao));
 
 app.post("/producao", (req, res) => {
-  const novo = req.body;
-  producao.push(novo);
+  producao.push(req.body);
   salvarDados();
   res.json({ success: true });
 });
@@ -79,4 +83,4 @@ app.delete("/producao/:index", (req, res) => {
   res.json({ success: true });
 });
 
-app.listen(3000, () => console.log("Servidor rodando na porta 3000"));
+server.listen(3000, () => console.log("Servidor rodando na porta 3000"));

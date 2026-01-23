@@ -3,40 +3,78 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel Produção</title>
+<title>Painel de Produção</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
-<header>
-  <h1>Painel de Produção</h1>
+<body class="bg-gray-100">
+
+<header class="bg-gray-800 text-white p-4 text-center">
+  <h1 class="text-2xl font-bold">Painel de Produção</h1>
 </header>
 
-<main>
-  <section id="upload-section">
-    <h2>Upload XLS</h2>
-    <input type="file" id="xlsFile">
-    <button onclick="uploadXLS()">Enviar</button>
+<main class="p-4">
+
+  <!-- Upload XLS -->
+  <section class="mb-6 bg-white p-4 rounded shadow">
+    <h2 class="font-bold mb-2">Upload XLS</h2>
+    <input type="file" id="xlsFile" class="border p-1">
+    <button onclick="uploadXLS()" class="bg-blue-600 text-white px-4 py-1 rounded ml-2">Enviar</button>
   </section>
 
-  <section id="producao-section">
-    <h2>Produção</h2>
-    <table id="producao-table">
-      <thead>
+  <!-- Filtro por máquina / prioridade -->
+  <section class="mb-6 bg-white p-4 rounded shadow flex flex-wrap gap-4 items-center">
+    <div>
+      <label>Máquina:</label>
+      <select id="filtroMaquina" onchange="filtrar()">
+        <option value="">Todas</option>
+      </select>
+    </div>
+    <div>
+      <label>Prioridade:</label>
+      <select id="filtroPrioridade" onchange="filtrar()">
+        <option value="">Todas</option>
+        <option value="PRIORIDADE">PRIORIDADE</option>
+      </select>
+    </div>
+    <button onclick="resetFiltros()" class="bg-gray-500 text-white px-3 py-1 rounded">Resetar</button>
+  </section>
+
+  <!-- Tabela de Produção -->
+  <section class="bg-white p-4 rounded shadow overflow-auto">
+    <table class="min-w-full border" id="producao-table">
+      <thead class="bg-gray-200">
         <tr>
-          <th>Item</th>
-          <th>Máquina</th>
-          <th>Vendida</th>
-          <th>Estoque</th>
-          <th>Produzir</th>
-          <th>Prioridade</th>
-          <th>Ações</th>
+          <th class="border px-2 py-1">Item</th>
+          <th class="border px-2 py-1">Máquina</th>
+          <th class="border px-2 py-1">Vendida</th>
+          <th class="border px-2 py-1">Estoque</th>
+          <th class="border px-2 py-1">Produzir</th>
+          <th class="border px-2 py-1">Prioridade</th>
+          <th class="border px-2 py-1">Ações</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </section>
+
+  <!-- Adicionar novo item -->
+  <section class="mt-6 bg-white p-4 rounded shadow">
+    <h2 class="font-bold mb-2">Adicionar Item</h2>
+    <div class="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <input type="text" id="novoItem" placeholder="Item" class="border p-1">
+      <input type="text" id="novaMaquina" placeholder="Máquina" class="border p-1">
+      <input type="number" id="novaVendida" placeholder="Vendida" class="border p-1">
+      <input type="number" id="novoEstoque" placeholder="Estoque" class="border p-1">
+      <input type="number" id="novoProduzir" placeholder="Produzir" class="border p-1">
+      <input type="text" id="novaPrioridade" placeholder="Prioridade" class="border p-1">
+    </div>
+    <button onclick="adicionarItem()" class="bg-green-600 text-white px-4 py-1 mt-2 rounded">Adicionar</button>
+  </section>
+
 </main>
 
+<script src="/socket.io/socket.io.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
