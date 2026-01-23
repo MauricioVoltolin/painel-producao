@@ -3,27 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel BF BOX</title>
+<title>Painel Cargas</title>
 
 <style>
 body{margin:0;font-family:Arial;background:#f2f2f2}
-header{display:flex;align-items:center;justify-content:space-between;background:#fff;padding:10px;box-shadow:0 2px 5px rgba(0,0,0,.1)}
-.tabs{display:flex;gap:10px}
-.tab{padding:5px 15px;border-radius:5px;background:#e0e0e0;cursor:pointer}
-.tab.active{background:#4CAF50;color:#fff}
+header{background:#fff;padding:10px;font-size:20px;font-weight:bold}
 #cargasContainer{display:flex;flex-wrap:wrap;gap:10px;padding:10px}
-.carga-card{background:#fff;border-radius:10px;padding:10px;flex:1 1 45%;min-width:250px}
-.carga-item{display:flex;justify-content:space-between;background:#f9f9f9;padding:5px;border-radius:5px;margin-top:5px}
-.add-item-btn{margin-top:10px;border:none;background:#4CAF50;color:#fff;border-radius:50%;width:35px;height:35px;font-size:20px;cursor:pointer}
-#addCarga{position:fixed;bottom:20px;right:20px;border:none;background:#4CAF50;color:#fff;border-radius:50%;width:50px;height:50px;font-size:25px;cursor:pointer}
+
+.carga-card{
+  background:#fff;
+  border-radius:10px;
+  padding:10px;
+  flex:1 1 45%;
+  min-width:260px;
+  position:relative;
+}
+
+.carga-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.status-select{
+  margin-right:10px;
+}
+
+.menu{
+  cursor:pointer;
+  font-size:20px;
+  position:relative;
+}
+
+.menu-content{
+  display:none;
+  position:absolute;
+  right:0;
+  background:#fff;
+  border:1px solid #ccc;
+  border-radius:5px;
+  z-index:10;
+}
+
+.menu-content div{
+  padding:5px 10px;
+  cursor:pointer;
+}
+
+.menu:hover .menu-content{
+  display:block;
+}
+
+.carga-item{
+  display:flex;
+  justify-content:space-between;
+  background:#f9f9f9;
+  padding:5px;
+  border-radius:5px;
+  margin-top:5px;
+}
+
+.add-item-btn{
+  margin-top:10px;
+  border:none;
+  background:#4CAF50;
+  color:#fff;
+  border-radius:50%;
+  width:35px;
+  height:35px;
+  font-size:20px;
+  cursor:pointer;
+}
+
+#addCarga{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  border:none;
+  background:#4CAF50;
+  color:#fff;
+  border-radius:50%;
+  width:50px;
+  height:50px;
+  font-size:25px;
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
-<header>
-  <h2>Painel BF BOX</h2>
-</header>
+<header>Painel de Cargas</header>
 
 <div id="cargasContainer"></div>
 <button id="addCarga">+</button>

@@ -6,32 +6,23 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Servir arquivos estáticos
 app.use(express.static('public'));
 
-// Dados em memória
-let cargas = [
-  {
-    id: 1,
-    title: 'Carga 01',
-    status: 'pendente',
-    itens: []
-  }
-];
+let cargas = [];
+let contadorCargas = 1;
 
 io.on('connection', socket => {
-  console.log('🔥 Cliente conectado:', socket.id);
-
-  // Envia dados iniciais
   socket.emit('updateCargas', cargas);
 
-  socket.on('addCarga', title => {
+  socket.on('addCarga', () => {
+    const numero = String(contadorCargas).padStart(2, '0');
     cargas.push({
       id: Date.now(),
-      title,
+      title: `Carga ${numero}`,
       status: 'pendente',
       itens: []
     });
+    contadorCargas++;
     io.emit('updateCargas', cargas);
   });
 
@@ -42,10 +33,8 @@ io.on('connection', socket => {
 
   socket.on('updateCargaStatus', ({ id, status }) => {
     const carga = cargas.find(c => c.id === id);
-    if (carga) {
-      carga.status = status;
-      io.emit('updateCargas', cargas);
-    }
+    if (carga) carga.status = status;
+    io.emit('updateCargas', cargas);
   });
 
   socket.on('addItem', ({ cargaId, itemName }) => {
@@ -60,19 +49,21 @@ io.on('connection', socket => {
     }
   });
 
-  socket.on('updateItem', ({ cargaId, itemId, status, name }) => {
+  socket.on('updateItem', ({ cargaId, itemId, name }) => {
+    const carga = cargas.find(c => c.id === cargaId);
+    if (!carga) return;
+    const item = carga.itens.find(i => i.id === itemId);
+    if (item) item.name = name;
+    io.emit('updateCargas', cargas);
+  });
+
+  socket.on('deleteItem', ({ cargaId, itemId }) => {
     const carga = cargas.find(c => c.id === cargaId);
     if (carga) {
-      const item = carga.itens.find(i => i.id === itemId);
-      if (item) {
-        if (status) item.status = status;
-        if (name) item.name = name;
-        io.emit('updateCargas', cargas);
-      }
+      carga.itens = carga.itens.filter(i => i.id !== itemId);
+      io.emit('updateCargas', cargas);
     }
   });
 });
 
-server.listen(process.env.PORT || 3000, () => {
-  console.log('🚀 Servidor rodando');
-});
+server.listen(process.env.PORT || 3000);
