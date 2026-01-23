@@ -1,108 +1,74 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel de Cargas</title>
-
-<style>
-body{margin:0;font-family:Arial;background:#f2f2f2}
-header{background:#fff;padding:10px;font-size:20px;font-weight:bold}
-#cargasContainer{display:flex;flex-wrap:wrap;gap:10px;padding:10px}
-
-.carga-card{
-  background:#fff;
-  border-radius:10px;
-  padding:10px;
-  flex:1 1 45%;
-  min-width:260px;
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  margin: 0;
 }
 
-.carga-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+header {
+  background: #222;
+  color: #fff;
+  padding: 10px;
 }
 
-.menu{
-  cursor:pointer;
-  font-size:20px;
-  position:relative;
+#cargas {
+  padding: 15px;
 }
 
-.menu-content{
-  display:none;
-  position:absolute;
-  right:0;
-  background:#fff;
-  border:1px solid #ccc;
-  border-radius:5px;
-  z-index:10;
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  position: relative;
 }
 
-.menu-content div{
-  padding:5px 10px;
-  cursor:pointer;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.menu:hover .menu-content{
-  display:block;
+.status {
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
 }
 
-.carga-item{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  background:#f9f9f9;
-  padding:5px;
-  border-radius:5px;
-  margin-top:5px;
+.menu {
+  cursor: pointer;
+  font-size: 20px;
 }
 
-.item-actions{
-  display:none;
+.menu-content {
+  display: none;
+  position: absolute;
+  right: 10px;
+  top: 35px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  z-index: 10;
 }
 
-.gerenciar .item-actions{
-  display:inline;
+.menu-content.show {
+  display: block;
 }
 
-.add-item-btn{
-  margin-top:10px;
-  border:none;
-  background:#4CAF50;
-  color:#fff;
-  border-radius:50%;
-  width:35px;
-  height:35px;
-  font-size:20px;
-  cursor:pointer;
+.menu-content button {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
 }
 
-#addCarga{
-  position:fixed;
-  bottom:20px;
-  right:20px;
-  border:none;
-  background:#4CAF50;
-  color:#fff;
-  border-radius:50%;
-  width:50px;
-  height:50px;
-  font-size:25px;
-  cursor:pointer;
+.item {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  padding: 5px;
+  background: #eee;
+  border-radius: 5px;
 }
-</style>
-</head>
-
-<body>
-
-<header>Painel de Cargas</header>
-
-<div id="cargasContainer"></div>
-<button id="addCarga">+</button>
-
-<script src="/socket.io/socket.io.js"></script>
-<script src="script.js"></script>
-</body>
-</html>

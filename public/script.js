@@ -1,100 +1,89 @@
 const socket = io();
+const container = document.getElementById("cargasContainer");
 
-function renderCargas(data) {
-  const container = document.getElementById('cargasContainer');
-  container.innerHTML = '';
+document.getElementById("addCarga").onclick = () => {
+  socket.emit("novaCarga");
+};
 
-  data.forEach(carga => {
-    const card = document.createElement('div');
-    card.className = 'carga-card';
+socket.on("update", cargas => {
+  container.innerHTML = "";
+
+  cargas.forEach(carga => {
+    const card = document.createElement("div");
+    card.className = "card";
 
     card.innerHTML = `
-      <div class="carga-header">
-        <strong>${carga.title}</strong>
-        <div style="display:flex;align-items:center;gap:5px">
-          <select class="status-carga">
-            <option value="pendente">Pendente</option>
-            <option value="carregando">Carregando</option>
-            <option value="pronto">Pronto</option>
-          </select>
-          <div class="menu">⋮
-            <div class="menu-content">
-              <div class="gerenciar-btn">Gerenciar itens</div>
-              <div class="excluir-btn">Excluir carga</div>
-            </div>
+      <div class="card-header">
+        <strong>Carga ${String(carga.numero).padStart(2,"0")}</strong>
+        <div>
+          <span class="status">${carga.status}</span>
+          <span class="menu">⋮</span>
+          <div class="menu-content">
+            <button class="addItem">Adicionar Item</button>
+            <button class="excluir">Excluir Carga</button>
           </div>
         </div>
       </div>
       <div class="itens"></div>
-      <button class="add-item-btn">+</button>
     `;
 
-    const statusCarga = card.querySelector('.status-carga');
-    statusCarga.value = carga.status;
-    statusCarga.onchange = () =>
-      socket.emit('updateCargaStatus', { id: carga.id, status: statusCarga.value });
+    const statusCarga = card.querySelector(".status");
+    statusCarga.onclick = () => {
+      const novo = carga.status === "Pendente"
+        ? "Carregando"
+        : carga.status === "Carregando"
+        ? "Pronto"
+        : "Pendente";
+      socket.emit("statusCarga", { id: carga.id, status: novo });
+    };
 
-    card.querySelector('.excluir-btn').onclick = () =>
-      socket.emit('deleteCarga', carga.id);
+    const menu = card.querySelector(".menu");
+    const menuContent = card.querySelector(".menu-content");
 
-    const itensDiv = card.querySelector('.itens');
+    menu.onclick = e => {
+      e.stopPropagation();
+      document.querySelectorAll(".menu-content.show")
+        .forEach(m => m.classList.remove("show"));
+      menuContent.classList.toggle("show");
+    };
+
+    document.addEventListener("click", () => {
+      menuContent.classList.remove("show");
+    });
+
+    card.querySelector(".excluir").onclick = () => {
+      socket.emit("excluirCarga", carga.id);
+    };
+
+    card.querySelector(".addItem").onclick = () => {
+      const nome = prompt("Nome do item:");
+      if (nome) socket.emit("addItem", { id: carga.id, nome });
+    };
+
+    const itensDiv = card.querySelector(".itens");
 
     carga.itens.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'carga-item';
-
+      const div = document.createElement("div");
+      div.className = "item";
       div.innerHTML = `
-        <span>${item.name}</span>
-        <select class="item-status">
-          <option value="aguardando">Aguardando</option>
-          <option value="faturado">Faturado</option>
-        </select>
-        <span class="item-actions">
-          <button class="edit">✏️</button>
-          <button class="del">❌</button>
-        </span>
+        <span>${item.nome}</span>
+        <span class="status">${item.status}</span>
       `;
 
-      const itemStatus = div.querySelector('.item-status');
-      itemStatus.value = item.status;
-      itemStatus.onchange = () =>
-        socket.emit('updateItemStatus', {
+      div.querySelector(".status").onclick = () => {
+        const novo = item.status === "Aguardando"
+          ? "Faturado"
+          : "Aguardando";
+        socket.emit("statusItem", {
           cargaId: carga.id,
           itemId: item.id,
-          status: itemStatus.value
-        });
-
-      div.querySelector('.edit').onclick = () => {
-        const novo = prompt('Novo nome', item.name);
-        if (novo) socket.emit('updateItemName', {
-          cargaId: carga.id,
-          itemId: item.id,
-          name: novo
+          status: novo
         });
       };
-
-      div.querySelector('.del').onclick = () =>
-        socket.emit('deleteItem', { cargaId: carga.id, itemId: item.id });
 
       itensDiv.appendChild(div);
     });
 
-    let gerenciar = false;
-    card.querySelector('.gerenciar-btn').onclick = () => {
-      gerenciar = !gerenciar;
-      itensDiv.classList.toggle('gerenciar', gerenciar);
-    };
-
-    card.querySelector('.add-item-btn').onclick = () => {
-      const nome = prompt('Nome do item');
-      if (nome) socket.emit('addItem', { cargaId: carga.id, itemName: nome });
-    };
-
     container.appendChild(card);
   });
-}
-
-document.getElementById('addCarga').onclick = () =>
-  socket.emit('addCarga');
-
-socket.on('updateCargas', renderCargas);
+});
