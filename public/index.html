@@ -3,39 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel Produção</title>
+<title>Painel de Produção</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="tabs">
-  <button class="active" onclick="openTab(0)">Produção</button>
-  <button onclick="openTab(1)">Cargas</button>
-  <button onclick="openTab(2)">TV</button>
-</div>
+<div class="container">
 
-<div class="tab active" id="producao-tab">
-  <div class="filtro-centralizado">
-    <label>Filtrar Máquina:</label>
-    <select id="filtroMaquina" onchange="renderProducao(producaoData)"></select>
+  <!-- Abas -->
+  <div class="tabs">
+    <button class="tablink" onclick="openTab('producao', this)" id="defaultOpen">Produção</button>
+    <button class="tablink" onclick="openTab('cargas', this)">Cargas</button>
+    <button class="tablink" onclick="openTab('tv', this)">TV</button>
   </div>
-  <input type="file" id="xls">
-  <div id="producao"></div>
-  <button onclick="exportAlteracoes()">Exportar Alterações</button>
+
+  <!-- ABA PRODUÇÃO -->
+  <div id="producao" class="tabcontent">
+    <div class="filtro-maquina">
+      <select id="filtroMaquina">
+        <option value="">Todas as máquinas</option>
+      </select>
+    </div>
+    <div id="producaoCards"></div>
+    <div class="botoes-finais">
+      <input type="file" id="uploadXLS">
+      <button id="exportXLS">Exportar Alterações</button>
+    </div>
+  </div>
+
+  <!-- ABA CARGAS -->
+  <div id="cargas" class="tabcontent">
+    <button id="novaCarga">Nova Carga</button>
+    <div id="cargasCards" class="cardsContainer"></div>
+  </div>
+
+  <!-- ABA TV -->
+  <div id="tv" class="tabcontent">
+    <h2>Resumo Geral</h2>
+    <div id="graficos"></div>
+  </div>
+
 </div>
 
-<div class="tab" id="cargas-tab">
-  <button onclick="novaCarga()">Nova Carga</button>
-  <div id="cargas"></div>
-</div>
-
-<div class="tab" id="tv-tab">
-  <h2>Resumo Geral</h2>
-  <div id="tv"></div>
-</div>
-
-<script src="/lib/socket.io.js"></script>
-<script src="/lib/xlsx.full.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="lib/xlsx.full.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

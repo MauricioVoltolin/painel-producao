@@ -1,235 +1,120 @@
 const socket = io();
 
-/* ===== TABS ===== */
-function openTab(i) {
-    const tabs = document.querySelectorAll('.tabs button');
-    const contents = document.querySelectorAll('.tab');
-    tabs.forEach(t => t.classList.remove('active'));
-    contents.forEach(c => c.classList.remove('active'));
-    tabs[i].classList.add('active');
-    contents[i].classList.add('active');
-}
-
-/* ===== PRODUÇÃO ===== */
-let producaoData = {};
-let producaoOriginal = {};
-
-const xlsInput = document.getElementById('xls');
-xlsInput.addEventListener('change', function (e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function (evt) {
-        const wb = XLSX.read(evt.target.result, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-        const linhas = data.slice(5);
-        let maquinas = {};
-        linhas.forEach(l => {
-            const item = l[0];
-            const maquina = l[7];
-            const prioridade = l[6];
-            const venda = l[10];
-            const estoque = l[12];
-            const produzir = l[16];
-            if (!item || !maquina) return;
-            if (!maquinas[maquina]) maquinas[maquina] = [];
-            maquinas[maquina].push({
-                item, prioridade, venda, estoque, produzir,
-                status: 'Aguardando',
-                statusCarga: 'Pendente'
-            });
-        });
-        producaoData = JSON.parse(JSON.stringify(maquinas));
-        producaoOriginal = JSON.parse(JSON.stringify(maquinas));
-        socket.emit('uploadProducao', producaoData);
-        renderProducao(producaoData);
-    };
-    reader.readAsArrayBuffer(file);
-});
-
-socket.on('atualizaProducao', data => {
-    producaoData = data;
-    renderProducao(producaoData);
-});
-
-/* ===== FILTRO DE MÁQUINA ===== */
-function renderProducao(maquinas) {
-    const filtro = document.getElementById('filtroMaquina');
-    const div = document.getElementById('producao');
-
-    filtro.innerHTML = '<option value="">Todas</option>';
-    for (const m in maquinas) filtro.innerHTML += `<option value="${m}">${m}</option>`;
-
-    div.innerHTML = '';
-    for (const m in maquinas) {
-        if (filtro.value && filtro.value !== m) continue;
-
-        const box = document.createElement('div');
-        box.className = 'maquina';
-        let html = `<strong>${m}</strong>`;
-        maquinas[m].forEach((i, idx) => {
-            html += `<div class="item-producao">
-                <span>${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}</span>
-                <select onchange="atualizaProducaoItem('${m}',${idx},this)" class="${i.status==='Faturado'?'faturado':'aguardando'}">
-                  <option ${i.status==='Aguardando'?'selected':''}>Aguardando</option>
-                  <option ${i.status==='Faturado'?'selected':''}>Faturado</option>
-                </select>
-                <div class="item-valores">
-                  <span>V:${i.venda||''}</span>
-                  <span>E:${i.estoque||''}</span>
-                  <span>P:${i.produzir||''}</span>
-                </div>
-            </div>`;
-        });
-        box.innerHTML = html;
-        div.appendChild(box);
-    }
-}
-
-function atualizaProducaoItem(maquina, idx, sel) {
-    producaoData[maquina][idx].status = sel.value;
-    socket.emit('atualizaProducao', producaoData);
-}
-
-/* ===== EXPORTAR ALTERAÇÕES ===== */
-function exportAlteracoes() {
-    let alteracoes = [];
-    for (const m in producaoData) {
-        producaoData[m].forEach((i, idx) => {
-            if (i.status !== producaoOriginal[m][idx].status) {
-                alteracoes.push({
-                    Maquina: m,
-                    Item: i.item,
-                    Status: i.status
-                });
-            }
-        });
-    }
-    if (alteracoes.length === 0) { alert('Nenhuma alteração para exportar'); return; }
-    const ws = XLSX.utils.json_to_sheet(alteracoes);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Alteracoes');
-    XLSX.writeFile(wb, 'alteracoes.xlsx');
-}
-
-/* ===== CARGAS ===== */
+// === VARIÁVEIS GLOBAIS ===
 let cargas = [];
+let producaoData = {};
 
-function novaCarga() {
-    cargas.push({ titulo: `Carga ${cargas.length + 1}`, itens: [], status: 'Pendente' });
+// === ABAS ===
+function openTab(tabName, elmnt){
+    const tabcontent = document.getElementsByClassName("tabcontent");
+    for(let i=0;i<tabcontent.length;i++) tabcontent[i].style.display="none";
+    const tablinks = document.getElementsByClassName("tablink");
+    for(let i=0;i<tablinks.length;i++) tablinks[i].className = tablinks[i].className.replace(" active","");
+    document.getElementById(tabName).style.display="block";
+    elmnt.className += " active";
+}
+document.getElementById("defaultOpen").click();
+
+// === CARGAS ===
+const cargasContainer = document.getElementById("cargasCards");
+const novaCargaBtn = document.getElementById("novaCarga");
+
+novaCargaBtn.onclick = ()=>{
+    const nova = {titulo:`Carga ${cargas.length+1}`, itens:[]};
+    cargas.push(nova);
     socket.emit('editarCarga', cargas);
 }
 
-function renderCargas(cargas) {
-    const div = document.getElementById('cargas');
-    div.innerHTML = '';
-    cargas.forEach((c, idx) => {
-        const card = document.createElement('div');
-        card.className = 'card';
+socket.on('initCargas', data=>{
+    cargas = data;
+    renderCargas();
+});
 
-        card.innerHTML = `
-      <div class="card-header">
-        <div class="card-header-left">
-          <div class="menu" onclick="toggleDropdown(${idx})">☰
-            <div class="dropdown" id="dropdown-${idx}">
-              <button onclick="editarItens(${idx})">Editar Itens</button>
-              <button onclick="excluirCarga(${idx})">Excluir Carga</button>
+socket.on('atualizaCargas', data=>{
+    cargas = data;
+    renderCargas();
+});
+
+function renderCargas(){
+    cargasContainer.innerHTML="";
+    cargas.forEach((carga,i)=>{
+        const card = document.createElement("div");
+        card.className="card";
+
+        card.innerHTML=`
+            <div class="cardHeader">
+                <span class="titulo">${carga.titulo}</span>
+                <select class="statusCarga">
+                    <option value="pendente">Pendente</option>
+                    <option value="carregando">Carregando</option>
+                    <option value="pronto">Pronto</option>
+                </select>
+                <div class="menuCard">☰</div>
             </div>
-          </div>
-          <strong>${c.titulo}</strong>
-        </div>
-        <div class="card-header-right">
-          <select onchange="atualizaStatusCarga(${idx},this)" class="status-select ${c.status==='Pendente'?'aguardando':'faturado'}">
-            <option ${c.status==='Pendente'?'selected':''}>Pendente</option>
-            <option ${c.status==='Carregando'?'selected':''}>Carregando</option>
-            <option ${c.status==='Pronto'?'selected':''}>Pronto</option>
-          </select>
-        </div>
-      </div>
-      <div class="card-itens" id="card-itens-${idx}"></div>
-      <button class="add-item" onclick="addItem(${idx})">+</button>
-    `;
-        div.appendChild(card);
-        renderItens(idx);
+            <div class="cardItens"></div>
+            <button class="addItem">+</button>
+        `;
+        cargasContainer.appendChild(card);
+
+        const addBtn = card.querySelector(".addItem");
+        const itensDiv = card.querySelector(".cardItens");
+        addBtn.onclick = ()=>{
+            const nome = prompt("Nome do item:");
+            if(nome){
+                carga.itens.push({nome,status:"aguardando"});
+                socket.emit('editarCarga', cargas);
+            }
+        }
+
+        carga.itens.forEach((item,j)=>{
+            const divItem = document.createElement("div");
+            divItem.className="item";
+            divItem.innerHTML=`
+                <span>${item.nome}</span>
+                <select class="itemStatus">
+                    <option value="aguardando" ${item.status==="aguardando"?"selected":""}>Aguardando</option>
+                    <option value="faturado" ${item.status==="faturado"?"selected":""}>Faturado</option>
+                </select>
+            `;
+            divItem.querySelector(".itemStatus").onchange = e=>{
+                item.status = e.target.value;
+                socket.emit('editarCarga', cargas);
+            }
+            itensDiv.appendChild(divItem);
+        });
     });
 }
 
-function toggleDropdown(idx) {
-    const dd = document.getElementById(`dropdown-${idx}`);
-    dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
-}
+// === PRODUÇÃO ===
+const uploadInput = document.getElementById("uploadXLS");
+uploadInput.addEventListener("change", async(e)=>{
+    const file = e.target.files[0];
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(sheet, {header:1, range:5});
+    producaoData = jsonData;
+    socket.emit("uploadProducao", producaoData);
+});
 
-function editarItens(idx) {
-    const itensDiv = document.getElementById(`card-itens-${idx}`);
-    itensDiv.querySelectorAll('.item').forEach(it => {
-        it.classList.add('editing');
+socket.on("initProducao", data=>{
+    producaoData = data;
+    renderProducao();
+});
+
+socket.on("atualizaProducao", data=>{
+    producaoData = data;
+    renderProducao();
+});
+
+function renderProducao(){
+    const container = document.getElementById("producaoCards");
+    container.innerHTML="";
+    if(!producaoData) return;
+    producaoData.forEach((linha,i)=>{
+        const div = document.createElement("div");
+        div.className="producaoItem";
+        div.textContent = linha.join(" | ");
+        container.appendChild(div);
     });
 }
-
-function excluirCarga(idx) {
-    if (confirm(`Deseja realmente excluir ${cargas[idx].titulo}?`)) {
-        socket.emit('excluirCarga', idx);
-    }
-}
-
-function addItem(idx) {
-    const nome = prompt('Nome do item:');
-    if (nome) {
-        cargas[idx].itens.push({ nome, status: 'Aguardando' });
-        socket.emit('editarCarga', cargas);
-    }
-}
-
-function renderItens(idx) {
-    const itensDiv = document.getElementById(`card-itens-${idx}`);
-    itensDiv.innerHTML = '';
-    cargas[idx].itens.forEach((it, i) => {
-        const itemEl = document.createElement('div');
-        itemEl.className = 'item';
-        itemEl.innerHTML = `
-      <span>${it.nome}</span>
-      <div class="item-icons">
-        <span onclick="renomearItem(${idx},${i})">✏️</span>
-        <span onclick="removerItem(${idx},${i})">🗑️</span>
-      </div>
-      <select onchange="atualizaItemStatus(${idx},${i},this)">
-        <option ${it.status==='Aguardando'?'selected':''}>Aguardando</option>
-        <option ${it.status==='Faturado'?'selected':''}>Faturado</option>
-      </select>
-    `;
-        itensDiv.appendChild(itemEl);
-    });
-}
-
-function renomearItem(cIdx, iIdx) {
-    const novo = prompt('Novo nome:', cargas[cIdx].itens[iIdx].nome);
-    if (novo) {
-        cargas[cIdx].itens[iIdx].nome = novo;
-        socket.emit('editarCarga', cargas);
-    }
-}
-
-function removerItem(cIdx, iIdx) {
-    if (confirm('Deseja excluir este item?')) {
-        cargas[cIdx].itens.splice(iIdx, 1);
-        socket.emit('editarCarga', cargas);
-    }
-}
-
-function atualizaStatusCarga(idx, sel) {
-    cargas[idx].status = sel.value;
-    socket.emit('editarCarga', cargas);
-}
-
-function atualizaItemStatus(cIdx, iIdx, sel) {
-    cargas[cIdx].itens[iIdx].status = sel.value;
-    socket.emit('editarCarga', cargas);
-}
-
-/* ===== SOCKET EVENTS ===== */
-socket.on('initCargas', data => { cargas = data; renderCargas(cargas); });
-socket.on('atualizaCargas', data => { cargas = data; renderCargas(cargas); });
-socket.on('initProducao', data => { producaoData = data; renderProducao(producaoData); });
-socket.on('atualizaProducao', data => { producaoData = data; renderProducao(producaoData); });
