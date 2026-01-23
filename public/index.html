@@ -1,53 +1,40 @@
-const express = require('express');
-const path = require('path');
-const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Produção</title>
+<script src="lib/xlsx.full.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-app.use(express.static(path.join(__dirname,'public')));
+<div class="tabs">
+  <button class="active" onclick="openTab(0)">Produção</button>
+  <button onclick="openTab(1)">Cargas</button>
+  <button onclick="openTab(2)">TV</button>
+</div>
 
-app.get('/', (req,res)=> {
-  res.sendFile(path.join(__dirname,'public','index.html'));
-});
+<!-- ABA PRODUÇÃO -->
+<div class="tab active" id="tab-producao">
+  <input type="file" id="xls">
+  <button onclick="exportAlteracoes()">Exportar Alterações</button>
+  <select id="filtroMaquina" class="filtro"></select>
+  <div id="producao"></div>
+</div>
 
-let cargas = [];
-let producao = {};
+<!-- ABA CARGAS -->
+<div class="tab" id="tab-cargas">
+  <button onclick="novaCarga()">+ Nova Carga</button>
+  <div class="grid" id="cargas"></div>
+</div>
 
-io.on('connection', socket=>{
-  console.log('Novo cliente conectado');
+<!-- ABA TV -->
+<div class="tab" id="tab-tv">
+  <div id="tv"></div>
+</div>
 
-  // envia estado atual
-  socket.emit('initCargas', cargas);
-  socket.emit('initProducao', producao);
-
-  // ================== CARGAS ==================
-  socket.on('editarCarga', novoEstado=>{
-    novoEstado.forEach((c,i)=>c.titulo=`Carga ${i+1}`);
-    cargas = novoEstado;
-    io.emit('atualizaCargas', cargas);
-  });
-
-  socket.on('excluirCarga', idx=>{
-    cargas.splice(idx,1);
-    cargas.forEach((c,i)=>c.titulo=`Carga ${i+1}`);
-    io.emit('atualizaCargas', cargas);
-  });
-
-  // ================== PRODUÇÃO ==================
-  socket.on('uploadProducao', data=>{
-    producao = data;
-    io.emit('atualizaProducao', producao);
-  });
-
-  socket.on('atualizaProducao', data=>{
-    producao = data;
-    io.emit('atualizaProducao', producao);
-  });
-
-  socket.on('disconnect', ()=>{
-    console.log('Cliente desconectou');
-  });
-});
-
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, ()=> console.log(`Servidor rodando na porta ${PORT}`));
+<script src="app.js"></script>
+</body>
+</html>
