@@ -93,6 +93,11 @@ function renderCargas(data){
     card.innerHTML = `
       <div class="card-header">
         <div class="card-header-left">
+          <select class="status-select" onchange="atualizaStatus(this, ${index})">
+            <option value="pendente">Pendente</option>
+            <option value="carregando">Carregando</option>
+            <option value="pronto">Pronto</option>
+          </select>
           <span class="menu">⋮
             <div class="dropdown">
               <button onclick="editarCarga(this)">Editar itens</button>
@@ -101,19 +106,11 @@ function renderCargas(data){
           </span>
           <strong>${carga.titulo}</strong>
         </div>
-        <div class="card-header-right">
-          <select class="status-select" onchange="atualizaStatus(this, ${index})">
-            <option value="pendente">Pendente</option>
-            <option value="carregando">Carregando</option>
-            <option value="pronto">Pronto</option>
-          </select>
-        </div>
       </div>
       <div class="itens"></div>
       <button class="add-item" onclick="addItem(this, ${index})">+</button>`;
     container.appendChild(card);
     card.querySelector('.status-select').value = carga.status;
-    atualizaStatus(card.querySelector('.status-select'), index);
     carga.itens.forEach(item=>{
       addItemRender(card.querySelector('.itens'), item);
     });
@@ -170,10 +167,19 @@ function excluirItem(el){
 }
 
 function atualizaItemStatus(sel){
+  if(!sel) return;
   sel.style.background = sel.value==='aguardando'?'orange':'green';
-  sel.style.color='#fff';
-  const cardIndex = Array.from(document.getElementById('cargas').children).indexOf(sel.closest('.card'));
+  sel.style.color = '#fff';
+
+  const card = sel.closest('.card');
+  if(!card) return;
+  const container = document.getElementById('cargas');
+  if(!container) return;
+
+  const cardIndex = Array.from(container.children).indexOf(card);
   const itemIndex = Array.from(sel.parentElement.parentElement.children).indexOf(sel.parentElement);
+  if(cardIndex<0 || itemIndex<0) return;
+
   cargas[cardIndex].itens[itemIndex].status = sel.value;
   socket.emit('editarCarga', cargas);
 }

@@ -19,25 +19,21 @@ io.on('connection', (socket) => {
   socket.emit('initCargas', cargas);
   socket.emit('initProducao', producao);
 
-  // nova carga
   socket.on('novaCarga', (carga) => {
     cargas.push(carga);
     io.emit('atualizaCargas', cargas);
   });
 
-  // editar ou atualizar cargas
   socket.on('editarCarga', (novoEstado) => {
     cargas = novoEstado;
     io.emit('atualizaCargas', cargas);
   });
 
-  // excluir carga
   socket.on('excluirCarga', (index) => {
     cargas.splice(index, 1);
     io.emit('atualizaCargas', cargas);
   });
 
-  // atualizar produção
   socket.on('atualizaProducao', (data) => {
     producao = data;
     io.emit('atualizaProducao', producao);
