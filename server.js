@@ -4,7 +4,7 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname,'public')));
 
 app.get('/', (req,res)=> {
   res.sendFile(path.join(__dirname,'public','index.html'));
@@ -23,12 +23,15 @@ io.on('connection', socket=>{
 
   // ================== CARGAS ==================
   socket.on('editarCarga', novoEstado=>{
+    // Recontar títulos sequenciais
+    novoEstado.forEach((c,i)=>c.titulo=`Carga ${i+1}`);
     cargas = novoEstado;
     io.emit('atualizaCargas', cargas);
   });
 
   socket.on('excluirCarga', idx=>{
     cargas.splice(idx,1);
+    cargas.forEach((c,i)=>c.titulo=`Carga ${i+1}`);
     io.emit('atualizaCargas', cargas);
   });
 

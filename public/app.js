@@ -121,13 +121,14 @@ function renderCargas(c){
     cardDiv.innerHTML = `
       <div class="card-header">
         <div class="card-header-left">
+          <strong>${card.titulo}</strong>
+        </div>
+        <div class="card-header-right">
           <select class="status-select ${card.status}">
             <option value="pendente" ${card.status==='pendente'?'selected':''}>Pendente</option>
             <option value="carregando" ${card.status==='carregando'?'selected':''}>Carregando</option>
             <option value="pronto" ${card.status==='pronto'?'selected':''}>Pronto</option>
           </select>
-        </div>
-        <div class="card-header-right">
           <div class="menu">☰
             <div class="dropdown">
               <button onclick="editarCard(${idx})">Editar</button>
@@ -142,15 +143,15 @@ function renderCargas(c){
     div.appendChild(cardDiv);
 
     const sel = cardDiv.querySelector('select');
-    ['click','change','touchstart'].forEach(ev=> sel.addEventListener(ev,e=>{
+    sel.addEventListener('change', e=>{
       card.status = sel.value;
       socket.emit('editarCarga', cargas);
-    }));
+    });
 
     const menu = cardDiv.querySelector('.menu');
     const drop = menu.querySelector('.dropdown');
-    ['click','touchstart'].forEach(ev=>{
-      menu.addEventListener(ev,e=>{ drop.style.display = drop.style.display==='block'?'none':'block'; });
+    menu.addEventListener('click', e=>{
+      drop.style.display = drop.style.display==='block'?'none':'block';
     });
 
     renderItens(card, cardDiv.querySelector('.card-itens'), idx);
