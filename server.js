@@ -1,23 +1,40 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
-app.use(express.static(path.join(__dirname,'public')));
+const upload = multer({ dest: 'uploads/' });
 
-app.get('/', (req,res)=> {
-  res.sendFile(path.join(__dirname,'public','index.html'));
-});
+app.use(express.static(path.join(__dirname,'public')));
+app.use(express.json());
 
 let cargas = [];
-let producao = {};
+let producaoData = {};
+
+// Salva XLS enviado
+app.post('/upload', upload.single('file'), (req,res)=>{
+  if(req.file){
+    const tmpPath = path.join(__dirname,'uploads','ultimaProducao.xlsx');
+    fs.renameSync(req.file.path,tmpPath);
+    res.json({ success:true });
+  }else{
+    res.status(400).json({ success:false });
+  }
+});
+
+app.get('/', (req,res)=>{
+  res.sendFile(path.join(__dirname,'public','index.html'));
+});
 
 io.on('connection', socket=>{
   console.log('Novo cliente conectado');
 
+  // Inicializa dados
   socket.emit('initCargas', cargas);
-  socket.emit('initProducao', producao);
+  socket.emit('initProducao', producaoData);
 
   socket.on('editarCarga', novoEstado=>{
     novoEstado.forEach((c,i)=>c.titulo=`Carga ${i+1}`);
@@ -32,13 +49,13 @@ io.on('connection', socket=>{
   });
 
   socket.on('uploadProducao', data=>{
-    producao = data;
-    io.emit('atualizaProducao', producao);
+    producaoData = data;
+    io.emit('atualizaProducao', producaoData);
   });
 
   socket.on('atualizaProducao', data=>{
-    producao = data;
-    io.emit('atualizaProducao', producao);
+    producaoData = data;
+    io.emit('atualizaProducao', producaoData);
   });
 
   socket.on('disconnect', ()=>{

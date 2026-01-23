@@ -14,33 +14,47 @@ function openTab(i){
 let producaoData = {};
 let producaoOriginal = {};
 
-document.getElementById('xls').addEventListener('change', function(e){
+const xlsInput = document.getElementById('xls');
+xlsInput.addEventListener('change', function(e){
   const file = e.target.files[0];
   if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(evt){
-    const wb = XLSX.read(evt.target.result, { type:'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(ws,{header:1});
-    const linhas = data.slice(5);
-    let maquinas = {};
-    for(const l of linhas){
-      const item = l[0];
-      const maquina = l[7];
-      const prioridade = l[6];
-      const venda = l[10];    
-      const estoque = l[12];  
-      const produzir = l[16]; 
-      if(!item || !maquina) continue;
-      if(!maquinas[maquina]) maquinas[maquina]=[];
-      maquinas[maquina].push({ item, prioridade, venda, estoque, produzir, status:'Em Branco' });
-    }
-    producaoData = JSON.parse(JSON.stringify(maquinas));
-    producaoOriginal = JSON.parse(JSON.stringify(maquinas));
-    socket.emit('uploadProducao', producaoData);
-    renderProducao(producaoData);
-  };
-  reader.readAsArrayBuffer(file);
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  fetch('/upload',{ method:'POST', body: formData })
+    .then(res=>res.json())
+    .then(r=>{
+      if(!r.success){ alert('Falha ao enviar XLS'); return; }
+      const reader = new FileReader();
+      reader.onload = function(evt){
+        const wb = XLSX.read(evt.target.result, { type:'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws,{header:1});
+        const linhas = data.slice(5); // da linha 6 pra baixo
+        let maquinas = {};
+        linhas.forEach(l=>{
+          const item = l[0];
+          const maquina = l[7];
+          const prioridade = l[6];
+          const venda = l[10];
+          const estoque = l[12];
+          const produzir = l[16];
+          if(!item || !maquina) return;
+          if(!maquinas[maquina]) maquinas[maquina]=[];
+          maquinas[maquina].push({
+            item, prioridade, venda, estoque, produzir,
+            status: 'Aguardando',  // frente do item
+            statusCarga: 'Pendente' // frente do titulo
+          });
+        });
+        producaoData = JSON.parse(JSON.stringify(maquinas));
+        producaoOriginal = JSON.parse(JSON.stringify(maquinas));
+        socket.emit('uploadProducao', producaoData);
+        renderProducao(producaoData);
+      };
+      reader.readAsArrayBuffer(file);
+    });
 });
 
 socket.on('atualizaProducao', data=>{
@@ -52,7 +66,7 @@ function renderProducao(maquinas){
   const filtro = document.getElementById('filtroMaquina');
   const div = document.getElementById('producao');
 
-  // Atualiza opções filtro
+  // Atualiza filtro
   filtro.innerHTML = '<option value="">Todas</option>';
   for(const m in maquinas) filtro.innerHTML += `<option value="${m}">${m}</option>`;
 
@@ -66,18 +80,15 @@ function renderProducao(maquinas){
     maquinas[m].forEach((i,idx)=>{
       html+=`<div class="item-producao">
         <span>${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}</span>
+        <select onchange="atualizaProducaoItem('${m}',${idx},this)" class="${i.status==='Faturado'?'faturado':'aguardando'}">
+          <option ${i.status==='Aguardando'?'selected':''}>Aguardando</option>
+          <option ${i.status==='Faturado'?'selected':''}>Faturado</option>
+        </select>
         <div class="item-valores">
           <span>V:${i.venda||''}</span>
           <span>E:${i.estoque||''}</span>
-          <span>P:${i.status||''}</span>
+          <span>P:${i.produzir||''}</span>
         </div>
-        <select onchange="atualizaProducaoItem('${m}',${idx},this)">
-          <option ${i.status==='Em Branco'?'selected':''}>Em Branco</option>
-          <option ${i.status==='Produção'?'selected':''}>Produção</option>
-          <option ${i.status==='Produção OK'?'selected':''}>Produção OK</option>
-          <option ${i.status==='Acabamento'?'selected':''}>Acabamento</option>
-          <option ${i.status==='Acabamento OK'?'selected':''}>Acabamento OK</option>
-        </select>
       </div>`;
     });
     box.innerHTML=html;
@@ -113,126 +124,119 @@ function exportAlteracoes(){
 
 /* ===== CARGAS ===== */
 let cargas = [];
-socket.on('initCargas', data=>{ cargas=data; renderCargas(cargas); });
-socket.on('atualizaCargas', data=>{ cargas=data; renderCargas(cargas); });
 
 function novaCarga(){
-  const nova = { titulo:`Carga ${cargas.length+1}`, status:'pendente', itens:[] };
-  cargas.push(nova);
+  cargas.push({ titulo:`Carga ${cargas.length+1}`, itens:[], status:'Pendente' });
   socket.emit('editarCarga', cargas);
 }
 
-function renderCargas(c){
+function renderCargas(cargas){
   const div = document.getElementById('cargas');
   div.innerHTML='';
-  c.forEach((card,idx)=>{
-    const cardDiv = document.createElement('div');
-    cardDiv.className='card';
-    cardDiv.innerHTML = `
+  cargas.forEach((c,idx)=>{
+    const card = document.createElement('div');
+    card.className='card';
+
+    // Header
+    card.innerHTML = `
       <div class="card-header">
-        <div class="card-header-left"><strong>${card.titulo}</strong></div>
-        <div class="card-header-right">
-          <div class="menu">☰
-            <div class="dropdown">
-              <button onclick="editarCard(${idx})">Editar</button>
-              <button onclick="excluirCard(${idx})">Excluir</button>
+        <div class="card-header-left">
+          <div class="menu" onclick="toggleDropdown(${idx})">☰
+            <div class="dropdown" id="dropdown-${idx}">
+              <button onclick="editarItens(${idx})">Editar Itens</button>
+              <button onclick="excluirCarga(${idx})">Excluir Carga</button>
             </div>
           </div>
-          <select class="status-select ${card.status==='pendente'?'aguardando':'faturado'}">
-            <option value="pendente" ${card.status==='pendente'?'selected':''}>Aguardando</option>
-            <option value="pronto" ${card.status==='pronto'?'selected':''}>Faturado</option>
+          <strong>${c.titulo}</strong>
+        </div>
+        <div class="card-header-right">
+          <select onchange="atualizaStatusCarga(${idx},this)" class="status-select ${c.status==='Pendente'?'aguardando':'faturado'}">
+            <option ${c.status==='Pendente'?'selected':''}>Pendente</option>
+            <option ${c.status==='Carregando'?'selected':''}>Carregando</option>
+            <option ${c.status==='Pronto'?'selected':''}>Pronto</option>
           </select>
         </div>
       </div>
-      <div class="card-itens"></div>
+      <div class="card-itens" id="card-itens-${idx}"></div>
       <button class="add-item" onclick="addItem(${idx})">+</button>
     `;
-    div.appendChild(cardDiv);
-
-    const sel = cardDiv.querySelector('select');
-    sel.addEventListener('change', e=>{
-      card.status = sel.value==='pendente'?'pendente':'pronto';
-      socket.emit('editarCarga', cargas);
-    });
-
-    const menu = cardDiv.querySelector('.menu');
-    const drop = menu.querySelector('.dropdown');
-    menu.addEventListener('click', e=>{
-      drop.style.display = drop.style.display==='block'?'none':'block';
-    });
-
-    renderItens(card, cardDiv.querySelector('.card-itens'), idx);
+    div.appendChild(card);
+    renderItens(idx);
   });
 }
 
-function renderItens(card,itensDiv, cardIdx){
+function toggleDropdown(idx){
+  const dd = document.getElementById(`dropdown-${idx}`);
+  dd.style.display = dd.style.display==='block'?'none':'block';
+}
+
+function editarItens(idx){
+  const itensDiv = document.getElementById(`card-itens-${idx}`);
+  itensDiv.querySelectorAll('.item').forEach(it=>{
+    it.classList.add('editing');
+  });
+}
+
+function excluirCarga(idx){
+  if(confirm(`Deseja realmente excluir ${cargas[idx].titulo}?`)){
+    socket.emit('excluirCarga', idx);
+  }
+}
+
+function addItem(idx){
+  const nome = prompt('Nome do item:');
+  if(nome){
+    cargas[idx].itens.push({nome,status:'Aguardando'});
+    socket.emit('editarCarga', cargas);
+  }
+}
+
+function renderItens(idx){
+  const itensDiv = document.getElementById(`card-itens-${idx}`);
   itensDiv.innerHTML='';
-  card.itens.forEach((i,idx)=>{
-    const div = document.createElement('div');
-    div.className='item';
-    div.innerHTML = `
-      <span>${i.nome}</span>
+  cargas[idx].itens.forEach((it,i)=>{
+    const itemEl = document.createElement('div');
+    itemEl.className='item';
+    itemEl.innerHTML = `
+      <span>${it.nome}</span>
       <div class="item-icons">
-        <span onclick="renomearItem(${cardIdx},${idx})">✏️</span>
-        <span onclick="excluirItem(${cardIdx},${idx})">🗑️</span>
+        <span onclick="renomearItem(${idx},${i})">✏️</span>
+        <span onclick="removerItem(${idx},${i})">🗑️</span>
       </div>
-      <select onchange="atualizaItem(${cardIdx},${idx},this)">
-        <option ${i.status==='Aguardando'?'selected':''}>Aguardando</option>
-        <option ${i.status==='Faturado'?'selected':''}>Faturado</option>
+      <select onchange="atualizaItemStatus(${idx},${i},this)">
+        <option ${it.status==='Aguardando'?'selected':''}>Aguardando</option>
+        <option ${it.status==='Faturado'?'selected':''}>Faturado</option>
       </select>
     `;
-    itensDiv.appendChild(div);
+    itensDiv.appendChild(itemEl);
   });
 }
 
-function atualizaItem(cardIdx,itIdx,sel){
-  cargas[cardIdx].itens[itIdx].status = sel.value;
-  socket.emit('editarCarga', cargas);
-}
-
-function addItem(cardIdx){
-  const nome = prompt('Nome do item:');
-  if(!nome) return;
-  cargas[cardIdx].itens.push({ nome, status:'Aguardando' });
-  socket.emit('editarCarga', cargas);
-}
-
-function renomearItem(cardIdx,itIdx){
-  const nome = prompt('Novo nome:', cargas[cardIdx].itens[itIdx].nome);
-  if(!nome) return;
-  cargas[cardIdx].itens[itIdx].nome = nome;
-  socket.emit('editarCarga', cargas);
-}
-
-function excluirItem(cardIdx,itIdx){
-  if(!confirm('Excluir este item?')) return;
-  cargas[cardIdx].itens.splice(itIdx,1);
-  socket.emit('editarCarga', cargas);
-}
-
-function excluirCard(idx){
-  if(!confirm('Excluir esta carga?')) return;
-  cargas.splice(idx,1);
-  socket.emit('editarCarga', cargas);
-}
-
-function editarCard(idx){
-  const cardDiv = document.getElementById('cargas').children[idx];
-  cardDiv.querySelectorAll('.item').forEach(d=>d.classList.add('editing'));
-}
-
-/* ===== TV ===== */
-socket.on('atualizaProducao', data=>{
-  const tv = document.getElementById('tv');
-  tv.innerHTML = '';
-  for(const m in data){
-    const box = document.createElement('div');
-    box.className='tv-box';
-    let html = `<strong>${m}</strong>`;
-    data[m].forEach(i=>{
-      html+=`<div>${i.item} - ${i.status}</div>`;
-    });
-    box.innerHTML=html;
-    tv.appendChild(box);
+function renomearItem(cIdx,iIdx){
+  const novo = prompt('Novo nome:', cargas[cIdx].itens[iIdx].nome);
+  if(novo){
+    cargas[cIdx].itens[iIdx].nome = novo;
+    socket.emit('editarCarga', cargas);
   }
-});
+}
+
+function removerItem(cIdx,iIdx){
+  if(confirm('Deseja excluir este item?')){
+    cargas[cIdx].itens.splice(iIdx,1);
+    socket.emit('editarCarga', cargas);
+  }
+}
+
+function atualizaStatusCarga(idx,sel){
+  cargas[idx].status = sel.value;
+  socket.emit('editarCarga', cargas);
+}
+
+function atualizaItemStatus(cIdx,iIdx,sel){
+  cargas[cIdx].itens[iIdx].status = sel.value;
+  socket.emit('editarCarga', cargas);
+}
+
+/* ===== Socket eventos ===== */
+socket.on('initCargas', data=>{ cargas=data; renderCargas(cargas); });
+socket.on('atualizaCargas', data=>{ cargas=data; renderCargas(cargas); });
