@@ -1,98 +1,73 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const path = require('path');
+function renderCargas(data){
+  cargasData=data;
+  const container=document.getElementById('cargasContainer');
+  container.innerHTML='';
+  
+  data.forEach((carga,index)=>{
+    const card=document.createElement('div');
+    card.className='carga-card';
+    
+    card.innerHTML=`
+      <h2>
+        ${carga.title}
+        <select class="status-select">
+          <option value="pendente">Pendente</option>
+          <option value="carregando">Carregando</option>
+          <option value="pronto">Pronto</option>
+        </select>
+        <div class="menu">⋮
+          <div class="menu-content">
+            <div class="gerenciar">Gerenciar</div>
+            <div class="excluir">Excluir</div>
+          </div>
+        </div>
+      </h2>
+      <div class="carga-itens"></div>
+      <button class="add-item-btn">+</button>
+    `;
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+    const sel = card.querySelector('.status-select');
+    sel.value = carga.status;
+    sel.onchange = ()=>socket.emit('updateCargaStatus',{id:carga.id,status:sel.value});
 
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Produção (já existente) - você mantém seu array ou lógica
-let producoes = [];
-
-// Cargas
-let cargas = [];
-
-io.on('connection', (socket) => {
-  console.log('Cliente conectado');
-
-  // Enviar estado atual
-  socket.emit('updateProducoes', producoes);
-  socket.emit('updateCargas', cargas);
-
-  // Upload XLS Produção
-  socket.on('uploadXLS', (data) => {
-    producoes = data;
-    io.emit('updateProducoes', producoes);
-  });
-
-  // Status de produção
-  socket.on('statusUpdate', ({index, status}) => {
-    if(producoes[index]){
-      producoes[index].status = status;
-      io.emit('updateProducoes', producoes);
-    }
-  });
-
-  // Adicionar nova carga
-  socket.on('addCarga', (title) => {
-    const newCarga = {
-      id: Date.now(),
-      title,
-      status: 'pendente',
-      itens: []
+    // Gerenciar / Excluir carga
+    card.querySelector('.gerenciar').onclick = ()=>{
+      const itensDiv = card.querySelector('.carga-itens');
+      itensDiv.querySelectorAll('.carga-item').forEach(it=>{
+        const newName = prompt('Editar nome do item', it.querySelector('.nome-item').innerText);
+        if(newName) socket.emit('updateItem',{cargaId:carga.id,itemId:it.dataset.id,name:newName});
+      });
     };
-    cargas.push(newCarga);
-    io.emit('updateCargas', cargas);
-  });
+    card.querySelector('.excluir').onclick = ()=>socket.emit('deleteCarga',carga.id);
 
-  // Atualizar status da carga
-  socket.on('updateCargaStatus', ({id, status}) => {
-    const c = cargas.find(c=>c.id===id);
-    if(c){ c.status=status; io.emit('updateCargas', cargas); }
-  });
-
-  // Adicionar item à carga
-  socket.on('addItem', ({cargaId, itemName}) => {
-    const c = cargas.find(c=>c.id===cargaId);
-    if(c){
-      c.itens.push({name:itemName, status:'aguardando', id:Date.now()});
-      io.emit('updateCargas', cargas);
-    }
-  });
-
-  // Atualizar item
-  socket.on('updateItem', ({cargaId, itemId, status, name})=>{
-    const c=cargas.find(c=>c.id===cargaId);
-    if(c){
-      const it=c.itens.find(i=>i.id===itemId);
-      if(it){
-        if(status) it.status=status;
-        if(name) it.name=name;
-        io.emit('updateCargas', cargas);
+    // ADICIONAR ITEM
+    const addBtn = card.querySelector('.add-item-btn');
+    addBtn.onclick = ()=>{
+      const nome = prompt('Nome do item:');
+      if(nome && nome.trim()!==''){
+        socket.emit('addItem',{cargaId:carga.id,itemName:nome});
       }
-    }
+    };
+
+    // Render itens
+    const itensDiv = card.querySelector('.carga-itens');
+    carga.itens.forEach(it=>{
+      const div = document.createElement('div');
+      div.className='carga-item';
+      div.dataset.id=it.id;
+      div.innerHTML=`
+        <span class="nome-item">${it.name}</span>
+        <select>
+          <option value="aguardando">Aguardando</option>
+          <option value="faturado">Faturado</option>
+        </select>
+      `;
+      const selItem = div.querySelector('select');
+      selItem.value = it.status;
+      selItem.onchange = ()=>socket.emit('updateItem',{cargaId:carga.id,itemId:it.id,status:selItem.value});
+      itensDiv.appendChild(div);
+    });
+
+    container.appendChild(card);
   });
-
-  // Excluir item
-  socket.on('deleteItem', ({cargaId, itemId})=>{
-    const c=cargas.find(c=>c.id===cargaId);
-    if(c){
-      c.itens=c.itens.filter(i=>i.id!==itemId);
-      io.emit('updateCargas', cargas);
-    }
-  });
-
-  // Excluir carga
-  socket.on('deleteCarga', (cargaId)=>{
-    cargas = cargas.filter(c=>c.id!==cargaId);
-    io.emit('updateCargas', cargas);
-  });
-
-  socket.on('disconnect', ()=>console.log('Cliente desconectado'));
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, ()=>console.log(`Servidor rodando na porta ${PORT}`));
+}
