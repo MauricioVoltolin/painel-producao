@@ -15,6 +15,7 @@ header img { height:50px; }
 .tab.active { background:#bbb; font-weight:bold; }
 #hora { font-weight:bold; }
 
+/* FILTRO PRODUÇÃO */
 #filtro-maquinas { text-align:center; margin:10px; display:block; }
 #filtro-maquinas select { padding:5px 10px; font-size:1em; }
 
@@ -29,11 +30,13 @@ section { padding:10px; }
 .status-select { flex:1; }
 
 /* Cargas */
-.cargas-container { display:flex; flex-wrap:wrap; gap:10px; }
-.carga-card { background:#fff; flex:1 1 calc(50% - 10px); margin-bottom:10px; padding:10px; border-radius:12px; box-shadow:0 2px 4px rgba(0,0,0,0.1); position:relative; }
-.carga-card h2 { margin:0 0 5px 0; display:flex; align-items:center; gap:5px; }
-.carga-status { background:#eee; padding:3px 8px; border-radius:12px; font-size:0.8em; margin-right:5px; }
-button.add-item { border:none; background:#4caf50; color:#fff; border-radius:50%; width:30px; height:30px; cursor:pointer; font-size:20px; display:flex; justify-content:center; align-items:center; }
+.cargas-container { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+.carga-card { background:#fff; flex:1 1 calc(50% - 10px); margin-bottom:10px; padding:10px; border-radius:12px; box-shadow:0 2px 4px rgba(0,0,0,0.1); position:relative; display:flex; flex-direction:column; }
+.carga-card h2 { margin:0 0 5px 0; display:flex; align-items:center; justify-content:space-between; }
+.carga-status { background:#eee; padding:3px 8px; border-radius:12px; font-size:0.8em; }
+.carga-itens { margin-top:5px; display:flex; flex-direction:column; gap:5px; }
+.carga-item { display:flex; justify-content:space-between; align-items:center; }
+button.add-item { border:none; background:#4caf50; color:#fff; border-radius:50%; width:35px; height:35px; cursor:pointer; font-size:20px; display:flex; justify-content:center; align-items:center; margin:10px auto 0 auto; }
 
 /* Upload */
 #upload-section { text-align:center; margin-top:20px; }
@@ -76,7 +79,7 @@ button.add-item { border:none; background:#4caf50; color:#fff; border-radius:50%
 
 <section id="cargas-tab" style="display:none;">
   <div class="cargas-container" id="cargas-container"></div>
-  <button onclick="addCarga()">Adicionar Nova Carga</button>
+  <button class="add-item" onclick="addCarga()">+</button>
 </section>
 
 <div id="upload-section">
@@ -200,24 +203,32 @@ function renderCargas(data){
     card.className='carga-card';
 
     const h2 = document.createElement('h2');
-    const statusSpan = document.createElement('span');
-    statusSpan.className='carga-status';
-    statusSpan.textContent=cargaIndex.status;
-    h2.appendChild(statusSpan);
-    h2.append(` ${cargaIndex.titulo}`);
+    const statusSelect = document.createElement('select');
+    ['Pendente','Carregando','Pronto'].forEach(s=>{
+      const opt=document.createElement('option');
+      opt.value=s;
+      opt.textContent=s;
+      if(s===cargaIndex.status) opt.selected=true;
+      statusSelect.appendChild(opt);
+    });
+    statusSelect.addEventListener('change',()=>socket.emit('updateCargaItem',{cargaIndex:data.indexOf(cargaIndex),itemIndex:null,status:statusSelect.value}));
+    statusSelect.style.marginLeft='10px';
     card.appendChild(h2);
+    h2.textContent=cargaIndex.titulo;
+    h2.appendChild(statusSelect);
+
+    const itensDiv = document.createElement('div');
+    itensDiv.className='carga-itens';
 
     cargaIndex.itens.forEach((itemIndex,i)=>{
       const row = document.createElement('div');
-      row.className='item-row';
+      row.className='carga-item';
 
       const info = document.createElement('div');
-      info.className='item-info';
       info.textContent=itemIndex.nome;
       row.appendChild(info);
 
       const select = document.createElement('select');
-      select.className='status-select';
       ['Aguardando','Faturado'].forEach(s=>{
         const opt=document.createElement('option');
         opt.value=s;
@@ -225,24 +236,18 @@ function renderCargas(data){
         if(s===itemIndex.status) opt.selected=true;
         select.appendChild(opt);
       });
-      select.addEventListener('change',()=>socket.emit('updateCargaItem',{cargaIndex:cargasData.indexOf(cargaIndex),itemIndex:i,status:select.value}));
+      select.addEventListener('change',()=>socket.emit('updateCargaItem',{cargaIndex:data.indexOf(cargaIndex),itemIndex:i,status:select.value}));
       row.appendChild(select);
-      card.appendChild(row);
+
+      itensDiv.appendChild(row);
     });
 
-    const addBtn = document.createElement('button');
-    addBtn.className='add-item';
-    addBtn.textContent='+';
-    addBtn.addEventListener('click',()=>{
-      const nome = prompt('Nome do item:');
-      if(nome) socket.emit('addCargaItem',{cargaIndex:cargasData.indexOf(cargaIndex),nomeItem:nome});
-    });
-    card.appendChild(addBtn);
-
+    card.appendChild(itensDiv);
     cargasContainer.appendChild(card);
   });
 }
 
+// Adicionar nova carga
 function addCarga(){
   socket.emit('addCarga');
 }
