@@ -12,34 +12,37 @@ function openTab(i){
 
 /* ===== ABA PRODUÇÃO ===== */
 let producaoData = {};
+let producaoOriginal = {};
 
 document.getElementById('xls').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
   const reader = new FileReader();
   reader.onload = function(evt){
-    const wb = XLSX.read(evt.target.result, { type:'binary' });
+    const wb = XLSX.read(evt.target.result, { type:'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(ws,{header:1});
-    const linhas = data.slice(5); // linhas a partir da 6
+    const linhas = data.slice(5);
     let maquinas = {};
     for(const l of linhas){
       const item = l[0];
       const maquina = l[7];
-      const estoque = l[12];  // M
-      const venda = l[10];    // K
-      const produzir = l[16]; // Q
-      const prioridade = l[6]; // G
+      const prioridade = l[6];
+      const venda = l[10];    
+      const estoque = l[12];  
+      const produzir = l[16]; 
       if(!item || !maquina) continue;
       if(!maquinas[maquina]) maquinas[maquina]=[];
-      maquinas[maquina].push({ item, estoque, venda, produzir, prioridade, status:'Em Branco' });
+      maquinas[maquina].push({ item, prioridade, venda, estoque, produzir, status:'Em Branco' });
     }
-    producaoData = maquinas;
-    socket.emit('atualizaProducao', producaoData); // envia para todos
+    producaoData = JSON.parse(JSON.stringify(maquinas));
+    producaoOriginal = JSON.parse(JSON.stringify(maquinas));
+    socket.emit('uploadProducao', producaoData);
     renderProducao(producaoData);
   };
-  reader.readAsBinaryString(e.target.files[0]);
+  reader.readAsArrayBuffer(file);
 });
 
-// Recebe atualização de todos
 socket.on('atualizaProducao', data=>{
   producaoData = data;
   renderProducao(producaoData);
@@ -77,10 +80,30 @@ function atualizaProducaoItem(maquina, idx, sel){
   socket.emit('atualizaProducao', producaoData);
 }
 
+/* ===== Exportar Alterações ===== */
+function exportAlteracoes(){
+  let alteracoes = [];
+  for(const m in producaoData){
+    producaoData[m].forEach((i,idx)=>{
+      if(i.status !== producaoOriginal[m][idx].status){
+        alteracoes.push({
+          Maquina: m,
+          Item: i.item,
+          Status: i.status
+        });
+      }
+    });
+  }
+  if(alteracoes.length===0){ alert('Nenhuma alteração para exportar'); return; }
+  const ws = XLSX.utils.json_to_sheet(alteracoes);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Alteracoes');
+  XLSX.writeFile(wb,'alteracoes.xlsx');
+}
+
 /* ===== ABA CARGAS ===== */
-// (mesmo código que já funciona)
 let cargas = [];
 socket.on('initCargas', data=>{ cargas=data; renderCargas(cargas); });
 socket.on('atualizaCargas', data=>{ cargas=data; renderCargas(cargas); });
 
-// ... resto do app.js para cargas e TV permanece igual
+// ... (restante do app.js para cargas e TV permanece o mesmo que já funciona)

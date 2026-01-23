@@ -5,12 +5,13 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
 app.use(express.static(path.join(__dirname, 'public')));
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 let cargas = [];
-let producao = {}; // Armazena os dados da aba Produção
+let producao = {}; // dados da produção
 
 io.on('connection', (socket) => {
   console.log('Novo cliente conectado');
@@ -19,7 +20,7 @@ io.on('connection', (socket) => {
   socket.emit('initCargas', cargas);
   socket.emit('initProducao', producao);
 
-  // ================= CARGAS =================
+  // ============ CARGAS ============
   socket.on('novaCarga', (carga) => {
     cargas.push(carga);
     io.emit('atualizaCargas', cargas);
@@ -35,9 +36,14 @@ io.on('connection', (socket) => {
     io.emit('atualizaCargas', cargas);
   });
 
-  // ================= PRODUÇÃO =================
+  // ============ PRODUÇÃO ============
+  socket.on('uploadProducao', (data) => {
+    producao = data;
+    io.emit('atualizaProducao', producao);
+  });
+
   socket.on('atualizaProducao', (data) => {
-    producao = data;          // armazenar para todos
+    producao = data;
     io.emit('atualizaProducao', producao);
   });
 
