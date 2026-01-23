@@ -1,71 +1,92 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static("public"));
+app.use(express.static(__dirname));
 
 let cargas = [];
-let contador = 1;
+let cargaId = 1;
+let itemId = 1;
 
-io.on("connection", socket => {
-  socket.emit("update", cargas);
+// SOCKET
+io.on('connection', socket => {
+  console.log('Cliente conectado');
 
-  socket.on("novaCarga", () => {
-    const carga = {
-      id: Date.now(),
-      numero: contador++,
-      status: "Pendente",
+  // Envia estado atual
+  socket.emit('updateCargas', cargas);
+
+  // ADICIONAR CARGA
+  socket.on('addCarga', data => {
+    const novaCarga = {
+      id: cargaId++,
+      title: data.title,
+      status: 'pendente',
       itens: []
     };
-    cargas.push(carga);
-    io.emit("update", cargas);
+
+    cargas.push(novaCarga);
+    io.emit('updateCargas', cargas);
   });
 
-  socket.on("excluirCarga", id => {
+  // EXCLUIR CARGA
+  socket.on('deleteCarga', id => {
     cargas = cargas.filter(c => c.id !== id);
-    cargas.forEach((c, i) => c.numero = i + 1);
-    contador = cargas.length + 1;
-    io.emit("update", cargas);
+    io.emit('updateCargas', cargas);
   });
 
-  socket.on("statusCarga", ({ id, status }) => {
-    const carga = cargas.find(c => c.id === id);
-    if (carga) carga.status = status;
-    io.emit("update", cargas);
-  });
-
-  socket.on("addItem", ({ id, nome }) => {
-    const carga = cargas.find(c => c.id === id);
+  // ATUALIZAR STATUS DA CARGA
+  socket.on('updateCargaStatus', data => {
+    const carga = cargas.find(c => c.id === data.id);
     if (carga) {
-      carga.itens.push({
-        id: Date.now(),
-        nome,
-        status: "Aguardando"
-      });
+      carga.status = data.status;
+      io.emit('updateCargas', cargas);
     }
-    io.emit("update", cargas);
   });
 
-  socket.on("statusItem", ({ cargaId, itemId, status }) => {
-    const carga = cargas.find(c => c.id === cargaId);
+  // ADICIONAR ITEM
+  socket.on('addItem', data => {
+    const carga = cargas.find(c => c.id === data.cargaId);
     if (!carga) return;
-    const item = carga.itens.find(i => i.id === itemId);
-    if (item) item.status = status;
-    io.emit("update", cargas);
+
+    carga.itens.push({
+      id: itemId++,
+      name: data.itemName,
+      status: 'aguardando'
+    });
+
+    io.emit('updateCargas', cargas);
   });
 
-  socket.on("excluirItem", ({ cargaId, itemId }) => {
-    const carga = cargas.find(c => c.id === cargaId);
+  // ATUALIZAR ITEM (status ou nome)
+  socket.on('updateItem', data => {
+    const carga = cargas.find(c => c.id === data.cargaId);
     if (!carga) return;
-    carga.itens = carga.itens.filter(i => i.id !== itemId);
-    io.emit("update", cargas);
+
+    const item = carga.itens.find(i => i.id === data.itemId);
+    if (!item) return;
+
+    if (data.status) item.status = data.status;
+    if (data.name) item.name = data.name;
+
+    io.emit('updateCargas', cargas);
+  });
+
+  // EXCLUIR ITEM
+  socket.on('deleteItem', data => {
+    const carga = cargas.find(c => c.id === data.cargaId);
+    if (!carga) return;
+
+    carga.itens = carga.itens.filter(i => i.id !== data.itemId);
+    io.emit('updateCargas', cargas);
   });
 });
 
-server.listen(3000, () => {
-  console.log("Servidor rodando em http://localhost:3000");
+// START
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log('Servidor rodando na porta', PORT);
 });
