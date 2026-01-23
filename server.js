@@ -10,22 +10,18 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Armazenamento em memória
 let cargas = [];
-let producao = {}; // dados da produção
+let producao = {};
 
 io.on('connection', (socket) => {
   console.log('Novo cliente conectado');
 
-  // envia estado atual
+  // Envia estado atual
   socket.emit('initCargas', cargas);
   socket.emit('initProducao', producao);
 
-  // ============ CARGAS ============
-  socket.on('novaCarga', (carga) => {
-    cargas.push(carga);
-    io.emit('atualizaCargas', cargas);
-  });
-
+  // ================== CARGAS ==================
   socket.on('editarCarga', (novoEstado) => {
     cargas = novoEstado;
     io.emit('atualizaCargas', cargas);
@@ -36,7 +32,7 @@ io.on('connection', (socket) => {
     io.emit('atualizaCargas', cargas);
   });
 
-  // ============ PRODUÇÃO ============
+  // ================== PRODUÇÃO ==================
   socket.on('uploadProducao', (data) => {
     producao = data;
     io.emit('atualizaProducao', producao);

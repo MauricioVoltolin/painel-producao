@@ -103,7 +103,6 @@ function exportAlteracoes(){
 
 /* ===== ABA CARGAS ===== */
 let cargas = [];
-
 socket.on('initCargas', data=>{ cargas=data; renderCargas(cargas); });
 socket.on('atualizaCargas', data=>{ cargas=data; renderCargas(cargas); });
 
@@ -142,7 +141,7 @@ function renderCargas(c){
     `;
     div.appendChild(cardDiv);
 
-    // eventos do select
+    // Eventos do select
     const sel = cardDiv.querySelector('select');
     sel.addEventListener('change', e=>{
       card.status = sel.value;
@@ -185,7 +184,6 @@ function addItem(cardIdx){
   socket.emit('editarCarga', cargas);
 }
 
-/* editar/excluir item */
 function renomearItem(cardIdx,itIdx){
   const nome = prompt('Novo nome:', cargas[cardIdx].itens[itIdx]);
   if(!nome) return;
@@ -199,14 +197,12 @@ function excluirItem(cardIdx,itIdx){
   socket.emit('editarCarga', cargas);
 }
 
-/* excluir card */
 function excluirCard(idx){
   if(!confirm('Excluir esta carga?')) return;
   cargas.splice(idx,1);
   socket.emit('editarCarga', cargas);
 }
 
-/* editar card (aparece ícones nos itens) */
 function editarCard(idx){
   const cardDiv = document.getElementById('cargas').children[idx];
   cardDiv.querySelectorAll('.item').forEach(d=>d.classList.add('editing'));

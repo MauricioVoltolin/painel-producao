@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel de Produção</title>
+  <!-- XLSX local -->
   <script src="lib/xlsx.full.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="style.css">
@@ -16,21 +17,21 @@
   <button onclick="openTab(2)">TV</button>
 </div>
 
-<!-- ABA 1 PRODUÇÃO -->
+<!-- ABA PRODUÇÃO -->
 <div class="tab active" id="tab-producao">
-  <input type="file" id="xls" />
+  <input type="file" id="xls">
   <button onclick="exportAlteracoes()">Exportar Alterações</button>
   <select id="filtroMaquina" class="filtro"></select>
   <div id="producao"></div>
 </div>
 
-<!-- ABA 2 CARGAS -->
+<!-- ABA CARGAS -->
 <div class="tab" id="tab-cargas">
   <button onclick="novaCarga()">+ Nova Carga</button>
   <div class="grid" id="cargas"></div>
 </div>
 
-<!-- ABA 3 TV -->
+<!-- ABA TV -->
 <div class="tab" id="tab-tv">
   <div id="tv"></div>
 </div>
