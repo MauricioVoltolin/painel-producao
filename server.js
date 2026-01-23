@@ -1,73 +1,76 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
 const multer = require('multer');
 const XLSX = require('xlsx');
 const cors = require('cors');
-const path = require('path');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
+app.use(cors());
+app.use(express.static('public')); // pasta onde estará index.html
+
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// Multer em memória (não precisa de pasta física)
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-let dados = [];
+let currentData = []; // armazena os dados carregados, compartilhado para todos os clients
 
-const upload = multer({ dest: 'uploads/' });
-
+// Upload XLS
 app.post('/upload', upload.single('file'), (req, res) => {
   try {
-    const workbook = XLSX.readFile(req.file.path);
+    const workbook = XLSX.read(req.file.buffer);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
     const items = [];
-    for (let i = 5; i < rows.length; i++) {
+    for (let i = 5; i < rows.length; i++) { // linha 6 em diante
       const row = rows[i];
-      if (!row || !row[0]) continue;
+      if (!row) continue;
+      const itemNome = row[0];
+      if (!itemNome) continue;
 
       items.push({
-        item: row[0],
-        maquina: row[7] || "Sem Máquina",
-        vendido: row[10] || 0,
-        estoque: row[12] || 0,
-        produzir: row[16] || 0,
-        status: '',
-        prioridade: row[6] && row[6].toString().toUpperCase().includes('PRIORIDADE') // coluna G
+        item: itemNome,
+        maquina: row[7] || 'Sem Máquina',
+        vendido: row[10] ?? '',
+        estoque: row[12] ?? '',
+        produzir: row[16] ?? '',
+        prioridade: row[6] === 'PRIORIDADE' ? true : false,
+        status: '' // inicial vazio
       });
     }
 
-    dados = items;
-    io.emit('atualizarDados', dados); // atualiza todos clientes conectados
-    res.json({ ok: true, total: dados.length });
+    currentData = items;
+
+    // atualiza todos os clients via socket
+    io.emit('update', currentData);
+
+    res.json({ ok: true, total: items.length });
   } catch (err) {
     console.error(err);
-    res.json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
-app.get('/dados', (req, res) => res.json(dados));
+// Atualização de status de um item
+app.post('/update', express.json(), (req, res) => {
+  const { index, status } = req.body;
+  if (currentData[index]) {
+    currentData[index].status = status;
+    io.emit('update', currentData);
+    res.json({ ok: true });
+  } else {
+    res.status(400).json({ ok: false });
+  }
+});
 
-io.on('connection', socket => {
-  console.log('Cliente conectado');
-  socket.emit('atualizarDados', dados);
-
-  socket.on('alterarStatus', ({maquina, idx, status}) => {
-    let cont = -1;
-    for (let i = 0; i < dados.length; i++) {
-      if (dados[i].maquina === maquina) cont++;
-      if (cont === idx) {
-        dados[i].status = status;
-        break;
-      }
-    }
-    io.emit('atualizarDados', dados); // envia atualização a todos
-  });
-
-  socket.on('disconnect', () => console.log('Cliente desconectado'));
+io.on('connection', (socket) => {
+  console.log('Novo client conectado');
+  // envia dados atuais
+  socket.emit('update', currentData);
 });
 
 const PORT = process.env.PORT || 3000;
