@@ -141,21 +141,19 @@ function renderCargas(c){
     `;
     div.appendChild(cardDiv);
 
-    // Eventos do select
     const sel = cardDiv.querySelector('select');
     ['click','change','touchstart'].forEach(ev=> sel.addEventListener(ev,e=>{
       card.status = sel.value;
       socket.emit('editarCarga', cargas);
     }));
 
-    // dropdown
     const menu = cardDiv.querySelector('.menu');
     const drop = menu.querySelector('.dropdown');
     ['click','touchstart'].forEach(ev=>{
-      menu.addEventListener(ev, e=>{ drop.style.display = drop.style.display==='block'?'none':'block'; });
+      menu.addEventListener(ev,e=>{ drop.style.display = drop.style.display==='block'?'none':'block'; });
     });
 
-    renderItens(card,itensDiv=cardDiv.querySelector('.card-itens'), idx);
+    renderItens(card, cardDiv.querySelector('.card-itens'), idx);
   });
 }
 

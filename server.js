@@ -6,47 +6,47 @@ const io = require('socket.io')(http);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get('/', (req,res)=> {
+  res.sendFile(path.join(__dirname,'public','index.html'));
 });
 
-// Armazenamento em memória
+// armazenamento em memória
 let cargas = [];
 let producao = {};
 
-io.on('connection', (socket) => {
+io.on('connection', socket=>{
   console.log('Novo cliente conectado');
 
-  // Envia estado atual
+  // envia estado atual
   socket.emit('initCargas', cargas);
   socket.emit('initProducao', producao);
 
   // ================== CARGAS ==================
-  socket.on('editarCarga', (novoEstado) => {
+  socket.on('editarCarga', novoEstado=>{
     cargas = novoEstado;
     io.emit('atualizaCargas', cargas);
   });
 
-  socket.on('excluirCarga', (index) => {
-    cargas.splice(index, 1);
+  socket.on('excluirCarga', idx=>{
+    cargas.splice(idx,1);
     io.emit('atualizaCargas', cargas);
   });
 
   // ================== PRODUÇÃO ==================
-  socket.on('uploadProducao', (data) => {
+  socket.on('uploadProducao', data=>{
     producao = data;
     io.emit('atualizaProducao', producao);
   });
 
-  socket.on('atualizaProducao', (data) => {
+  socket.on('atualizaProducao', data=>{
     producao = data;
     io.emit('atualizaProducao', producao);
   });
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', ()=>{
     console.log('Cliente desconectou');
   });
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+http.listen(PORT, ()=> console.log(`Servidor rodando na porta ${PORT}`));
