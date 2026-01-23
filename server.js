@@ -1,86 +1,67 @@
-const express = require("express");
-const multer = require("multer");
-const XLSX = require("xlsx");
-const fs = require("fs");
-const path = require("path");
-const cors = require("cors");
-const http = require("http");
-const { Server } = require("socket.io");
-
+const express = require('express');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 
-app.use(cors());
+const upload = multer({ dest: 'uploads/' });
+
+app.use(express.static(path.join(__dirname,'public')));
 app.use(express.json());
-app.use(express.static("public"));
 
-const upload = multer({ dest: "uploads/" });
-const DATA_FILE = path.join(__dirname, "data.json");
+let cargas = [];
+let producaoData = {};
 
-let producao = [];
-if (fs.existsSync(DATA_FILE)) {
-  producao = JSON.parse(fs.readFileSync(DATA_FILE));
-}
-
-// Salvar dados
-function salvarDados() {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(producao, null, 2));
-  io.emit("atualizar", producao); // Atualiza TV em tempo real
-}
-
-// Upload XLS
-app.post("/upload", upload.single("file"), (req, res) => {
-  try {
-    const workbook = XLSX.readFile(req.file.path);
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-    producao = [];
-    for (let i = 5; i < jsonData.length; i++) { // linha 6+
-      const row = jsonData[i];
-      if (!row || !row[0]) continue;
-
-      producao.push({
-        item: row[0] || "",
-        maquina: row[7] || "",
-        vendida: row[10] || 0,
-        estoque: row[12] || 0,
-        produzir: row[16] || 0,
-        prioridade: row[6] || ""
-      });
-    }
-
-    salvarDados();
-    fs.unlinkSync(req.file.path);
-    res.json({ success: true, producao });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: err.message });
+// Salva XLS enviado
+app.post('/upload', upload.single('file'), (req,res)=>{
+  if(req.file){
+    const tmpPath = path.join(__dirname,'uploads','ultimaProducao.xlsx');
+    fs.renameSync(req.file.path,tmpPath);
+    res.json({ success:true });
+  }else{
+    res.status(400).json({ success:false });
   }
 });
 
-// CRUD
-app.get("/producao", (req, res) => res.json(producao));
-
-app.post("/producao", (req, res) => {
-  producao.push(req.body);
-  salvarDados();
-  res.json({ success: true });
+app.get('/', (req,res)=>{
+  res.sendFile(path.join(__dirname,'public','index.html'));
 });
 
-app.put("/producao/:index", (req, res) => {
-  const idx = parseInt(req.params.index);
-  producao[idx] = req.body;
-  salvarDados();
-  res.json({ success: true });
+io.on('connection', socket=>{
+  console.log('Novo cliente conectado');
+
+  // Inicializa dados
+  socket.emit('initCargas', cargas);
+  socket.emit('initProducao', producaoData);
+
+  socket.on('editarCarga', novoEstado=>{
+    novoEstado.forEach((c,i)=>c.titulo=`Carga ${i+1}`);
+    cargas = novoEstado;
+    io.emit('atualizaCargas', cargas);
+  });
+
+  socket.on('excluirCarga', idx=>{
+    cargas.splice(idx,1);
+    cargas.forEach((c,i)=>c.titulo=`Carga ${i+1}`);
+    io.emit('atualizaCargas', cargas);
+  });
+
+  socket.on('uploadProducao', data=>{
+    producaoData = data;
+    io.emit('atualizaProducao', producaoData);
+  });
+
+  socket.on('atualizaProducao', data=>{
+    producaoData = data;
+    io.emit('atualizaProducao', producaoData);
+  });
+
+  socket.on('disconnect', ()=>{
+    console.log('Cliente desconectou');
+  });
 });
 
-app.delete("/producao/:index", (req, res) => {
-  const idx = parseInt(req.params.index);
-  producao.splice(idx, 1);
-  salvarDados();
-  res.json({ success: true });
-});
-
-server.listen(3000, () => console.log("Servidor rodando na porta 3000"));
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, ()=> console.log(`Servidor rodando na porta ${PORT}`));
