@@ -51,11 +51,15 @@ socket.on('atualizaProducao', data=>{
 function renderProducao(maquinas){
   const filtro = document.getElementById('filtroMaquina');
   const div = document.getElementById('producao');
+
+  // Atualiza opções filtro
   filtro.innerHTML = '<option value="">Todas</option>';
+  for(const m in maquinas) filtro.innerHTML += `<option value="${m}">${m}</option>`;
+
   div.innerHTML = '';
   for(const m in maquinas){
-    filtro.innerHTML += `<option>${m}</option>`;
     if(filtro.value && filtro.value!==m) continue;
+
     const box = document.createElement('div');
     box.className='maquina';
     let html = `<strong>${m}</strong>`;
@@ -63,11 +67,11 @@ function renderProducao(maquinas){
       html+=`<div class="item-producao">
         <span>${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}</span>
         <div class="item-valores">
-          <span>P:${i.status}</span>
-          <span>V:${i.venda}</span>
-          <span>E:${i.estoque}</span>
+          <span>V:${i.venda||''}</span>
+          <span>E:${i.estoque||''}</span>
+          <span>P:${i.status||''}</span>
         </div>
-        <select onchange="atualizaProducaoItem('${m}', ${idx}, this)">
+        <select onchange="atualizaProducaoItem('${m}',${idx},this)">
           <option ${i.status==='Em Branco'?'selected':''}>Em Branco</option>
           <option ${i.status==='Produção'?'selected':''}>Produção</option>
           <option ${i.status==='Produção OK'?'selected':''}>Produção OK</option>
@@ -128,17 +132,16 @@ function renderCargas(c){
       <div class="card-header">
         <div class="card-header-left"><strong>${card.titulo}</strong></div>
         <div class="card-header-right">
-          <select class="status-select ${card.status}">
-            <option value="pendente" ${card.status==='pendente'?'selected':''}>Pendente</option>
-            <option value="carregando" ${card.status==='carregando'?'selected':''}>Carregando</option>
-            <option value="pronto" ${card.status==='pronto'?'selected':''}>Pronto</option>
-          </select>
           <div class="menu">☰
             <div class="dropdown">
               <button onclick="editarCard(${idx})">Editar</button>
               <button onclick="excluirCard(${idx})">Excluir</button>
             </div>
           </div>
+          <select class="status-select ${card.status==='pendente'?'aguardando':'faturado'}">
+            <option value="pendente" ${card.status==='pendente'?'selected':''}>Aguardando</option>
+            <option value="pronto" ${card.status==='pronto'?'selected':''}>Faturado</option>
+          </select>
         </div>
       </div>
       <div class="card-itens"></div>
@@ -148,7 +151,7 @@ function renderCargas(c){
 
     const sel = cardDiv.querySelector('select');
     sel.addEventListener('change', e=>{
-      card.status = sel.value;
+      card.status = sel.value==='pendente'?'pendente':'pronto';
       socket.emit('editarCarga', cargas);
     });
 
@@ -183,8 +186,7 @@ function renderItens(card,itensDiv, cardIdx){
 }
 
 function atualizaItem(cardIdx,itIdx,sel){
-  card = cargas[cardIdx];
-  card.itens[itIdx].status = sel.value;
+  cargas[cardIdx].itens[itIdx].status = sel.value;
   socket.emit('editarCarga', cargas);
 }
 

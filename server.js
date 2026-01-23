@@ -16,11 +16,9 @@ let producao = {};
 io.on('connection', socket=>{
   console.log('Novo cliente conectado');
 
-  // envia estado atual
   socket.emit('initCargas', cargas);
   socket.emit('initProducao', producao);
 
-  // ================== CARGAS ==================
   socket.on('editarCarga', novoEstado=>{
     novoEstado.forEach((c,i)=>c.titulo=`Carga ${i+1}`);
     cargas = novoEstado;
@@ -33,7 +31,6 @@ io.on('connection', socket=>{
     io.emit('atualizaCargas', cargas);
   });
 
-  // ================== PRODUÇÃO ==================
   socket.on('uploadProducao', data=>{
     producao = data;
     io.emit('atualizaProducao', producao);

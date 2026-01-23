@@ -18,10 +18,16 @@
 
 <!-- ABA PRODUÇÃO -->
 <div class="tab active" id="tab-producao">
-  <input type="file" id="xls">
-  <button onclick="exportAlteracoes()">Exportar Alterações</button>
-  <select id="filtroMaquina" class="filtro"></select>
+  <div class="filtro-container">
+    <select id="filtroMaquina" class="filtro" onchange="renderProducao(producaoData)">
+      <option value="">Todas</option>
+    </select>
+  </div>
   <div id="producao"></div>
+  <div class="producao-buttons">
+    <input type="file" id="xls">
+    <button onclick="exportAlteracoes()">Exportar Alterações</button>
+  </div>
 </div>
 
 <!-- ABA CARGAS -->
