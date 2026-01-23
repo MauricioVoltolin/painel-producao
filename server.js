@@ -10,7 +10,6 @@ app.get('/', (req,res)=> {
   res.sendFile(path.join(__dirname,'public','index.html'));
 });
 
-// armazenamento em memória
 let cargas = [];
 let producao = {};
 
@@ -23,7 +22,6 @@ io.on('connection', socket=>{
 
   // ================== CARGAS ==================
   socket.on('editarCarga', novoEstado=>{
-    // Recontar títulos sequenciais
     novoEstado.forEach((c,i)=>c.titulo=`Carga ${i+1}`);
     cargas = novoEstado;
     io.emit('atualizaCargas', cargas);

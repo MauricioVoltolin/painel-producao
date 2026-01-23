@@ -10,7 +10,7 @@ function openTab(i){
   contents[i].classList.add('active');
 }
 
-/* ===== ABA PRODUÇÃO ===== */
+/* ===== PRODUÇÃO ===== */
 let producaoData = {};
 let producaoOriginal = {};
 
@@ -62,11 +62,11 @@ function renderProducao(maquinas){
       html+=`<div class="item-producao">
         <span>${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}</span>
         <select onchange="atualizaProducaoItem('${m}', ${idx}, this)">
-          <option>Em Branco</option>
-          <option>Produção</option>
-          <option>Produção OK</option>
-          <option>Acabamento</option>
-          <option>Acabamento OK</option>
+          <option ${i.status==='Em Branco'?'selected':''}>Em Branco</option>
+          <option ${i.status==='Produção'?'selected':''}>Produção</option>
+          <option ${i.status==='Produção OK'?'selected':''}>Produção OK</option>
+          <option ${i.status==='Acabamento'?'selected':''}>Acabamento</option>
+          <option ${i.status==='Acabamento OK'?'selected':''}>Acabamento OK</option>
         </select>
       </div>`;
     });
@@ -101,7 +101,7 @@ function exportAlteracoes(){
   XLSX.writeFile(wb,'alteracoes.xlsx');
 }
 
-/* ===== ABA CARGAS ===== */
+/* ===== CARGAS ===== */
 let cargas = [];
 socket.on('initCargas', data=>{ cargas=data; renderCargas(cargas); });
 socket.on('atualizaCargas', data=>{ cargas=data; renderCargas(cargas); });
@@ -124,17 +124,17 @@ function renderCargas(c){
           <strong>${card.titulo}</strong>
         </div>
         <div class="card-header-right">
-          <select class="status-select ${card.status}">
-            <option value="pendente" ${card.status==='pendente'?'selected':''}>Pendente</option>
-            <option value="carregando" ${card.status==='carregando'?'selected':''}>Carregando</option>
-            <option value="pronto" ${card.status==='pronto'?'selected':''}>Pronto</option>
-          </select>
           <div class="menu">☰
             <div class="dropdown">
               <button onclick="editarCard(${idx})">Editar</button>
               <button onclick="excluirCard(${idx})">Excluir</button>
             </div>
           </div>
+          <select class="status-select ${card.status}">
+            <option value="pendente" ${card.status==='pendente'?'selected':''}>Pendente</option>
+            <option value="carregando" ${card.status==='carregando'?'selected':''}>Carregando</option>
+            <option value="pronto" ${card.status==='pronto'?'selected':''}>Pronto</option>
+          </select>
         </div>
       </div>
       <div class="card-itens"></div>
@@ -165,9 +165,9 @@ function renderItens(card,itensDiv, cardIdx){
     div.className='item';
     div.innerHTML = `
       <span>${i}</span>
-      <select>
-        <option>Aguardando</option>
-        <option>Faturado</option>
+      <select onchange="atualizaItem(${cardIdx},${idx},this)">
+        <option ${i.status==='Aguardando'?'selected':''}>Aguardando</option>
+        <option ${i.status==='Faturado'?'selected':''}>Faturado</option>
       </select>
       <div class="item-icons">
         <span onclick="renomearItem(${cardIdx},${idx})">✏️</span>
@@ -178,17 +178,22 @@ function renderItens(card,itensDiv, cardIdx){
   });
 }
 
+function atualizaItem(cardIdx,itIdx,sel){
+  cargas[cardIdx].itens[itIdx].status = sel.value;
+  socket.emit('editarCarga', cargas);
+}
+
 function addItem(cardIdx){
   const nome = prompt('Nome do item:');
   if(!nome) return;
-  cargas[cardIdx].itens.push(nome);
+  cargas[cardIdx].itens.push({ nome, status:'Aguardando' });
   socket.emit('editarCarga', cargas);
 }
 
 function renomearItem(cardIdx,itIdx){
-  const nome = prompt('Novo nome:', cargas[cardIdx].itens[itIdx]);
+  const nome = prompt('Novo nome:', cargas[cardIdx].itens[itIdx].nome);
   if(!nome) return;
-  cargas[cardIdx].itens[itIdx] = nome;
+  cargas[cardIdx].itens[itIdx].nome = nome;
   socket.emit('editarCarga', cargas);
 }
 
@@ -209,7 +214,7 @@ function editarCard(idx){
   cardDiv.querySelectorAll('.item').forEach(d=>d.classList.add('editing'));
 }
 
-/* ===== ABA TV ===== */
+/* ===== TV ===== */
 socket.on('atualizaProducao', data=>{
   const tv = document.getElementById('tv');
   tv.innerHTML = '';
