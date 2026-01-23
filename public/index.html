@@ -167,52 +167,6 @@ function renderMachines(data){
 socket.on('updateProducoes',data=>{ currentData=data; renderMachines(currentData); });
 socket.on('updateCargas',data=>{ cargasData=data; renderCargas(cargasData); });
 
-// CARGAS
-const cargasContainer=document.getElementById('cargasContainer');
-function renderCargas(data){
-  cargasContainer.innerHTML='';
-  data.forEach((cargaIndex,cargaNum)=>{
-    const card=document.createElement('div');
-    card.className='carga-card';
-    const h2=document.createElement('h2');
-    h2.textContent=cargaIndex.titulo;
-    const statusSelect=document.createElement('select');
-    statusSelect.style.borderRadius='12px'; statusSelect.style.fontSize='1em';
-    ['Pendente','Carregando','Pronto'].forEach(s=>{ const opt=document.createElement('option'); opt.value=s; opt.textContent=s; if(s===cargaIndex.status) opt.selected=true; statusSelect.appendChild(opt); });
-    statusSelect.onchange=()=>socket.emit('updateCargaItem',{cargaIndex:cargaNum,itemIndex:null,status:statusSelect.value});
-    const menu=document.createElement('span'); menu.className='carga-menu'; menu.textContent='⋮'; menu.onclick=()=>{
-      const op=prompt('Digite 1 para Gerenciar, 2 para Excluir');
-      if(op==='2') socket.emit('removeCarga',cargaNum);
-      if(op==='1'){
-        const itens=card.querySelectorAll('.carga-item');
-        itens.forEach((row,i)=>{
-          if(!row.querySelector('.delete-item')){
-            const btn=document.createElement('span');
-            btn.innerHTML='🗑️'; btn.className='delete-item'; btn.style.marginLeft='10px'; btn.style.cursor='pointer';
-            btn.onclick=()=>socket.emit('removeItemCarga',{cargaIndex:cargaNum,itemIndex:i});
-            row.appendChild(btn);
-          }
-        });
-      }
-    };
-    h2.appendChild(statusSelect); h2.appendChild(menu); card.appendChild(h2);
-
-    const itensDiv=document.createElement('div'); itensDiv.className='carga-itens';
-    cargaIndex.itens.forEach((item,i)=>{
-      const row=document.createElement('div'); row.className='carga-item';
-      const info=document.createElement('div'); info.textContent=item.nome; row.appendChild(info);
-      const sel=document.createElement('select'); ['Aguardando','Faturado'].forEach(s=>{ const opt=document.createElement('option'); opt.value=s; opt.textContent=s; if(s===item.status) opt.selected=true; sel.appendChild(opt); });
-      sel.onchange=()=>socket.emit('updateCargaItem',{cargaIndex:cargaNum,itemIndex:i,status:sel.value});
-      row.appendChild(sel);
-      itensDiv.appendChild(row);
-    });
-    card.appendChild(itensDiv);
-    const addBtn=document.createElement('button'); addBtn.className='add-item'; addBtn.textContent='+'; addBtn.onclick=()=>socket.emit('addItemCarga',cargaNum);
-    card.appendChild(addBtn);
-    cargasContainer.appendChild(card);
-  });
-}
-
 // EXPORTAR ALTERAÇÕES
 function exportAlteracoes(){
   const exportData=currentData.filter((_,i)=>alteracoes.has(i)).map(it=>({
