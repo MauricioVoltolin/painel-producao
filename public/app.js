@@ -13,61 +13,61 @@ function openTab(i){
 }
 
 /* ===== ABA PRODUÇÃO ===== */
-document.getElementById('xls').addEventListener('change', function(e){
-  var reader = new FileReader();
-  reader.onload = function(evt){
-    var wb = XLSX.read(evt.target.result, { type:'binary' });
-    var ws = wb.Sheets[wb.SheetNames[0]];
-    var data = XLSX.utils.sheet_to_json(ws,{header:1});
-    var linhas = data.slice(5);
-    var maquinas = {};
+let producaoData = {};
 
-    for(var i=0;i<linhas.length;i++){
-      var l = linhas[i];
-      var item = l[0];
-      var maquina = l[7];
-      var prioridade = l[6];
-      var produzir = l[16];
+document.getElementById('xls').addEventListener('change', function(e){
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    const wb = XLSX.read(evt.target.result, { type:'binary' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws,{header:1});
+    const linhas = data.slice(5);
+    let maquinas = {};
+    for(let i=0;i<linhas.length;i++){
+      const l = linhas[i];
+      const item = l[0];
+      const maquina = l[7];
+      const prioridade = l[6];
+      const produzir = l[16];
       if(!maquina || !item) continue;
       if(!maquinas[maquina]) maquinas[maquina]=[];
-      maquinas[maquina].push({ item:item, prioridade:prioridade, produzir:produzir });
+      maquinas[maquina].push({ item, prioridade, produzir });
     }
-    renderProducao(maquinas);
+    producaoData = maquinas;
+    socket.emit('atualizaProducao', producaoData);
+    renderProducao(producaoData);
   };
   reader.readAsBinaryString(e.target.files[0]);
 });
 
+socket.on('atualizaProducao', (data)=>{
+  producaoData = data;
+  renderProducao(producaoData);
+});
+
 function renderProducao(maquinas){
-  var filtro = document.getElementById('filtroMaquina');
-  var div = document.getElementById('producao');
+  const filtro = document.getElementById('filtroMaquina');
+  const div = document.getElementById('producao');
   filtro.innerHTML = '<option value="">Todas</option>';
   div.innerHTML = '';
-  for(var m in maquinas){
-    filtro.innerHTML += '<option>'+m+'</option>';
-    var box = document.createElement('div');
+  for(let m in maquinas){
+    filtro.innerHTML += `<option>${m}</option>`;
+    const box = document.createElement('div');
     box.className='maquina';
-    var html = '<strong>'+m+'</strong>';
-    for(var k=0;k<maquinas[m].length;k++){
-      var i = maquinas[m][k];
-      html+='<div>'+i.item+' '+(i.prioridade=='PRIORIDADE'?'⚠️':'')+'</div>';
-    }
+    let html = `<strong>${m}</strong>`;
+    maquinas[m].forEach(i=>{
+      html+=`<div>${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}</div>`;
+    });
     box.innerHTML=html;
     div.appendChild(box);
   }
 }
 
 /* ===== ABA CARGAS ===== */
-var cargas = [];
+let cargas = [];
 
-socket.on('init', (data) => {
-  cargas = data;
-  renderCargas(cargas);
-});
-
-socket.on('atualizaCargas', (data) => {
-  cargas = data;
-  renderCargas(cargas);
-});
+socket.on('initCargas', (data)=>{ cargas=data; renderCargas(cargas); });
+socket.on('atualizaCargas', (data)=>{ cargas=data; renderCargas(cargas); });
 
 function novaCarga(){
   const carga = { titulo:'Carga '+(cargas.length+1), status:'pendente', itens:[] };
@@ -80,21 +80,21 @@ function renderCargas(data){
   data.forEach((carga,index)=>{
     const card = document.createElement('div');
     card.className='card';
-    card.innerHTML = 
-      `<div class="card-header">
+    card.innerHTML = `
+      <div class="card-header">
         <div class="card-header-left"><strong>${carga.titulo}</strong></div>
         <div class="card-header-right">
+          <select class="status-select" onchange="atualizaStatus(this, ${index})">
+            <option value="pendente">Pendente</option>
+            <option value="carregando">Carregando</option>
+            <option value="pronto">Pronto</option>
+          </select>
           <span class="menu">⋮
             <div class="dropdown">
               <button onclick="editarCarga(this)">Editar itens</button>
               <button onclick="excluirCarga(${index})">Excluir carga</button>
             </div>
           </span>
-          <select class="status-select" onchange="atualizaStatus(this, ${index})">
-            <option value="pendente">Pendente</option>
-            <option value="carregando">Carregando</option>
-            <option value="pronto">Pronto</option>
-          </select>
         </div>
       </div>
       <div class="itens"></div>
@@ -111,7 +111,7 @@ function renderCargas(data){
 function addItem(btn,index){
   const nome = prompt('Nome do item');
   if(!nome) return;
-  cargas[index].itens.push({nome:nome,status:'aguardando'});
+  cargas[index].itens.push({nome, status:'aguardando'});
   socket.emit('editarCarga', cargas);
 }
 
@@ -123,7 +123,10 @@ function addItemRender(container, item){
       <span onclick="renomearItem(this)">🖉</span>
       <span onclick="excluirItem(this)">🗑️</span>
     </span>
-    <select onchange="atualizaItemStatus(this)"><option value="aguardando">Aguardando</option><option value="faturado">Faturado</option></select>`;
+    <select onchange="atualizaItemStatus(this)">
+      <option value="aguardando">Aguardando</option>
+      <option value="faturado">Faturado</option>
+    </select>`;
   div.querySelector('select').value = item.status;
   atualizaItemStatus(div.querySelector('select'));
   container.appendChild(div);
@@ -147,12 +150,12 @@ function excluirItem(el){
   socket.emit('editarCarga', cargas);
 }
 
-function atualizarItemStatus(sel){
+function atualizaItemStatus(sel){
+  sel.style.background = sel.value==='aguardando'?'orange':'green';
+  sel.style.color='#fff';
   const cardIndex = Array.from(document.getElementById('cargas').children).indexOf(sel.closest('.card'));
   const itemIndex = Array.from(sel.parentElement.parentElement.children).indexOf(sel.parentElement);
   cargas[cardIndex].itens[itemIndex].status = sel.value;
-  sel.style.background = sel.value==='aguardando'?'orange':'green';
-  sel.style.color='#fff';
   socket.emit('editarCarga', cargas);
 }
 

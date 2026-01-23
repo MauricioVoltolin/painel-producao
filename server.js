@@ -9,14 +9,16 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Estado global das cargas
+// Estado global
 let cargas = [];
+let producao = {}; // armazenar dados da aba produção
 
 io.on('connection', (socket) => {
   console.log('Novo cliente conectado');
 
-  // Envia estado atual ao novo cliente
-  socket.emit('init', cargas);
+  // Enviar estado atual
+  socket.emit('initCargas', cargas);
+  socket.emit('initProducao', producao);
 
   // Nova carga
   socket.on('novaCarga', (carga) => {
@@ -32,8 +34,14 @@ io.on('connection', (socket) => {
 
   // Excluir carga
   socket.on('excluirCarga', (index) => {
-    cargas.splice(index,1);
+    cargas.splice(index, 1);
     io.emit('atualizaCargas', cargas);
+  });
+
+  // Atualizar produção
+  socket.on('atualizaProducao', (data) => {
+    producao = data;
+    io.emit('atualizaProducao', producao);
   });
 
   socket.on('disconnect', () => {
