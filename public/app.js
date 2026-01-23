@@ -103,7 +103,127 @@ function exportAlteracoes(){
 
 /* ===== ABA CARGAS ===== */
 let cargas = [];
+
 socket.on('initCargas', data=>{ cargas=data; renderCargas(cargas); });
 socket.on('atualizaCargas', data=>{ cargas=data; renderCargas(cargas); });
 
-// ... (restante do app.js para cargas e TV permanece o mesmo que já funciona)
+function novaCarga(){
+  const nova = { titulo:`Carga ${cargas.length+1}`, status:'pendente', itens:[] };
+  cargas.push(nova);
+  socket.emit('editarCarga', cargas);
+}
+
+function renderCargas(c){
+  const div = document.getElementById('cargas');
+  div.innerHTML='';
+  c.forEach((card,idx)=>{
+    const cardDiv = document.createElement('div');
+    cardDiv.className='card';
+    cardDiv.innerHTML = `
+      <div class="card-header">
+        <div class="card-header-left">
+          <select class="status-select ${card.status}">
+            <option value="pendente" ${card.status==='pendente'?'selected':''}>Pendente</option>
+            <option value="carregando" ${card.status==='carregando'?'selected':''}>Carregando</option>
+            <option value="pronto" ${card.status==='pronto'?'selected':''}>Pronto</option>
+          </select>
+        </div>
+        <div class="card-header-right">
+          <div class="menu">☰
+            <div class="dropdown">
+              <button onclick="editarCard(${idx})">Editar</button>
+              <button onclick="excluirCard(${idx})">Excluir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-itens"></div>
+      <button class="add-item" onclick="addItem(${idx})">+</button>
+    `;
+    div.appendChild(cardDiv);
+
+    // eventos do select
+    const sel = cardDiv.querySelector('select');
+    sel.addEventListener('change', e=>{
+      card.status = sel.value;
+      socket.emit('editarCarga', cargas);
+    });
+
+    // dropdown
+    const menu = cardDiv.querySelector('.menu');
+    const drop = menu.querySelector('.dropdown');
+    menu.onclick = e=>{ drop.style.display = drop.style.display==='block'?'none':'block'; };
+
+    renderItens(card,itensDiv=cardDiv.querySelector('.card-itens'), idx);
+  });
+}
+
+function renderItens(card,itensDiv, cardIdx){
+  itensDiv.innerHTML='';
+  card.itens.forEach((i,idx)=>{
+    const div = document.createElement('div');
+    div.className='item';
+    div.innerHTML = `
+      <span>${i}</span>
+      <select>
+        <option>Aguardando</option>
+        <option>Faturado</option>
+      </select>
+      <div class="item-icons">
+        <span onclick="renomearItem(${cardIdx},${idx})">✏️</span>
+        <span onclick="excluirItem(${cardIdx},${idx})">🗑️</span>
+      </div>
+    `;
+    itensDiv.appendChild(div);
+  });
+}
+
+function addItem(cardIdx){
+  const nome = prompt('Nome do item:');
+  if(!nome) return;
+  cargas[cardIdx].itens.push(nome);
+  socket.emit('editarCarga', cargas);
+}
+
+/* editar/excluir item */
+function renomearItem(cardIdx,itIdx){
+  const nome = prompt('Novo nome:', cargas[cardIdx].itens[itIdx]);
+  if(!nome) return;
+  cargas[cardIdx].itens[itIdx] = nome;
+  socket.emit('editarCarga', cargas);
+}
+
+function excluirItem(cardIdx,itIdx){
+  if(!confirm('Excluir este item?')) return;
+  cargas[cardIdx].itens.splice(itIdx,1);
+  socket.emit('editarCarga', cargas);
+}
+
+/* excluir card */
+function excluirCard(idx){
+  if(!confirm('Excluir esta carga?')) return;
+  cargas.splice(idx,1);
+  socket.emit('editarCarga', cargas);
+}
+
+/* editar card (aparece ícones nos itens) */
+function editarCard(idx){
+  const cardDiv = document.getElementById('cargas').children[idx];
+  cardDiv.querySelectorAll('.item').forEach(d=>d.classList.add('editing'));
+}
+
+/* ===== ABA TV ===== */
+socket.on('atualizaProducao', data=>{
+  const tv = document.getElementById('tv');
+  tv.innerHTML = '';
+  for(const m in data){
+    const box = document.createElement('div');
+    box.className='tv-box';
+    let html = `<strong>${m}</strong>`;
+    data[m].forEach(i=>{
+      html+=`<div>${i.item} - ${i.status}</div>`;
+    });
+    box.innerHTML=html;
+    tv.appendChild(box);
+  }
+});
