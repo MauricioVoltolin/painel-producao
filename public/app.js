@@ -27,7 +27,7 @@ document.getElementById('xls').addEventListener('change', function(e){
       const prioridade = l[6];
       if(!item || !maquina) continue;
       if(!maquinas[maquina]) maquinas[maquina]=[];
-      maquinas[maquina].push({ item, prioridade });
+      maquinas[maquina].push({ item, prioridade, status:'Em Branco' });
     }
     producaoData = maquinas;
     socket.emit('atualizaProducao', producaoData);
@@ -51,12 +51,26 @@ function renderProducao(maquinas){
     const box = document.createElement('div');
     box.className='maquina';
     let html = `<strong>${m}</strong>`;
-    maquinas[m].forEach(i=>{
-      html+=`<div>${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}</div>`;
+    maquinas[m].forEach((i,idx)=>{
+      html+=`<div class="item-producao">
+        <span>${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}</span>
+        <select onchange="atualizaProducaoItem('${m}', ${idx}, this)">
+          <option>Em Branco</option>
+          <option>Produção</option>
+          <option>Produção OK</option>
+          <option>Acabamento</option>
+          <option>Acabamento OK</option>
+        </select>
+      </div>`;
     });
     box.innerHTML=html;
     div.appendChild(box);
   }
+}
+
+function atualizaProducaoItem(maquina, idx, sel){
+  producaoData[maquina][idx].status = sel.value;
+  socket.emit('atualizaProducao', producaoData);
 }
 
 /* ===== ABA CARGAS ===== */
@@ -104,7 +118,7 @@ function renderCargas(data){
       addItemRender(card.querySelector('.itens'), item);
     });
 
-    // Mostrar dropdown do menu ao clicar
+    // dropdown menu
     const menu = card.querySelector('.menu');
     menu.onclick = ()=>{
       const drop = menu.querySelector('.dropdown');
