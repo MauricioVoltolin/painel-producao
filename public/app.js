@@ -1,3 +1,5 @@
+const socket = io();
+
 /* ===== TABS ===== */
 function openTab(i){
   var tabs = document.querySelectorAll('.tabs button');
@@ -55,113 +57,121 @@ function renderProducao(maquinas){
 }
 
 /* ===== ABA CARGAS ===== */
-var count=0;
+var cargas = [];
 
-function novaCarga(){
-  count++;
-  var card = document.createElement('div');
-  card.className='card';
-  card.innerHTML = 
-    '<div class="card-header">'+
-      '<div class="card-header-left"><strong>Carga '+count+'</strong></div>'+
-      '<div class="card-header-right">'+
-        '<span class="menu">⋮'+
-          '<div class="dropdown">'+
-            '<button onclick="editarCarga(this)">Editar itens</button>'+
-            '<button onclick="excluirCarga(this)">Excluir carga</button>'+
-          '</div>'+
-        '</span>'+
-        '<select class="status-select" onchange="atualizaStatus(this)">'+
-          '<option value="pendente">Pendente</option>'+
-          '<option value="carregando">Carregando</option>'+
-          '<option value="pronto">Pronto</option>'+
-        '</select>'+
-      '</div>'+
-    '</div>'+
-    '<div class="itens"></div>'+
-    '<button class="add-item" onclick="addItem(this)">+</button>';
-  document.getElementById('cargas').appendChild(card);
-  // Inicializa cor do status
-  var sel = card.querySelector('.status-select');
-  atualizaStatus(sel);
-}
-
-// Atualiza cor do status da carga
-function atualizaStatus(sel){
-  var val = sel.value;
-  sel.style.background = val==='pendente'?'orange': val==='carregando'?'gold':'green';
-  sel.style.color = val==='carregando'?'#000':'#fff';
-}
-
-// Mostrar/ocultar dropdown do menu
-document.addEventListener('click', function(e){
-  var dropdowns = document.querySelectorAll('.dropdown');
-  for(var i=0;i<dropdowns.length;i++) dropdowns[i].style.display='none';
-  if(e.target.classList.contains('menu')){
-    var d = e.target.querySelector('.dropdown');
-    if(d) d.style.display='block';
-    e.stopPropagation();
-  }
+socket.on('init', (data) => {
+  cargas = data;
+  renderCargas(cargas);
 });
 
-function addItem(btn){
-  var nome = prompt('Nome do item');
-  if(nome){
-    var itensDiv = btn.previousElementSibling;
-    var div = document.createElement('div');
-    div.className='item';
-    div.innerHTML = nome +
-      '<span class="item-icons">'+
-        '<span onclick="renomearItem(this)">🖉</span>'+
-        '<span onclick="excluirItem(this)">🗑️</span>'+
-      '</span>'+
-      '<select onchange="atualizaItemStatus(this)">'+
-        '<option value="aguardando">Aguardando</option>'+
-        '<option value="faturado">Faturado</option>'+
-      '</select>';
-    itensDiv.appendChild(div);
-  }
+socket.on('atualizaCargas', (data) => {
+  cargas = data;
+  renderCargas(cargas);
+});
+
+function novaCarga(){
+  const carga = { titulo:'Carga '+(cargas.length+1), status:'pendente', itens:[] };
+  socket.emit('novaCarga', carga);
+}
+
+function renderCargas(data){
+  const container = document.getElementById('cargas');
+  container.innerHTML = '';
+  data.forEach((carga,index)=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML = 
+      `<div class="card-header">
+        <div class="card-header-left"><strong>${carga.titulo}</strong></div>
+        <div class="card-header-right">
+          <span class="menu">⋮
+            <div class="dropdown">
+              <button onclick="editarCarga(this)">Editar itens</button>
+              <button onclick="excluirCarga(${index})">Excluir carga</button>
+            </div>
+          </span>
+          <select class="status-select" onchange="atualizaStatus(this, ${index})">
+            <option value="pendente">Pendente</option>
+            <option value="carregando">Carregando</option>
+            <option value="pronto">Pronto</option>
+          </select>
+        </div>
+      </div>
+      <div class="itens"></div>
+      <button class="add-item" onclick="addItem(this, ${index})">+</button>`;
+    container.appendChild(card);
+    card.querySelector('.status-select').value = carga.status;
+    atualizaStatus(card.querySelector('.status-select'), index);
+    carga.itens.forEach(item=>{
+      addItemRender(card.querySelector('.itens'), item);
+    });
+  });
+}
+
+function addItem(btn,index){
+  const nome = prompt('Nome do item');
+  if(!nome) return;
+  cargas[index].itens.push({nome:nome,status:'aguardando'});
+  socket.emit('editarCarga', cargas);
+}
+
+function addItemRender(container, item){
+  const div = document.createElement('div');
+  div.className='item';
+  div.innerHTML = `${item.nome} 
+    <span class="item-icons">
+      <span onclick="renomearItem(this)">🖉</span>
+      <span onclick="excluirItem(this)">🗑️</span>
+    </span>
+    <select onchange="atualizaItemStatus(this)"><option value="aguardando">Aguardando</option><option value="faturado">Faturado</option></select>`;
+  div.querySelector('select').value = item.status;
+  atualizaItemStatus(div.querySelector('select'));
+  container.appendChild(div);
 }
 
 function renomearItem(el){
-  var itemDiv = el.parentElement.parentElement;
-  var nomeAtual = itemDiv.firstChild.textContent;
-  var novo = prompt('Renomear item:', nomeAtual);
-  if(novo) itemDiv.firstChild.textContent = novo;
+  const itemDiv = el.parentElement.parentElement;
+  const novo = prompt('Renomear item', itemDiv.firstChild.textContent);
+  if(!novo) return;
+  const cardIndex = Array.from(document.getElementById('cargas').children).indexOf(itemDiv.closest('.card'));
+  const itemIndex = Array.from(itemDiv.parentElement.children).indexOf(itemDiv);
+  cargas[cardIndex].itens[itemIndex].nome = novo;
+  socket.emit('editarCarga', cargas);
 }
 
 function excluirItem(el){
-  if(confirm('Excluir este item?')) el.parentElement.parentElement.remove();
+  if(!confirm('Excluir este item?')) return;
+  const cardIndex = Array.from(document.getElementById('cargas').children).indexOf(el.closest('.card'));
+  const itemIndex = Array.from(el.parentElement.parentElement.children).indexOf(el.parentElement);
+  cargas[cardIndex].itens.splice(itemIndex,1);
+  socket.emit('editarCarga', cargas);
 }
 
-function atualizaItemStatus(sel){
+function atualizarItemStatus(sel){
+  const cardIndex = Array.from(document.getElementById('cargas').children).indexOf(sel.closest('.card'));
+  const itemIndex = Array.from(sel.parentElement.parentElement.children).indexOf(sel.parentElement);
+  cargas[cardIndex].itens[itemIndex].status = sel.value;
   sel.style.background = sel.value==='aguardando'?'orange':'green';
-  sel.style.color = '#fff';
+  sel.style.color='#fff';
+  socket.emit('editarCarga', cargas);
 }
 
-// Editar itens → só mostra ícones
 function editarCarga(btn){
-  var card = btn.closest('.card');
-  var itens = card.querySelectorAll('.item');
-  for(var i=0;i<itens.length;i++){
-    itens[i].classList.toggle('editing');
-  }
+  const itens = btn.closest('.card').querySelectorAll('.item');
+  itens.forEach(i=>i.classList.toggle('editing'));
 }
 
-function excluirCarga(btn){
-  if(confirm('Excluir esta carga?')){
-    btn.closest('.card').remove();
-    corrigirNumeracao();
-  }
+function excluirCarga(index){
+  if(!confirm('Excluir esta carga?')) return;
+  socket.emit('excluirCarga', index);
 }
 
-function corrigirNumeracao(){
-  count=0;
-  var cards = document.querySelectorAll('.card');
-  for(var i=0;i<cards.length;i++){
-    count++;
-    cards[i].querySelector('strong').innerText='Carga '+count;
-  }
+function atualizaStatus(sel,index){
+  const val = sel.value;
+  sel.style.background = val==='pendente'?'orange': val==='carregando'?'gold':'green';
+  sel.style.color = val==='carregando'?'#000':'#fff';
+  cargas[index].status = val;
+  socket.emit('editarCarga', cargas);
 }
 
 /* ===== ABA TV ===== */

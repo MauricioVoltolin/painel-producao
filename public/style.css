@@ -1,6 +1,6 @@
 body { font-family: Arial, sans-serif; margin:0; background:#f2f2f2 }
-.tabs { display:flex; background:#333 }
-.tabs button { flex:1; padding:15px; color:#fff; background:none; border:none; cursor:pointer }
+.tabs { display:flex; background:#333; flex-wrap: wrap; }
+.tabs button { flex:1; padding:15px; color:#fff; background:none; border:none; cursor:pointer; min-width:100px }
 .tabs button.active { background:#2ecc71 }
 .tab { display:none; padding:20px }
 .tab.active { display:block }
@@ -10,27 +10,29 @@ body { font-family: Arial, sans-serif; margin:0; background:#f2f2f2 }
 .maquina { background:#fff; margin-bottom:10px; padding:10px; box-shadow:0 2px 6px rgba(0,0,0,.15) }
 
 /* Aba Cargas */
-.grid { display:grid; grid-template-columns:repeat(2,1fr); gap:20px }
-.card { background:#fff; padding:15px; box-shadow:0 4px 10px rgba(0,0,0,.15); position:relative; }
-.card-header { display:flex; justify-content:space-between; align-items:center; position:relative }
-.card-header-left { display:flex; align-items:center; gap:8px; }
-.status-select { padding:5px 10px; border-radius:20px; border:none; color:#fff; cursor:pointer; margin-left:8px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:20px }
+.card { background:#fff; padding:15px; box-shadow:0 4px 10px rgba(0,0,0,.15); position:relative; display:flex; flex-direction:column }
+.card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px }
+.card-header-left { display:flex; align-items:center; gap:8px }
+.card-header-right { display:flex; align-items:center; gap:8px }
+
+.status-select { padding:5px 10px; border-radius:20px; border:none; color:#fff; cursor:pointer }
 .pendente { background:orange }
 .carregando { background:gold; color:#000 }
 .pronto { background:green }
 
-.menu { cursor:pointer; margin-left:8px; position:relative }
+.menu { cursor:pointer; position:relative }
 .dropdown { position:absolute; top:22px; right:0; background:#fff; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,.15); overflow:hidden; display:none; z-index:10 }
 .dropdown button { background:none; border:none; padding:10px 15px; width:100%; text-align:left; cursor:pointer; font-size:14px }
 .dropdown button:hover { background:#f2f2f2 }
 
-.item { margin-top:5px; position:relative; }
-.item-icons { display:none; margin-left:8px; cursor:pointer; }
-.item-icons span { margin-left:4px; font-size:14px; }
-.item select { display:inline-block; margin-left:8px; }
+.item { margin-top:5px; position:relative; display:flex; align-items:center; gap:8px }
+.item-icons { display:none; cursor:pointer }
+.item-icons span { font-size:14px; margin-left:4px }
+.item select { display:inline-block; margin-left:8px }
 
 /* Mostrar ícones quando estiver editando */
-.item.editing .item-icons { display:inline-block; }
+.item.editing .item-icons { display:inline-block }
 
 /* Botão + */
 .add-item { margin-top:12px; width:38px; height:38px; border-radius:50%; background:#2ecc71; color:#fff; border:none; font-size:22px; cursor:pointer }
