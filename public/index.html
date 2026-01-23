@@ -5,37 +5,37 @@
 <title>Painel de Produção - BF BOX</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body { margin:0; font-family: Arial,sans-serif; background:#f2f2f2; }
-  header { display:flex; align-items:center; justify-content:space-between; background:#fff; padding:10px 20px; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100;}
-  header img { height:50px; }
-  header .logo { display:flex; align-items:center; gap:20px; }
-  header .tabs { display:flex; gap:10px; }
-  header .tab { cursor:pointer; padding:5px 15px; border-radius:5px; background:#e0e0e0; }
-  header .tab.active { background:#4CAF50; color:white; }
-  #filtro { margin:10px auto; text-align:center; }
-  #filtro select { padding:5px 10px; font-size:1em; border-radius:5px; }
-  #machines, #cargasContainer { display:flex; flex-wrap:wrap; gap:10px; padding:10px; justify-content:flex-start; }
-  .machine { background:white; padding:10px; border-radius:10px; flex:1 1 300px; display:flex; flex-direction:column; }
-  .machine h2 { margin:0 0 10px 0; }
-  .machine table { width:100%; border-collapse:collapse; }
-  .machine th, .machine td { border-bottom:1px solid #ddd; padding:5px; text-align:right; }
-  .carga-card { background:white; border-radius:10px; padding:10px; margin:5px; width:calc(50% - 10px); box-sizing:border-box; display:flex; flex-direction:column; gap:5px; position:relative; }
-  .carga-card h2 { display:flex; justify-content:space-between; align-items:center; margin:0; }
-  .carga-menu { cursor:pointer; font-size:1.5em; margin-left:5px; }
-  .carga-itens { display:flex; flex-direction:column; gap:3px; margin-top:5px; }
-  .carga-item { display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:5px 10px; border-radius:5px; }
-  .carga-item .delete-item { margin-left:10px; cursor:pointer; }
-  .add-item { align-self:center; padding:5px 10px; border-radius:50%; font-size:1.2em; cursor:pointer; }
-  #upload-section { text-align:center; margin:20px; }
-  #upload-section input, #upload-section button { margin:5px; padding:5px 10px; }
-  .prioridade { background:yellow; font-weight:bold; }
-  /* MOBILE */
-  @media(max-width:480px){
-    .machine table th, .machine table td { font-size:0.8em; padding:3px; }
-    .carga-card { width:100%; }
-    .carga-item { flex-direction:column; align-items:flex-start; }
-    .carga-item select { width:50%; }
-  }
+body { margin:0; font-family: Arial,sans-serif; background:#f2f2f2; }
+header { display:flex; align-items:center; justify-content:space-between; background:#fff; padding:10px 20px; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100;}
+header img { height:50px; }
+header .logo { display:flex; align-items:center; gap:20px; }
+header .tabs { display:flex; gap:10px; margin-left:20px; }
+header .tab { cursor:pointer; padding:5px 15px; border-radius:5px; background:#e0e0e0; }
+header .tab.active { background:#4CAF50; color:white; }
+#filtro { margin:10px auto; text-align:center; }
+#filtro select { padding:5px 10px; font-size:1em; border-radius:5px; }
+#machines, #cargasContainer { display:flex; flex-direction:column; gap:10px; padding:10px; }
+.machine { background:white; padding:10px; border-radius:10px; display:flex; flex-direction:column; }
+.machine h2 { margin:0 0 10px 0; }
+.machine table { width:100%; border-collapse:collapse; }
+.machine th, .machine td { border-bottom:1px solid #ddd; padding:5px; text-align:right; }
+.carga-card { background:white; border-radius:10px; padding:10px; margin:5px; display:flex; flex-direction:column; gap:5px; position:relative; }
+.carga-card h2 { display:flex; justify-content:space-between; align-items:center; margin:0; }
+.carga-menu { cursor:pointer; font-size:1.5em; margin-left:5px; }
+.carga-itens { display:flex; flex-direction:column; gap:3px; margin-top:5px; }
+.carga-item { display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:5px 10px; border-radius:5px; }
+.carga-item .delete-item { margin-left:10px; cursor:pointer; }
+.add-item { align-self:center; padding:5px 10px; border-radius:50%; font-size:1.2em; cursor:pointer; }
+#upload-section { text-align:center; margin:20px; }
+#upload-section input, #upload-section button { margin:5px; padding:5px 10px; }
+.prioridade { background:yellow; font-weight:bold; }
+/* MOBILE */
+@media(max-width:480px){
+  .machine table th, .machine table td { font-size:0.8em; padding:3px; text-align:left; }
+  .carga-card { width:100%; }
+  .carga-item { flex-direction:column; align-items:flex-start; }
+  .carga-item select { width:50%; margin-top:3px; }
+}
 </style>
 </head>
 <body>
@@ -67,9 +67,7 @@
   <button onclick="exportAlteracoes()">Exportar Alterações</button>
 </div>
 
-<!-- SheetJS -->
 <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-<!-- Socket.io -->
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
@@ -119,7 +117,6 @@ function upload(){
       currentData.push(item);
       maquinasSet.add(item.maquina);
     }
-    // popula filtro
     filterSelect.innerHTML='<option value="">Todas</option>';
     maquinasSet.forEach(m=>{ filterSelect.innerHTML+=`<option value="${m}">${m}</option>`; });
     renderMachines(currentData);
@@ -128,7 +125,7 @@ function upload(){
   reader.readAsArrayBuffer(file);
 }
 
-// RENDER PRODUÇÕES
+// RENDER PRODUÇÃO
 function renderMachines(data){
   const container=document.getElementById('machines');
   container.innerHTML='';
@@ -166,7 +163,7 @@ function renderMachines(data){
   });
 }
 
-// SOCKETS - REAL TIME
+// SOCKETS
 socket.on('updateProducoes',data=>{ currentData=data; renderMachines(currentData); });
 socket.on('updateCargas',data=>{ cargasData=data; renderCargas(cargasData); });
 
@@ -215,6 +212,23 @@ function renderCargas(data){
     cargasContainer.appendChild(card);
   });
 }
+
+// EXPORTAR ALTERAÇÕES
+function exportAlteracoes(){
+  const exportData=currentData.filter((_,i)=>alteracoes.has(i)).map(it=>({
+    item: it.item,
+    maquina: it.maquina,
+    vendido: it.vendido,
+    estoque: it.estoque,
+    produzir: it.produzir,
+    status: it.status
+  }));
+  const ws=XLSX.utils.json_to_sheet(exportData);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Alteracoes');
+  XLSX.writeFile(wb,'alteracoes.xlsx');
+}
 </script>
+
 </body>
 </html>
