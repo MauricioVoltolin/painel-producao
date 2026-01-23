@@ -10,7 +10,7 @@ app.get('/', (req, res) => {
 });
 
 let cargas = [];
-let producao = {};
+let producao = {}; // Armazena os dados da aba Produção
 
 io.on('connection', (socket) => {
   console.log('Novo cliente conectado');
@@ -19,6 +19,7 @@ io.on('connection', (socket) => {
   socket.emit('initCargas', cargas);
   socket.emit('initProducao', producao);
 
+  // ================= CARGAS =================
   socket.on('novaCarga', (carga) => {
     cargas.push(carga);
     io.emit('atualizaCargas', cargas);
@@ -34,8 +35,9 @@ io.on('connection', (socket) => {
     io.emit('atualizaCargas', cargas);
   });
 
+  // ================= PRODUÇÃO =================
   socket.on('atualizaProducao', (data) => {
-    producao = data;
+    producao = data;          // armazenar para todos
     io.emit('atualizaProducao', producao);
   });
 
