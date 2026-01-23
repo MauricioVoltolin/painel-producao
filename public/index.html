@@ -4,155 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Painel BF BOX</title>
+
 <style>
-body{margin:0;font-family:Arial,sans-serif;background:#f2f2f2;}
-header{display:flex;align-items:center;justify-content:space-between;background:#fff;padding:10px 20px;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
-header img{height:50px;}
-.tabs{display:flex;gap:10px;margin-left:20px;}
-.tab{cursor:pointer;padding:5px 15px;border-radius:5px;background:#e0e0e0;}
-.tab.active{background:#4CAF50;color:white;}
-#hora{font-weight:bold;}
-#cargasContainer{display:flex;flex-wrap:wrap;gap:10px;padding:10px;}
-.carga-card{background:white;border-radius:10px;padding:10px;flex:1 1 calc(50% - 10px);display:flex;flex-direction:column;gap:5px;position:relative;min-width:250px;}
-.carga-card h2{display:flex;justify-content:space-between;align-items:center;margin:0;}
-.carga-card .status-select{border-radius:15px;padding:5px 10px;}
-.carga-itens{display:flex;flex-direction:column;gap:5px;margin-top:5px;}
-.carga-item{display:flex;justify-content:space-between;align-items:center;background:#f9f9f9;padding:5px 10px;border-radius:5px;}
-.carga-item select{border-radius:8px;padding:2px 5px;}
-.add-item-btn{align-self:center;padding:5px 10px;border-radius:50%;font-size:1.2em;cursor:pointer;background:#4CAF50;color:white;border:none;}
-.menu{position:absolute;top:10px;right:10px;cursor:pointer;}
-.menu-content{display:none;position:absolute;top:25px;right:0;background:white;border:1px solid #ccc;border-radius:5px;z-index:10;}
-.menu-content div{padding:5px 10px;cursor:pointer;}
-.menu:hover .menu-content{display:block;}
-#addCarga{margin:10px;padding:10px;border-radius:50%;font-size:1.5em;cursor:pointer;background:#4CAF50;color:white;border:none;position:fixed;bottom:20px;right:20px;}
-@media(max-width:480px){
-  .carga-card{flex:1 1 100%;}
-}
+body{margin:0;font-family:Arial;background:#f2f2f2}
+header{display:flex;align-items:center;justify-content:space-between;background:#fff;padding:10px;box-shadow:0 2px 5px rgba(0,0,0,.1)}
+.tabs{display:flex;gap:10px}
+.tab{padding:5px 15px;border-radius:5px;background:#e0e0e0;cursor:pointer}
+.tab.active{background:#4CAF50;color:#fff}
+#cargasContainer{display:flex;flex-wrap:wrap;gap:10px;padding:10px}
+.carga-card{background:#fff;border-radius:10px;padding:10px;flex:1 1 45%;min-width:250px}
+.carga-item{display:flex;justify-content:space-between;background:#f9f9f9;padding:5px;border-radius:5px;margin-top:5px}
+.add-item-btn{margin-top:10px;border:none;background:#4CAF50;color:#fff;border-radius:50%;width:35px;height:35px;font-size:20px;cursor:pointer}
+#addCarga{position:fixed;bottom:20px;right:20px;border:none;background:#4CAF50;color:#fff;border-radius:50%;width:50px;height:50px;font-size:25px;cursor:pointer}
 </style>
 </head>
+
 <body>
 
 <header>
-<img src="https://site.siteargus.com.br/sendThumb.asp?idcliente=543&path=parceiro&file=27_6_543_458_13510820_510120865837737_6061197160572500699_n.jpg&width=280" alt="Logo">
-<div class="tabs">
-  <div class="tab active" data-tab="producao">Produção</div>
-  <div class="tab" data-tab="cargas">Cargas</div>
-</div>
-<div id="hora"></div>
+  <h2>Painel BF BOX</h2>
 </header>
 
-<!-- Produção (mantida) -->
-<div id="producao" style="display:block; padding:10px;">
-  <!-- Seu código atual da Produção -->
-</div>
-
-<!-- Aba Cargas -->
-<div id="cargas" style="display:none;">
-  <div id="cargasContainer"></div>
-  <button id="addCarga">+</button>
-</div>
+<div id="cargasContainer"></div>
+<button id="addCarga">+</button>
 
 <script src="/socket.io/socket.io.js"></script>
-<script>
-const socket = io();
-
-// Tabs
-document.querySelectorAll('.tab').forEach(tab=>{
-  tab.onclick = ()=>{
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    tab.classList.add('active');
-    if(tab.dataset.tab==='cargas'){
-      document.getElementById('producao').style.display='none';
-      document.getElementById('cargas').style.display='block';
-    } else {
-      document.getElementById('producao').style.display='block';
-      document.getElementById('cargas').style.display='none';
-    }
-  };
-});
-
-// Atualizar hora
-setInterval(()=>{document.getElementById('hora').innerText=new Date().toLocaleString();},1000);
-
-// Render Cargas
-let cargasData=[];
-function renderCargas(data){
-  cargasData=data;
-  const container=document.getElementById('cargasContainer');
-  container.innerHTML='';
-  
-  data.forEach((carga,index)=>{
-    const card=document.createElement('div');
-    card.className='carga-card';
-    
-    card.innerHTML=`
-      <h2>
-        ${carga.title}
-        <select class="status-select">
-          <option value="pendente">Pendente</option>
-          <option value="carregando">Carregando</option>
-          <option value="pronto">Pronto</option>
-        </select>
-        <div class="menu">⋮
-          <div class="menu-content">
-            <div class="gerenciar">Gerenciar</div>
-            <div class="excluir">Excluir</div>
-          </div>
-        </div>
-      </h2>
-      <div class="carga-itens"></div>
-      <button class="add-item-btn">+</button>
-    `;
-
-    const sel = card.querySelector('.status-select');
-    sel.value = carga.status;
-    sel.onchange = ()=>socket.emit('updateCargaStatus',{id:carga.id,status:sel.value});
-
-    // Gerenciar / Excluir carga
-    card.querySelector('.gerenciar').onclick = ()=>{
-      const itensDiv = card.querySelector('.carga-itens');
-      itensDiv.querySelectorAll('.carga-item').forEach(it=>{
-        const newName = prompt('Editar nome do item', it.querySelector('.nome-item').innerText);
-        if(newName) socket.emit('updateItem',{cargaId:carga.id,itemId:it.dataset.id,name:newName});
-      });
-    };
-    card.querySelector('.excluir').onclick = ()=>socket.emit('deleteCarga',carga.id);
-
-    // Adicionar item
-    const addBtn = card.querySelector('.add-item-btn');
-    addBtn.onclick = ()=>{
-      const nome = prompt('Nome do item:');
-      if(nome && nome.trim()!==''){
-        socket.emit('addItem',{cargaId:carga.id,itemName:nome});
-      }
-    };
-
-    // Render itens
-    const itensDiv = card.querySelector('.carga-itens');
-    carga.itens.forEach(it=>{
-      const div=document.createElement('div');
-      div.className='carga-item';
-      div.dataset.id=it.id;
-      div.innerHTML=`
-        <span class="nome-item">${it.name}</span>
-        <select>
-          <option value="aguardando">Aguardando</option>
-          <option value="faturado">Faturado</option>
-        </select>
-      `;
-      const selItem=div.querySelector('select');
-      selItem.value=it.status;
-      selItem.onchange=()=>socket.emit('updateItem',{cargaId:carga.id,itemId:it.id,status:selItem.value});
-      itensDiv.appendChild(div);
-    });
-
-    container.appendChild(card);
-  });
-}
-
-// Socket.io
-socket.on('updateCargas', data => renderCargas(data));
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
