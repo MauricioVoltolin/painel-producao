@@ -55,12 +55,18 @@ function renderProducao(maquinas){
   div.innerHTML = '';
   for(const m in maquinas){
     filtro.innerHTML += `<option>${m}</option>`;
+    if(filtro.value && filtro.value!==m) continue;
     const box = document.createElement('div');
     box.className='maquina';
     let html = `<strong>${m}</strong>`;
     maquinas[m].forEach((i,idx)=>{
       html+=`<div class="item-producao">
         <span>${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}</span>
+        <div class="item-valores">
+          <span>P:${i.status}</span>
+          <span>V:${i.venda}</span>
+          <span>E:${i.estoque}</span>
+        </div>
         <select onchange="atualizaProducaoItem('${m}', ${idx}, this)">
           <option ${i.status==='Em Branco'?'selected':''}>Em Branco</option>
           <option ${i.status==='Produção'?'selected':''}>Produção</option>
@@ -120,21 +126,19 @@ function renderCargas(c){
     cardDiv.className='card';
     cardDiv.innerHTML = `
       <div class="card-header">
-        <div class="card-header-left">
-          <strong>${card.titulo}</strong>
-        </div>
+        <div class="card-header-left"><strong>${card.titulo}</strong></div>
         <div class="card-header-right">
+          <select class="status-select ${card.status}">
+            <option value="pendente" ${card.status==='pendente'?'selected':''}>Pendente</option>
+            <option value="carregando" ${card.status==='carregando'?'selected':''}>Carregando</option>
+            <option value="pronto" ${card.status==='pronto'?'selected':''}>Pronto</option>
+          </select>
           <div class="menu">☰
             <div class="dropdown">
               <button onclick="editarCard(${idx})">Editar</button>
               <button onclick="excluirCard(${idx})">Excluir</button>
             </div>
           </div>
-          <select class="status-select ${card.status}">
-            <option value="pendente" ${card.status==='pendente'?'selected':''}>Pendente</option>
-            <option value="carregando" ${card.status==='carregando'?'selected':''}>Carregando</option>
-            <option value="pronto" ${card.status==='pronto'?'selected':''}>Pronto</option>
-          </select>
         </div>
       </div>
       <div class="card-itens"></div>
@@ -164,22 +168,23 @@ function renderItens(card,itensDiv, cardIdx){
     const div = document.createElement('div');
     div.className='item';
     div.innerHTML = `
-      <span>${i}</span>
-      <select onchange="atualizaItem(${cardIdx},${idx},this)">
-        <option ${i.status==='Aguardando'?'selected':''}>Aguardando</option>
-        <option ${i.status==='Faturado'?'selected':''}>Faturado</option>
-      </select>
+      <span>${i.nome}</span>
       <div class="item-icons">
         <span onclick="renomearItem(${cardIdx},${idx})">✏️</span>
         <span onclick="excluirItem(${cardIdx},${idx})">🗑️</span>
       </div>
+      <select onchange="atualizaItem(${cardIdx},${idx},this)">
+        <option ${i.status==='Aguardando'?'selected':''}>Aguardando</option>
+        <option ${i.status==='Faturado'?'selected':''}>Faturado</option>
+      </select>
     `;
     itensDiv.appendChild(div);
   });
 }
 
 function atualizaItem(cardIdx,itIdx,sel){
-  cargas[cardIdx].itens[itIdx].status = sel.value;
+  card = cargas[cardIdx];
+  card.itens[itIdx].status = sel.value;
   socket.emit('editarCarga', cargas);
 }
 
