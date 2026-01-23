@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel de Produção</title>
-<script src="lib/xlsx.full.min.js"></script>
-<script src="/socket.io/socket.io.js"></script>
+<title>Painel Produção</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,31 +14,28 @@
   <button onclick="openTab(2)">TV</button>
 </div>
 
-<!-- ABA PRODUÇÃO -->
-<div class="tab active" id="tab-producao">
-  <div class="filtro-container">
-    <select id="filtroMaquina" class="filtro" onchange="renderProducao(producaoData)">
-      <option value="">Todas</option>
-    </select>
+<div class="tab active" id="producao-tab">
+  <div class="filtro-centralizado">
+    <label>Filtrar Máquina:</label>
+    <select id="filtroMaquina" onchange="renderProducao(producaoData)"></select>
   </div>
+  <input type="file" id="xls">
   <div id="producao"></div>
-  <div class="producao-buttons">
-    <input type="file" id="xls">
-    <button onclick="exportAlteracoes()">Exportar Alterações</button>
-  </div>
+  <button onclick="exportAlteracoes()">Exportar Alterações</button>
 </div>
 
-<!-- ABA CARGAS -->
-<div class="tab" id="tab-cargas">
-  <button onclick="novaCarga()">+ Nova Carga</button>
-  <div class="grid" id="cargas"></div>
+<div class="tab" id="cargas-tab">
+  <button onclick="novaCarga()">Nova Carga</button>
+  <div id="cargas"></div>
 </div>
 
-<!-- ABA TV -->
-<div class="tab" id="tab-tv">
+<div class="tab" id="tv-tab">
+  <h2>Resumo Geral</h2>
   <div id="tv"></div>
 </div>
 
+<script src="/lib/socket.io.js"></script>
+<script src="/lib/xlsx.full.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
