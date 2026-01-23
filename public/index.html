@@ -37,9 +37,7 @@ section { padding:10px; }
 .carga-itens { margin-top:5px; display:flex; flex-direction:column; gap:5px; }
 .carga-item { display:flex; justify-content:space-between; align-items:center; }
 button.add-item { border:none; background:#4caf50; color:#fff; border-radius:50%; width:35px; height:35px; cursor:pointer; font-size:20px; display:flex; justify-content:center; align-items:center; margin:10px auto 0 auto; }
-
-/* Upload */
-#upload-section { text-align:center; margin-top:20px; }
+.carga-menu { cursor:pointer; font-weight:bold; }
 
 /* Mobile */
 @media(max-width:600px){
@@ -106,7 +104,7 @@ function renderMachines(data){
     grouped[maquina].push({...item,index:i});
   });
 
-  // atualizar filtro
+  // atualizar filtro local
   selectMaquina.innerHTML='<option value="">Todas</option>';
   Object.keys(grouped).forEach(m=>{
     selectMaquina.innerHTML+=`<option value="${m}">${m}</option>`;
@@ -198,11 +196,14 @@ document.querySelectorAll('.tab').forEach(tab=>{
 // ===== CARGAS =====
 function renderCargas(data){
   cargasContainer.innerHTML='';
-  data.forEach((cargaIndex)=>{
+  data.forEach((cargaIndex,cargaNum)=>{
     const card = document.createElement('div');
     card.className='carga-card';
 
+    // Título + menu
     const h2 = document.createElement('h2');
+    h2.textContent=cargaIndex.titulo;
+
     const statusSelect = document.createElement('select');
     ['Pendente','Carregando','Pronto'].forEach(s=>{
       const opt=document.createElement('option');
@@ -211,21 +212,26 @@ function renderCargas(data){
       if(s===cargaIndex.status) opt.selected=true;
       statusSelect.appendChild(opt);
     });
-    statusSelect.addEventListener('change',()=>socket.emit('updateCargaItem',{cargaIndex:data.indexOf(cargaIndex),itemIndex:null,status:statusSelect.value}));
-    statusSelect.style.marginLeft='10px';
-    card.appendChild(h2);
-    h2.textContent=cargaIndex.titulo;
-    h2.appendChild(statusSelect);
+    statusSelect.addEventListener('change',()=>socket.emit('updateCargaItem',{cargaIndex:cargaNum,itemIndex:null,status:statusSelect.value}));
 
+    const menu = document.createElement('span');
+    menu.className='carga-menu';
+    menu.textContent='⋮';
+    menu.onclick=()=>socket.emit('removeCarga',cargaNum);
+
+    h2.appendChild(statusSelect);
+    h2.appendChild(menu);
+    card.appendChild(h2);
+
+    // Itens
     const itensDiv = document.createElement('div');
     itensDiv.className='carga-itens';
-
-    cargaIndex.itens.forEach((itemIndex,i)=>{
+    cargaIndex.itens.forEach((item,i)=>{
       const row = document.createElement('div');
       row.className='carga-item';
 
       const info = document.createElement('div');
-      info.textContent=itemIndex.nome;
+      info.textContent=item.nome;
       row.appendChild(info);
 
       const select = document.createElement('select');
@@ -233,16 +239,30 @@ function renderCargas(data){
         const opt=document.createElement('option');
         opt.value=s;
         opt.textContent=s;
-        if(s===itemIndex.status) opt.selected=true;
+        if(s===item.status) opt.selected=true;
         select.appendChild(opt);
       });
-      select.addEventListener('change',()=>socket.emit('updateCargaItem',{cargaIndex:data.indexOf(cargaIndex),itemIndex:i,status:select.value}));
+      select.addEventListener('change',()=>socket.emit('updateCargaItem',{cargaIndex:cargaNum,itemIndex:i,status:select.value}));
+
       row.appendChild(select);
 
+      // Long press para excluir
+      let pressTimer;
+      row.addEventListener('mousedown',()=>pressTimer=setTimeout(()=>socket.emit('removeItemCarga',{cargaIndex:cargaNum,itemIndex:i}),1000));
+      row.addEventListener('mouseup',()=>clearTimeout(pressTimer));
+      row.addEventListener('mouseleave',()=>clearTimeout(pressTimer));
       itensDiv.appendChild(row);
     });
 
     card.appendChild(itensDiv);
+
+    // Botão + dentro do card
+    const addBtn = document.createElement('button');
+    addBtn.className='add-item';
+    addBtn.textContent='+';
+    addBtn.onclick=()=>socket.emit('addItemCarga',cargaNum);
+    card.appendChild(addBtn);
+
     cargasContainer.appendChild(card);
   });
 }
@@ -257,7 +277,6 @@ socket.on('update', data=>{
   currentData = data;
   renderMachines(currentData);
 });
-
 socket.on('updateCargas', data=>{
   cargasData = data;
   renderCargas(cargasData);
