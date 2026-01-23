@@ -3,50 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel de Produção</title>
+<title>Painel Produção</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<header>
+  <h1>Painel de Produção</h1>
+</header>
 
-<div class="container">
+<main>
+  <section id="upload-section">
+    <h2>Upload XLS</h2>
+    <input type="file" id="xlsFile">
+    <button onclick="uploadXLS()">Enviar</button>
+  </section>
 
-  <!-- Abas -->
-  <div class="tabs">
-    <button class="tablink" onclick="openTab('producao', this)" id="defaultOpen">Produção</button>
-    <button class="tablink" onclick="openTab('cargas', this)">Cargas</button>
-    <button class="tablink" onclick="openTab('tv', this)">TV</button>
-  </div>
+  <section id="producao-section">
+    <h2>Produção</h2>
+    <table id="producao-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Máquina</th>
+          <th>Vendida</th>
+          <th>Estoque</th>
+          <th>Produzir</th>
+          <th>Prioridade</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+</main>
 
-  <!-- ABA PRODUÇÃO -->
-  <div id="producao" class="tabcontent">
-    <div class="filtro-maquina">
-      <select id="filtroMaquina">
-        <option value="">Todas as máquinas</option>
-      </select>
-    </div>
-    <div id="producaoCards"></div>
-    <div class="botoes-finais">
-      <input type="file" id="uploadXLS">
-      <button id="exportXLS">Exportar Alterações</button>
-    </div>
-  </div>
-
-  <!-- ABA CARGAS -->
-  <div id="cargas" class="tabcontent">
-    <button id="novaCarga">Nova Carga</button>
-    <div id="cargasCards" class="cardsContainer"></div>
-  </div>
-
-  <!-- ABA TV -->
-  <div id="tv" class="tabcontent">
-    <h2>Resumo Geral</h2>
-    <div id="graficos"></div>
-  </div>
-
-</div>
-
-<script src="/socket.io/socket.io.js"></script>
-<script src="lib/xlsx.full.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
