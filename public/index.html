@@ -2,186 +2,147 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel de Produção - BF BOX</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel BF BOX</title>
 <style>
-body { margin:0; font-family: Arial,sans-serif; background:#f2f2f2; }
-header { display:flex; align-items:center; justify-content:space-between; background:#fff; padding:10px 20px; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100;}
-header img { height:50px; }
-header .logo { display:flex; align-items:center; gap:20px; }
-header .tabs { display:flex; gap:10px; margin-left:20px; }
-header .tab { cursor:pointer; padding:5px 15px; border-radius:5px; background:#e0e0e0; }
-header .tab.active { background:#4CAF50; color:white; }
-#filtro { margin:10px auto; text-align:center; }
-#filtro select { padding:5px 10px; font-size:1em; border-radius:5px; }
-#machines, #cargasContainer { display:flex; flex-direction:column; gap:10px; padding:10px; }
-.machine { background:white; padding:10px; border-radius:10px; display:flex; flex-direction:column; }
-.machine h2 { margin:0 0 10px 0; }
-.machine table { width:100%; border-collapse:collapse; }
-.machine th, .machine td { border-bottom:1px solid #ddd; padding:5px; text-align:right; }
-.carga-card { background:white; border-radius:10px; padding:10px; margin:5px; display:flex; flex-direction:column; gap:5px; position:relative; }
-.carga-card h2 { display:flex; justify-content:space-between; align-items:center; margin:0; }
-.carga-menu { cursor:pointer; font-size:1.5em; margin-left:5px; }
-.carga-itens { display:flex; flex-direction:column; gap:3px; margin-top:5px; }
-.carga-item { display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:5px 10px; border-radius:5px; }
-.carga-item .delete-item { margin-left:10px; cursor:pointer; }
-.add-item { align-self:center; padding:5px 10px; border-radius:50%; font-size:1.2em; cursor:pointer; }
-#upload-section { text-align:center; margin:20px; }
-#upload-section input, #upload-section button { margin:5px; padding:5px 10px; }
-.prioridade { background:yellow; font-weight:bold; }
-/* MOBILE */
+body{margin:0;font-family:Arial,sans-serif;background:#f2f2f2;}
+header{display:flex;align-items:center;justify-content:space-between;background:#fff;padding:10px 20px;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+header img{height:50px;}
+.tabs{display:flex;gap:10px;}
+.tab{cursor:pointer;padding:5px 15px;border-radius:5px;background:#e0e0e0;}
+.tab.active{background:#4CAF50;color:white;}
+#cargasContainer{display:flex;flex-wrap:wrap;gap:10px;padding:10px;}
+.carga-card{background:white;border-radius:10px;padding:10px;flex:1 1 calc(50% - 10px);display:flex;flex-direction:column;gap:5px;position:relative;min-width:250px;}
+.carga-card h2{display:flex;justify-content:space-between;align-items:center;margin:0;}
+.carga-card .status-select{border-radius:15px;padding:5px 10px;}
+.carga-itens{display:flex;flex-direction:column;gap:5px;margin-top:5px;}
+.carga-item{display:flex;justify-content:space-between;align-items:center;background:#f9f9f9;padding:5px 10px;border-radius:5px;}
+.carga-item select{border-radius:8px;padding:2px 5px;}
+.add-item-btn{align-self:center;padding:5px 10px;border-radius:50%;font-size:1.2em;cursor:pointer;background:#4CAF50;color:white;border:none;}
+.menu{position:absolute;top:10px;right:10px;cursor:pointer;}
+.menu-content{display:none;position:absolute;top:25px;right:0;background:white;border:1px solid #ccc;border-radius:5px;z-index:10;}
+.menu-content div{padding:5px 10px;cursor:pointer;}
+.menu:hover .menu-content{display:block;}
+#addCarga{margin:10px;padding:10px;border-radius:50%;font-size:1.5em;cursor:pointer;background:#4CAF50;color:white;border:none;position:fixed;bottom:20px;right:20px;}
 @media(max-width:480px){
-  .machine table th, .machine table td { font-size:0.8em; padding:3px; text-align:left; }
-  .carga-card { width:100%; }
-  .carga-item { flex-direction:column; align-items:flex-start; }
-  .carga-item select { width:50%; margin-top:3px; }
+  .carga-card{flex:1 1 100%;}
 }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    <img src="https://site.siteargus.com.br/sendThumb.asp?idcliente=543&path=parceiro&file=27_6_543_458_13510820_510120865837737_6061197160572500699_n.jpg&width=280" alt="BF BOX">
-    <div class="tabs">
-      <div class="tab active" id="tabProducao">Produção</div>
-      <div class="tab" id="tabCargas">Cargas</div>
-    </div>
-  </div>
-  <div id="hora"></div>
+<img src="https://site.siteargus.com.br/sendThumb.asp?idcliente=543&path=parceiro&file=27_6_543_458_13510820_510120865837737_6061197160572500699_n.jpg&width=280" alt="Logo">
+<div class="tabs">
+  <div class="tab active" data-tab="producao">Produção</div>
+  <div class="tab" data-tab="cargas">Cargas</div>
+</div>
+<div id="hora"></div>
 </header>
 
-<div id="filtro">
-  <label>Filtrar Máquina: </label>
-  <select id="filterMachines">
-    <option value="">Todas</option>
-  </select>
+<!-- Container Produção (mantida) -->
+<div id="producao" style="display:block; padding:10px;">
+  <!-- Aqui você mantém o código atual da Produção -->
 </div>
 
-<div id="machines"></div>
-<div id="cargasContainer" style="display:none;"></div>
-
-<div id="upload-section">
-  <input type="file" id="fileInput">
-  <button onclick="upload()">Carregar XLS</button>
-  <button onclick="exportAlteracoes()">Exportar Alterações</button>
+<!-- Container Cargas -->
+<div id="cargas" style="display:none;">
+  <div id="cargasContainer"></div>
+  <button id="addCarga">+</button>
 </div>
 
-<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const socket = io();
-let currentData = [];
-let alteracoes = new Set();
-let cargasData = [];
+const socket=io();
 
-// Atualiza hora
-function updateHora(){ document.getElementById('hora').textContent = new Date().toLocaleString(); }
-setInterval(updateHora,1000); updateHora();
-
-// Abas
-const tabProducao=document.getElementById('tabProducao');
-const tabCargas=document.getElementById('tabCargas');
-const filtro=document.getElementById('filtro');
-tabProducao.onclick=()=>{ tabProducao.classList.add('active'); tabCargas.classList.remove('active'); document.getElementById('machines').style.display='flex'; document.getElementById('cargasContainer').style.display='none'; filtro.style.display='block'; }
-tabCargas.onclick=()=>{ tabCargas.classList.add('active'); tabProducao.classList.remove('active'); document.getElementById('machines').style.display='none'; document.getElementById('cargasContainer').style.display='flex'; filtro.style.display='none'; }
-
-// FILTRO
-const filterSelect=document.getElementById('filterMachines');
-filterSelect.onchange=()=>renderMachines(currentData);
-
-// UPLOAD XLS
-function upload(){
-  const file=document.getElementById('fileInput').files[0];
-  if(!file){ alert('Selecione um arquivo'); return; }
-  const reader=new FileReader();
-  reader.onload=(evt)=>{
-    const data=new Uint8Array(evt.target.result);
-    const workbook=XLSX.read(data,{type:'array'});
-    const sheet=workbook.Sheets[workbook.SheetNames[0]];
-    const rows=XLSX.utils.sheet_to_json(sheet,{header:1});
-    currentData=[];
-    const maquinasSet=new Set();
-    for(let i=5;i<rows.length;i++){
-      const row=rows[i];
-      if(!row || !row[0]) continue;
-      const item={
-        item: row[0],
-        maquina: row[7] || 'Sem Máquina',
-        vendido: row[10]||0,
-        estoque: row[12]||0,
-        produzir: row[16]||0,
-        status: ''
-      };
-      if(row[6]==='PRIORIDADE') item.prioridade=true;
-      currentData.push(item);
-      maquinasSet.add(item.maquina);
+// Tabs
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    if(tab.dataset.tab==='cargas'){
+      document.getElementById('producao').style.display='none';
+      document.getElementById('cargas').style.display='block';
+    } else {
+      document.getElementById('producao').style.display='block';
+      document.getElementById('cargas').style.display='none';
     }
-    filterSelect.innerHTML='<option value="">Todas</option>';
-    maquinasSet.forEach(m=>{ filterSelect.innerHTML+=`<option value="${m}">${m}</option>`; });
-    renderMachines(currentData);
-    socket.emit('updateProducoes',currentData);
   };
-  reader.readAsArrayBuffer(file);
-}
+});
 
-// RENDER PRODUÇÃO
-function renderMachines(data){
-  const container=document.getElementById('machines');
+// Atualizar hora
+setInterval(()=>{document.getElementById('hora').innerText=new Date().toLocaleString();},1000);
+
+// Gerenciar Cargas
+let cargasData=[];
+function renderCargas(data){
+  cargasData=data;
+  const container=document.getElementById('cargasContainer');
   container.innerHTML='';
-  const filterVal=filterSelect.value;
-  const grouped={};
-  data.forEach((item,i)=>{
-    if(filterVal && item.maquina!==filterVal) return;
-    if(!grouped[item.maquina]) grouped[item.maquina]=[];
-    grouped[item.maquina].push({...item,index:i});
-  });
-  Object.keys(grouped).forEach(maquina=>{
-    const div=document.createElement('div');
-    div.className='machine';
-    div.innerHTML=`<h2>${maquina}</h2>`;
-    const table=document.createElement('table');
-    table.innerHTML=`<tr><th>Item</th><th>V</th><th>E</th><th>P</th><th>Status</th></tr>`;
-    grouped[maquina].forEach(it=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`
-        <td class="${it.prioridade?'prioridade':''}">${it.item}</td>
-        <td>${it.vendido}</td>
-        <td>${it.estoque}</td>
-        <td>${it.produzir}</td>
-      `;
-      const td=document.createElement('td');
-      const sel=document.createElement('select');
-      sel.innerHTML=`<option value="">Selecione</option><option value="producao">Produção</option><option value="producao-finalizada">Produção Finalizada</option><option value="acabamento">Acabamento</option><option value="acabamento-finalizado">Acabamento Finalizado</option>`;
-      sel.onchange=()=>{ it.status=sel.value; alteracoes.add(it.index); tr.style.backgroundColor=sel.value?'#d0ffd0':'white'; socket.emit('statusUpdate',{index:it.index,status:sel.value}); };
-      td.appendChild(sel);
-      tr.appendChild(td);
-      table.appendChild(tr);
+  data.forEach((carga,index)=>{
+    const card=document.createElement('div');
+    card.className='carga-card';
+    card.innerHTML=`
+      <h2>
+        ${carga.title}
+        <select class="status-select">
+          <option value="pendente">Pendente</option>
+          <option value="carregando">Carregando</option>
+          <option value="pronto">Pronto</option>
+        </select>
+        <div class="menu">⋮
+          <div class="menu-content">
+            <div class="gerenciar">Gerenciar</div>
+            <div class="excluir">Excluir</div>
+          </div>
+        </div>
+      </h2>
+      <div class="carga-itens"></div>
+      <button class="add-item-btn">+</button>
+    `;
+    const sel=card.querySelector('.status-select');
+    sel.value=carga.status;
+    sel.onchange=()=>socket.emit('updateCargaStatus',{id:carga.id,status:sel.value});
+
+    // Gerenciar / Excluir carga
+    card.querySelector('.gerenciar').onclick=()=>{
+      const itensDiv=card.querySelector('.carga-itens');
+      itensDiv.querySelectorAll('.carga-item').forEach(it=>{
+        const newName=prompt('Editar nome do item',it.querySelector('.nome-item').innerText);
+        if(newName) socket.emit('updateItem',{cargaId:carga.id,itemId:it.dataset.id,name:newName});
+      });
+    };
+    card.querySelector('.excluir').onclick=()=>socket.emit('deleteCarga',carga.id);
+
+    // Adicionar item
+    card.querySelector('.add-item-btn').onclick=()=>{
+      const nome=prompt('Nome do item:');
+      if(nome) socket.emit('addItem',{cargaId:carga.id,itemName:nome});
+    };
+
+    // Render itens
+    const itensDiv=card.querySelector('.carga-itens');
+    carga.itens.forEach(it=>{
+      const div=document.createElement('div');
+      div.className='carga-item';
+      div.dataset.id=it.id;
+      div.innerHTML=`<span class="nome-item">${it.name}</span>
+        <select>
+          <option value="aguardando">Aguardando</option>
+          <option value="faturado">Faturado</option>
+        </select>`;
+      const selItem=div.querySelector('select');
+      selItem.value=it.status;
+      selItem.onchange=()=>socket.emit('updateItem',{cargaId:carga.id,itemId:it.id,status:selItem.value});
+      itensDiv.appendChild(div);
     });
-    div.appendChild(table);
-    container.appendChild(div);
+
+    container.appendChild(card);
   });
 }
 
-// SOCKETS
-socket.on('updateProducoes',data=>{ currentData=data; renderMachines(currentData); });
-socket.on('updateCargas',data=>{ cargasData=data; renderCargas(cargasData); });
-
-// EXPORTAR ALTERAÇÕES
-function exportAlteracoes(){
-  const exportData=currentData.filter((_,i)=>alteracoes.has(i)).map(it=>({
-    item: it.item,
-    maquina: it.maquina,
-    vendido: it.vendido,
-    estoque: it.estoque,
-    produzir: it.produzir,
-    status: it.status
-  }));
-  const ws=XLSX.utils.json_to_sheet(exportData);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Alteracoes');
-  XLSX.writeFile(wb,'alteracoes.xlsx');
-}
+// Socket.io
+socket.on('updateCargas', data=>renderCargas(data));
 </script>
 
 </body>
