@@ -143,15 +143,17 @@ function renderCargas(c){
 
     // Eventos do select
     const sel = cardDiv.querySelector('select');
-    sel.addEventListener('change', e=>{
+    ['click','change','touchstart'].forEach(ev=> sel.addEventListener(ev,e=>{
       card.status = sel.value;
       socket.emit('editarCarga', cargas);
-    });
+    }));
 
     // dropdown
     const menu = cardDiv.querySelector('.menu');
     const drop = menu.querySelector('.dropdown');
-    menu.onclick = e=>{ drop.style.display = drop.style.display==='block'?'none':'block'; };
+    ['click','touchstart'].forEach(ev=>{
+      menu.addEventListener(ev, e=>{ drop.style.display = drop.style.display==='block'?'none':'block'; });
+    });
 
     renderItens(card,itensDiv=cardDiv.querySelector('.card-itens'), idx);
   });
