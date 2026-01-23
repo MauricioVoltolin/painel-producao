@@ -103,6 +103,13 @@ function renderCargas(data){
     carga.itens.forEach(item=>{
       addItemRender(card.querySelector('.itens'), item);
     });
+
+    // Mostrar dropdown do menu ao clicar
+    const menu = card.querySelector('.menu');
+    menu.onclick = ()=>{
+      const drop = menu.querySelector('.dropdown');
+      drop.style.display = drop.style.display==='block'?'none':'block';
+    };
   });
 }
 
