@@ -2,285 +2,219 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel BF Box - Produção & Cargas</title>
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<title>Painel de Produção - BF BOX</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { margin:0; font-family:sans-serif; background:#f5f5f5; }
-header { display:flex; justify-content:space-between; align-items:center; padding:10px; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,0.1); flex-wrap:wrap; }
-header img { height:50px; }
-.header-center { display:flex; flex-direction:column; align-items:center; flex:1; }
-.tabs { display:flex; margin-top:5px; }
-.tab { margin:0 5px; padding:5px 10px; cursor:pointer; border-radius:5px; background:#ddd; font-size:0.9em; }
-.tab.active { background:#bbb; font-weight:bold; }
-#hora { font-weight:bold; }
-
-/* FILTRO PRODUÇÃO */
-#filtro-maquinas { text-align:center; margin:10px; display:block; }
-#filtro-maquinas select { padding:5px 10px; font-size:1em; }
-
-/* Produção */
-section { padding:10px; }
-.machine-card { background:#fff; margin-bottom:10px; padding:10px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); display:flex; flex-direction:column; }
-.machine-card h2 { margin:0 0 10px 0; }
-.item-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #eee; align-items:center; }
-.item-row.prioridade { background:#fff59d; } /* Amarelo para PRIORIDADE */
-.item-info { flex:2; }
-.quantidades { text-align:right; flex:1; font-size:0.9em; color:#555; }
-.status-select { flex:1; }
-
-/* Cargas */
-.cargas-container { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
-.carga-card { background:#fff; flex:1 1 calc(50% - 10px); margin-bottom:10px; padding:10px; border-radius:12px; box-shadow:0 2px 4px rgba(0,0,0,0.1); position:relative; display:flex; flex-direction:column; }
-.carga-card h2 { margin:0 0 5px 0; display:flex; align-items:center; justify-content:space-between; }
-.carga-status { background:#eee; padding:3px 8px; border-radius:12px; font-size:0.8em; }
-.carga-itens { margin-top:5px; display:flex; flex-direction:column; gap:5px; }
-.carga-item { display:flex; justify-content:space-between; align-items:center; }
-button.add-item { border:none; background:#4caf50; color:#fff; border-radius:50%; width:35px; height:35px; cursor:pointer; font-size:20px; display:flex; justify-content:center; align-items:center; margin:10px auto 0 auto; }
-.carga-menu { cursor:pointer; font-weight:bold; }
-
-/* Mobile */
-@media(max-width:600px){
-  .item-row { flex-direction:column; align-items:flex-start; }
-  .quantidades { text-align:left; width:100%; order:1; }
-  .status-select { width:50%; margin-top:5px; order:2; }
-  .item-info { order:0; width:100%; margin-bottom:3px; }
-  #filtro-maquinas { margin:5px 0; }
-  .tabs { justify-content:center; width:100%; margin-top:5px; }
-  .carga-card { flex:1 1 100%; }
-}
+  body { margin:0; font-family: Arial,sans-serif; background:#f2f2f2; }
+  header { display:flex; align-items:center; justify-content:space-between; background:#fff; padding:10px 20px; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100;}
+  header img { height:50px; }
+  header .logo { display:flex; align-items:center; gap:20px; }
+  header .tabs { display:flex; gap:10px; }
+  header .tab { cursor:pointer; padding:5px 15px; border-radius:5px; background:#e0e0e0; }
+  header .tab.active { background:#4CAF50; color:white; }
+  #filtro { margin:10px auto; text-align:center; }
+  #filtro select { padding:5px 10px; font-size:1em; border-radius:5px; }
+  #machines, #cargasContainer { display:flex; flex-wrap:wrap; gap:10px; padding:10px; justify-content:flex-start; }
+  .machine { background:white; padding:10px; border-radius:10px; flex:1 1 300px; display:flex; flex-direction:column; }
+  .machine h2 { margin:0 0 10px 0; }
+  .machine table { width:100%; border-collapse:collapse; }
+  .machine th, .machine td { border-bottom:1px solid #ddd; padding:5px; text-align:right; }
+  .carga-card { background:white; border-radius:10px; padding:10px; margin:5px; width:calc(50% - 10px); box-sizing:border-box; display:flex; flex-direction:column; gap:5px; position:relative; }
+  .carga-card h2 { display:flex; justify-content:space-between; align-items:center; margin:0; }
+  .carga-menu { cursor:pointer; font-size:1.5em; margin-left:5px; }
+  .carga-itens { display:flex; flex-direction:column; gap:3px; margin-top:5px; }
+  .carga-item { display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:5px 10px; border-radius:5px; }
+  .carga-item .delete-item { margin-left:10px; cursor:pointer; }
+  .add-item { align-self:center; padding:5px 10px; border-radius:50%; font-size:1.2em; cursor:pointer; }
+  #upload-section { text-align:center; margin:20px; }
+  #upload-section input, #upload-section button { margin:5px; padding:5px 10px; }
+  .prioridade { background:yellow; font-weight:bold; }
+  /* MOBILE */
+  @media(max-width:480px){
+    .machine table th, .machine table td { font-size:0.8em; padding:3px; }
+    .carga-card { width:100%; }
+    .carga-item { flex-direction:column; align-items:flex-start; }
+    .carga-item select { width:50%; }
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <img src="https://site.siteargus.com.br/sendThumb.asp?idcliente=543&path=parceiro&file=27_6_543_458_13510820_510120865837737_6061197160572500699_n.jpg&width=280" alt="Logo BF Box">
-  <div class="header-center">
+  <div class="logo">
+    <img src="https://site.siteargus.com.br/sendThumb.asp?idcliente=543&path=parceiro&file=27_6_543_458_13510820_510120865837737_6061197160572500699_n.jpg&width=280" alt="BF BOX">
     <div class="tabs">
-      <div class="tab active" data-tab="producao">Produção</div>
-      <div class="tab" data-tab="cargas">Cargas</div>
+      <div class="tab active" id="tabProducao">Produção</div>
+      <div class="tab" id="tabCargas">Cargas</div>
     </div>
   </div>
   <div id="hora"></div>
 </header>
 
-<div id="filtro-maquinas">
-  <label>Filtrar por máquina: </label>
-  <select id="selectMaquina">
+<div id="filtro">
+  <label>Filtrar Máquina: </label>
+  <select id="filterMachines">
     <option value="">Todas</option>
   </select>
 </div>
 
-<section id="producao-tab">
-  <div id="machines"></div>
-</section>
-
-<section id="cargas-tab" style="display:none;">
-  <div class="cargas-container" id="cargas-container"></div>
-  <button class="add-item" onclick="addCarga()">+</button>
-</section>
+<div id="machines"></div>
+<div id="cargasContainer" style="display:none;"></div>
 
 <div id="upload-section">
-  <input type="file" id="file">
+  <input type="file" id="fileInput">
   <button onclick="upload()">Carregar XLS</button>
+  <button onclick="exportAlteracoes()">Exportar Alterações</button>
 </div>
 
+<!-- SheetJS -->
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<!-- Socket.io -->
+<script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
-const machinesDiv = document.getElementById('machines');
-const selectMaquina = document.getElementById('selectMaquina');
-const cargasContainer = document.getElementById('cargas-container');
-const filtroDiv = document.getElementById('filtro-maquinas');
 let currentData = [];
+let alteracoes = new Set();
 let cargasData = [];
 
-// ===== Produção =====
+// Atualiza hora
+function updateHora(){ document.getElementById('hora').textContent = new Date().toLocaleString(); }
+setInterval(updateHora,1000); updateHora();
+
+// Abas
+const tabProducao=document.getElementById('tabProducao');
+const tabCargas=document.getElementById('tabCargas');
+const filtro=document.getElementById('filtro');
+tabProducao.onclick=()=>{ tabProducao.classList.add('active'); tabCargas.classList.remove('active'); document.getElementById('machines').style.display='flex'; document.getElementById('cargasContainer').style.display='none'; filtro.style.display='block'; }
+tabCargas.onclick=()=>{ tabCargas.classList.add('active'); tabProducao.classList.remove('active'); document.getElementById('machines').style.display='none'; document.getElementById('cargasContainer').style.display='flex'; filtro.style.display='none'; }
+
+// FILTRO
+const filterSelect=document.getElementById('filterMachines');
+filterSelect.onchange=()=>renderMachines(currentData);
+
+// UPLOAD XLS
+function upload(){
+  const file=document.getElementById('fileInput').files[0];
+  if(!file){ alert('Selecione um arquivo'); return; }
+  const reader=new FileReader();
+  reader.onload=(evt)=>{
+    const data=new Uint8Array(evt.target.result);
+    const workbook=XLSX.read(data,{type:'array'});
+    const sheet=workbook.Sheets[workbook.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(sheet,{header:1});
+    currentData=[];
+    const maquinasSet=new Set();
+    for(let i=5;i<rows.length;i++){
+      const row=rows[i];
+      if(!row || !row[0]) continue;
+      const item={
+        item: row[0],
+        maquina: row[7] || 'Sem Máquina',
+        vendido: row[10]||0,
+        estoque: row[12]||0,
+        produzir: row[16]||0,
+        status: ''
+      };
+      if(row[6]==='PRIORIDADE') item.prioridade=true;
+      currentData.push(item);
+      maquinasSet.add(item.maquina);
+    }
+    // popula filtro
+    filterSelect.innerHTML='<option value="">Todas</option>';
+    maquinasSet.forEach(m=>{ filterSelect.innerHTML+=`<option value="${m}">${m}</option>`; });
+    renderMachines(currentData);
+    socket.emit('updateProducoes',currentData);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// RENDER PRODUÇÕES
 function renderMachines(data){
-  machinesDiv.innerHTML='';
+  const container=document.getElementById('machines');
+  container.innerHTML='';
+  const filterVal=filterSelect.value;
   const grouped={};
   data.forEach((item,i)=>{
-    const maquina = item.maquina || 'Sem Máquina';
-    if(!grouped[maquina]) grouped[maquina]=[];
-    grouped[maquina].push({...item,index:i});
+    if(filterVal && item.maquina!==filterVal) return;
+    if(!grouped[item.maquina]) grouped[item.maquina]=[];
+    grouped[item.maquina].push({...item,index:i});
   });
-
-  // atualizar filtro local
-  selectMaquina.innerHTML='<option value="">Todas</option>';
-  Object.keys(grouped).forEach(m=>{
-    selectMaquina.innerHTML+=`<option value="${m}">${m}</option>`;
-  });
-
-  const filter = selectMaquina.value;
-  for(const m in grouped){
-    if(filter && m!==filter) continue;
-    const card = document.createElement('div');
-    card.className='machine-card';
-    const title = document.createElement('h2');
-    title.textContent=m;
-    card.appendChild(title);
-
-    grouped[m].forEach(item=>{
-      const row = document.createElement('div');
-      row.className='item-row';
-      if(item.prioridade) row.classList.add('prioridade');
-
-      const info = document.createElement('div');
-      info.className='item-info';
-      info.textContent=item.item;
-      row.appendChild(info);
-
-      const quant = document.createElement('div');
-      quant.className='quantidades';
-      quant.textContent=`V:${item.vendido} E:${item.estoque} P:${item.produzir}`;
-      row.appendChild(quant);
-
-      const select = document.createElement('select');
-      select.className='status-select';
-      ['','Produção','Produção Finalizada','Acabamento','Acabamento Finalizado'].forEach(s=>{
-        const opt = document.createElement('option');
-        opt.value=s;
-        opt.textContent=s;
-        if(s===item.status) opt.selected=true;
-        select.appendChild(opt);
-      });
-      select.addEventListener('change',()=>updateStatus(item.index,select.value));
-      row.appendChild(select);
-
-      card.appendChild(row);
+  Object.keys(grouped).forEach(maquina=>{
+    const div=document.createElement('div');
+    div.className='machine';
+    div.innerHTML=`<h2>${maquina}</h2>`;
+    const table=document.createElement('table');
+    table.innerHTML=`<tr><th>Item</th><th>V</th><th>E</th><th>P</th><th>Status</th></tr>`;
+    grouped[maquina].forEach(it=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td class="${it.prioridade?'prioridade':''}">${it.item}</td>
+        <td>${it.vendido}</td>
+        <td>${it.estoque}</td>
+        <td>${it.produzir}</td>
+      `;
+      const td=document.createElement('td');
+      const sel=document.createElement('select');
+      sel.innerHTML=`<option value="">Selecione</option><option value="producao">Produção</option><option value="producao-finalizada">Produção Finalizada</option><option value="acabamento">Acabamento</option><option value="acabamento-finalizado">Acabamento Finalizado</option>`;
+      sel.onchange=()=>{ it.status=sel.value; alteracoes.add(it.index); tr.style.backgroundColor=sel.value?'#d0ffd0':'white'; socket.emit('statusUpdate',{index:it.index,status:sel.value}); };
+      td.appendChild(sel);
+      tr.appendChild(td);
+      table.appendChild(tr);
     });
-
-    machinesDiv.appendChild(card);
-  }
-}
-
-// ===== Status em tempo real =====
-function updateStatus(index,status){
-  socket.emit('statusUpdate',{index,status});
-}
-
-// ===== Filtro =====
-selectMaquina.addEventListener('change',()=>renderMachines(currentData));
-
-// ===== Upload XLS =====
-async function upload(){
-  const file = document.getElementById('file').files[0];
-  if(!file){ alert('Selecione um arquivo'); return; }
-  const form = new FormData();
-  form.append('file',file);
-  const res = await fetch('/upload',{method:'POST',body:form});
-  const json = await res.json();
-  if(json.ok) alert(`Arquivo carregado: ${json.total} itens`);
-  else alert('Erro no upload');
-}
-
-// ===== HORA =====
-function updateHora(){
-  const h=new Date();
-  document.getElementById('hora').textContent=h.toLocaleString();
-}
-setInterval(updateHora,1000);
-updateHora();
-
-// ===== Abas =====
-document.querySelectorAll('.tab').forEach(tab=>{
-  tab.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    tab.classList.add('active');
-    const isProducao = tab.dataset.tab==='producao';
-    document.getElementById('producao-tab').style.display=isProducao?'block':'none';
-    document.getElementById('cargas-tab').style.display=isProducao?'none':'block';
-    filtroDiv.style.display=isProducao?'block':'none';
+    div.appendChild(table);
+    container.appendChild(div);
   });
-});
+}
 
-// ===== CARGAS =====
+// SOCKETS - REAL TIME
+socket.on('updateProducoes',data=>{ currentData=data; renderMachines(currentData); });
+socket.on('updateCargas',data=>{ cargasData=data; renderCargas(cargasData); });
+
+// CARGAS
+const cargasContainer=document.getElementById('cargasContainer');
 function renderCargas(data){
   cargasContainer.innerHTML='';
   data.forEach((cargaIndex,cargaNum)=>{
-    const card = document.createElement('div');
+    const card=document.createElement('div');
     card.className='carga-card';
-
-    // Título + menu
-    const h2 = document.createElement('h2');
+    const h2=document.createElement('h2');
     h2.textContent=cargaIndex.titulo;
+    const statusSelect=document.createElement('select');
+    statusSelect.style.borderRadius='12px'; statusSelect.style.fontSize='1em';
+    ['Pendente','Carregando','Pronto'].forEach(s=>{ const opt=document.createElement('option'); opt.value=s; opt.textContent=s; if(s===cargaIndex.status) opt.selected=true; statusSelect.appendChild(opt); });
+    statusSelect.onchange=()=>socket.emit('updateCargaItem',{cargaIndex:cargaNum,itemIndex:null,status:statusSelect.value});
+    const menu=document.createElement('span'); menu.className='carga-menu'; menu.textContent='⋮'; menu.onclick=()=>{
+      const op=prompt('Digite 1 para Gerenciar, 2 para Excluir');
+      if(op==='2') socket.emit('removeCarga',cargaNum);
+      if(op==='1'){
+        const itens=card.querySelectorAll('.carga-item');
+        itens.forEach((row,i)=>{
+          if(!row.querySelector('.delete-item')){
+            const btn=document.createElement('span');
+            btn.innerHTML='🗑️'; btn.className='delete-item'; btn.style.marginLeft='10px'; btn.style.cursor='pointer';
+            btn.onclick=()=>socket.emit('removeItemCarga',{cargaIndex:cargaNum,itemIndex:i});
+            row.appendChild(btn);
+          }
+        });
+      }
+    };
+    h2.appendChild(statusSelect); h2.appendChild(menu); card.appendChild(h2);
 
-    const statusSelect = document.createElement('select');
-    ['Pendente','Carregando','Pronto'].forEach(s=>{
-      const opt=document.createElement('option');
-      opt.value=s;
-      opt.textContent=s;
-      if(s===cargaIndex.status) opt.selected=true;
-      statusSelect.appendChild(opt);
-    });
-    statusSelect.addEventListener('change',()=>socket.emit('updateCargaItem',{cargaIndex:cargaNum,itemIndex:null,status:statusSelect.value}));
-
-    const menu = document.createElement('span');
-    menu.className='carga-menu';
-    menu.textContent='⋮';
-    menu.onclick=()=>socket.emit('removeCarga',cargaNum);
-
-    h2.appendChild(statusSelect);
-    h2.appendChild(menu);
-    card.appendChild(h2);
-
-    // Itens
-    const itensDiv = document.createElement('div');
-    itensDiv.className='carga-itens';
+    const itensDiv=document.createElement('div'); itensDiv.className='carga-itens';
     cargaIndex.itens.forEach((item,i)=>{
-      const row = document.createElement('div');
-      row.className='carga-item';
-
-      const info = document.createElement('div');
-      info.textContent=item.nome;
-      row.appendChild(info);
-
-      const select = document.createElement('select');
-      ['Aguardando','Faturado'].forEach(s=>{
-        const opt=document.createElement('option');
-        opt.value=s;
-        opt.textContent=s;
-        if(s===item.status) opt.selected=true;
-        select.appendChild(opt);
-      });
-      select.addEventListener('change',()=>socket.emit('updateCargaItem',{cargaIndex:cargaNum,itemIndex:i,status:select.value}));
-
-      row.appendChild(select);
-
-      // Long press para excluir
-      let pressTimer;
-      row.addEventListener('mousedown',()=>pressTimer=setTimeout(()=>socket.emit('removeItemCarga',{cargaIndex:cargaNum,itemIndex:i}),1000));
-      row.addEventListener('mouseup',()=>clearTimeout(pressTimer));
-      row.addEventListener('mouseleave',()=>clearTimeout(pressTimer));
+      const row=document.createElement('div'); row.className='carga-item';
+      const info=document.createElement('div'); info.textContent=item.nome; row.appendChild(info);
+      const sel=document.createElement('select'); ['Aguardando','Faturado'].forEach(s=>{ const opt=document.createElement('option'); opt.value=s; opt.textContent=s; if(s===item.status) opt.selected=true; sel.appendChild(opt); });
+      sel.onchange=()=>socket.emit('updateCargaItem',{cargaIndex:cargaNum,itemIndex:i,status:sel.value});
+      row.appendChild(sel);
       itensDiv.appendChild(row);
     });
-
     card.appendChild(itensDiv);
-
-    // Botão + dentro do card
-    const addBtn = document.createElement('button');
-    addBtn.className='add-item';
-    addBtn.textContent='+';
-    addBtn.onclick=()=>socket.emit('addItemCarga',cargaNum);
+    const addBtn=document.createElement('button'); addBtn.className='add-item'; addBtn.textContent='+'; addBtn.onclick=()=>socket.emit('addItemCarga',cargaNum);
     card.appendChild(addBtn);
-
     cargasContainer.appendChild(card);
   });
 }
-
-// Adicionar nova carga
-function addCarga(){
-  socket.emit('addCarga');
-}
-
-// ===== SOCKET.IO =====
-socket.on('update', data=>{
-  currentData = data;
-  renderMachines(currentData);
-});
-socket.on('updateCargas', data=>{
-  cargasData = data;
-  renderCargas(cargasData);
-});
 </script>
 </body>
 </html>
