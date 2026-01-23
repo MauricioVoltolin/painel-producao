@@ -6,7 +6,7 @@
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 <style>
-body { font-family:sans-serif; margin:0; padding:0; background:#f5f5f5; }
+body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 header { display:flex; justify-content:space-between; align-items:center; padding:10px; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,0.1); flex-wrap:wrap; }
 header img { height:50px; }
 .header-center { display:flex; flex-direction:column; align-items:center; flex:1; }
@@ -14,7 +14,8 @@ header img { height:50px; }
 .tab { margin:0 5px; padding:5px 10px; cursor:pointer; border-radius:5px; background:#ddd; font-size:0.9em; }
 .tab.active { background:#bbb; font-weight:bold; }
 #hora { font-weight:bold; }
-#filtro-maquinas { text-align:center; margin:10px; }
+
+#filtro-maquinas { text-align:center; margin:10px; display:block; }
 #filtro-maquinas select { padding:5px 10px; font-size:1em; }
 
 /* Produção */
@@ -22,7 +23,7 @@ section { padding:10px; }
 .machine-card { background:#fff; margin-bottom:10px; padding:10px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); display:flex; flex-direction:column; }
 .machine-card h2 { margin:0 0 10px 0; }
 .item-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #eee; align-items:center; }
-.item-row.prioridade { background:#fff59d; }
+.item-row.prioridade { background:#fff59d; } /* Amarelo para PRIORIDADE */
 .item-info { flex:2; }
 .quantidades { text-align:right; flex:1; font-size:0.9em; color:#555; }
 .status-select { flex:1; }
@@ -75,6 +76,7 @@ button.add-item { border:none; background:#4caf50; color:#fff; border-radius:50%
 
 <section id="cargas-tab" style="display:none;">
   <div class="cargas-container" id="cargas-container"></div>
+  <button onclick="addCarga()">Adicionar Nova Carga</button>
 </section>
 
 <div id="upload-section">
@@ -87,59 +89,60 @@ const socket = io();
 const machinesDiv = document.getElementById('machines');
 const selectMaquina = document.getElementById('selectMaquina');
 const cargasContainer = document.getElementById('cargas-container');
+const filtroDiv = document.getElementById('filtro-maquinas');
 let currentData = [];
 let cargasData = [];
-let cargaCount = 1;
 
-// ===== PRODUÇÃO =====
+// ===== Produção =====
 function renderMachines(data){
-  machinesDiv.innerHTML = '';
-  const grouped = {};
-  data.forEach((item, i)=>{
+  machinesDiv.innerHTML='';
+  const grouped={};
+  data.forEach((item,i)=>{
     const maquina = item.maquina || 'Sem Máquina';
-    if(!grouped[maquina]) grouped[maquina] = [];
-    grouped[maquina].push({...item, index:i});
+    if(!grouped[maquina]) grouped[maquina]=[];
+    grouped[maquina].push({...item,index:i});
   });
 
-  selectMaquina.innerHTML = '<option value="">Todas</option>';
+  // atualizar filtro
+  selectMaquina.innerHTML='<option value="">Todas</option>';
   Object.keys(grouped).forEach(m=>{
-    selectMaquina.innerHTML += `<option value="${m}">${m}</option>`;
+    selectMaquina.innerHTML+=`<option value="${m}">${m}</option>`;
   });
 
   const filter = selectMaquina.value;
   for(const m in grouped){
     if(filter && m!==filter) continue;
     const card = document.createElement('div');
-    card.className = 'machine-card';
+    card.className='machine-card';
     const title = document.createElement('h2');
-    title.textContent = m;
+    title.textContent=m;
     card.appendChild(title);
 
     grouped[m].forEach(item=>{
       const row = document.createElement('div');
-      row.className = 'item-row';
+      row.className='item-row';
       if(item.prioridade) row.classList.add('prioridade');
 
       const info = document.createElement('div');
-      info.className = 'item-info';
-      info.textContent = item.item;
+      info.className='item-info';
+      info.textContent=item.item;
       row.appendChild(info);
 
       const quant = document.createElement('div');
-      quant.className = 'quantidades';
-      quant.textContent = `V:${item.vendido} E:${item.estoque} P:${item.produzir}`;
+      quant.className='quantidades';
+      quant.textContent=`V:${item.vendido} E:${item.estoque} P:${item.produzir}`;
       row.appendChild(quant);
 
       const select = document.createElement('select');
-      select.className = 'status-select';
+      select.className='status-select';
       ['','Produção','Produção Finalizada','Acabamento','Acabamento Finalizado'].forEach(s=>{
         const opt = document.createElement('option');
-        opt.value = s;
-        opt.textContent = s;
-        if(s===item.status) opt.selected = true;
+        opt.value=s;
+        opt.textContent=s;
+        if(s===item.status) opt.selected=true;
         select.appendChild(opt);
       });
-      select.addEventListener('change', ()=>updateStatus(item.index, select.value));
+      select.addEventListener('change',()=>updateStatus(item.index,select.value));
       row.appendChild(select);
 
       card.appendChild(row);
@@ -149,156 +152,111 @@ function renderMachines(data){
   }
 }
 
-function updateStatus(index, status){
-  socket.emit('statusUpdate', {index, status});
+// ===== Status em tempo real =====
+function updateStatus(index,status){
+  socket.emit('statusUpdate',{index,status});
 }
 
-// ===== UPLOAD XLS =====
+// ===== Filtro =====
+selectMaquina.addEventListener('change',()=>renderMachines(currentData));
+
+// ===== Upload XLS =====
 async function upload(){
   const file = document.getElementById('file').files[0];
   if(!file){ alert('Selecione um arquivo'); return; }
   const form = new FormData();
-  form.append('file', file);
-
+  form.append('file',file);
   const res = await fetch('/upload',{method:'POST',body:form});
   const json = await res.json();
   if(json.ok) alert(`Arquivo carregado: ${json.total} itens`);
   else alert('Erro no upload');
 }
 
-// ===== SOCKET.IO =====
-socket.on('update', data=>{
-  currentData = data;
-  renderMachines(currentData);
-  renderCargas(cargasData);
-});
-
 // ===== HORA =====
 function updateHora(){
-  const h = new Date();
-  document.getElementById('hora').textContent = h.toLocaleString();
+  const h=new Date();
+  document.getElementById('hora').textContent=h.toLocaleString();
 }
 setInterval(updateHora,1000);
 updateHora();
 
-// ===== ABAS =====
+// ===== Abas =====
 document.querySelectorAll('.tab').forEach(tab=>{
-  tab.addEventListener('click', ()=>{
+  tab.addEventListener('click',()=>{
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
     tab.classList.add('active');
-    document.getElementById('producao-tab').style.display = tab.dataset.tab==='producao'?'block':'none';
-    document.getElementById('cargas-tab').style.display = tab.dataset.tab==='cargas'?'block':'none';
+    const isProducao = tab.dataset.tab==='producao';
+    document.getElementById('producao-tab').style.display=isProducao?'block':'none';
+    document.getElementById('cargas-tab').style.display=isProducao?'none':'block';
+    filtroDiv.style.display=isProducao?'block':'none';
   });
 });
 
 // ===== CARGAS =====
-function createCargaCard(title){
-  const cardId = `carga-${cargaCount}`;
-  const card = document.createElement('div');
-  card.className = 'carga-card';
-  card.id = cardId;
-
-  const h = document.createElement('h2');
-  const statusBadge = document.createElement('span');
-  statusBadge.className = 'carga-status';
-  statusBadge.textContent = 'Pendente';
-  h.appendChild(statusBadge);
-  const titleText = document.createTextNode(title);
-  h.appendChild(titleText);
-  card.appendChild(h);
-
-  const itemsDiv = document.createElement('div');
-  itemsDiv.className = 'items-div';
-  card.appendChild(itemsDiv);
-
-  const addBtn = document.createElement('button');
-  addBtn.className = 'add-item';
-  addBtn.textContent = '+';
-  addBtn.addEventListener('click', ()=>{
-    const nome = prompt('Nome do item:');
-    if(!nome) return;
-    const itemId = `item-${Date.now()}`;
-    const row = document.createElement('div');
-    row.className = 'item-row';
-    row.id = itemId;
-
-    const info = document.createElement('div');
-    info.className = 'item-info';
-    info.textContent = nome;
-    row.appendChild(info);
-
-    const selectItemStatus = document.createElement('select');
-    ['Aguardando','Faturado'].forEach(s=>{
-      const opt = document.createElement('option');
-      opt.value = s;
-      opt.textContent = s;
-      selectItemStatus.appendChild(opt);
-    });
-    selectItemStatus.addEventListener('change', ()=>{
-      const item = cargasData.find(c=>c.id===cardId).items.find(i=>i.id===itemId);
-      if(item) item.status = selectItemStatus.value;
-      socket.emit('cargaUpdate', cargasData);
-    });
-    row.appendChild(selectItemStatus);
-
-    itemsDiv.appendChild(row);
-
-    const c = cargasData.find(c=>c.id===cardId);
-    if(c) c.items.push({id:itemId, nome, status:selectItemStatus.value});
-    socket.emit('cargaUpdate', cargasData);
-  });
-  card.appendChild(addBtn);
-
-  cargasContainer.appendChild(card);
-  cargasData.push({id:cardId, title, status:'Pendente', items:[]});
-  cargaCount++;
-}
-
-// CARGA 01 fixa
-createCargaCard('CARGA 01');
-
-function addCarga(){
-  const title = `CARGA ${String(cargaCount).padStart(2,'0')}`;
-  createCargaCard(title);
-}
-
 function renderCargas(data){
-  data.forEach(c=>{
-    const card = document.getElementById(c.id);
-    if(!card) return;
-    card.querySelector('.carga-status').textContent = c.status;
-    const itemsDiv = card.querySelector('.items-div');
-    itemsDiv.innerHTML = '';
-    c.items.forEach(i=>{
+  cargasContainer.innerHTML='';
+  data.forEach((cargaIndex)=>{
+    const card = document.createElement('div');
+    card.className='carga-card';
+
+    const h2 = document.createElement('h2');
+    const statusSpan = document.createElement('span');
+    statusSpan.className='carga-status';
+    statusSpan.textContent=cargaIndex.status;
+    h2.appendChild(statusSpan);
+    h2.append(` ${cargaIndex.titulo}`);
+    card.appendChild(h2);
+
+    cargaIndex.itens.forEach((itemIndex,i)=>{
       const row = document.createElement('div');
-      row.className = 'item-row';
-      row.id = i.id;
+      row.className='item-row';
 
       const info = document.createElement('div');
-      info.className = 'item-info';
-      info.textContent = i.nome;
+      info.className='item-info';
+      info.textContent=itemIndex.nome;
       row.appendChild(info);
 
-      const selectItemStatus = document.createElement('select');
+      const select = document.createElement('select');
+      select.className='status-select';
       ['Aguardando','Faturado'].forEach(s=>{
-        const opt = document.createElement('option');
-        opt.value = s;
-        opt.textContent = s;
-        if(s===i.status) opt.selected=true;
-        selectItemStatus.appendChild(opt);
+        const opt=document.createElement('option');
+        opt.value=s;
+        opt.textContent=s;
+        if(s===itemIndex.status) opt.selected=true;
+        select.appendChild(opt);
       });
-      selectItemStatus.addEventListener('change', ()=>{
-        const item = cargasData.find(cd=>cd.id===c.id).items.find(it=>it.id===i.id);
-        if(item) item.status = selectItemStatus.value;
-        socket.emit('cargaUpdate', cargasData);
-      });
-      row.appendChild(selectItemStatus);
-
-      itemsDiv.appendChild(row);
+      select.addEventListener('change',()=>socket.emit('updateCargaItem',{cargaIndex:cargasData.indexOf(cargaIndex),itemIndex:i,status:select.value}));
+      row.appendChild(select);
+      card.appendChild(row);
     });
+
+    const addBtn = document.createElement('button');
+    addBtn.className='add-item';
+    addBtn.textContent='+';
+    addBtn.addEventListener('click',()=>{
+      const nome = prompt('Nome do item:');
+      if(nome) socket.emit('addCargaItem',{cargaIndex:cargasData.indexOf(cargaIndex),nomeItem:nome});
+    });
+    card.appendChild(addBtn);
+
+    cargasContainer.appendChild(card);
   });
 }
 
+function addCarga(){
+  socket.emit('addCarga');
+}
+
+// ===== SOCKET.IO =====
+socket.on('update', data=>{
+  currentData = data;
+  renderMachines(currentData);
+});
+
+socket.on('updateCargas', data=>{
+  cargasData = data;
+  renderCargas(cargasData);
+});
 </script>
 </body>
 </html>

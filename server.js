@@ -1,77 +1,108 @@
+// server.js
 const express = require('express');
 const multer = require('multer');
-const XLSX = require('xlsx');
-const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 const http = require('http');
 const { Server } = require('socket.io');
 
 const app = express();
-app.use(cors());
-app.use(express.static('public')); // pasta onde estará index.html
-
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Multer em memória (não precisa de pasta física)
-const storage = multer.memoryStorage();
+app.use(express.static('public')); // pasta com index.html e scripts
+
+// armazenamento temporário do upload
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+});
 const upload = multer({ storage });
 
-let currentData = []; // armazena os dados carregados, compartilhado para todos os clients
+// Dados globais em memória (para todos os dispositivos)
+let producaoData = []; // itens da produção
+let cargasData = [];   // itens das cargas
 
-// Upload XLS
-app.post('/upload', upload.single('file'), (req, res) => {
+// Upload do XLS
+app.post('/upload', upload.single('file'), async (req, res) => {
+  if(!req.file) return res.json({ok:false});
+
   try {
-    const workbook = XLSX.read(req.file.buffer);
+    const XLSX = require('xlsx');
+    const workbook = XLSX.readFile(req.file.path);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
 
-    const items = [];
-    for (let i = 5; i < rows.length; i++) { // linha 6 em diante
+    producaoData = [];
+
+    for(let i=5; i<rows.length; i++){ // linha 6 em diante
       const row = rows[i];
-      if (!row) continue;
-      const itemNome = row[0];
-      if (!itemNome) continue;
-
-      items.push({
-        item: itemNome,
+      if(!row || !row[0]) continue;
+      producaoData.push({
+        item: row[0],
         maquina: row[7] || 'Sem Máquina',
-        vendido: row[10] ?? '',
-        estoque: row[12] ?? '',
-        produzir: row[16] ?? '',
-        prioridade: row[6] === 'PRIORIDADE' ? true : false,
-        status: '' // inicial vazio
+        vendido: row[10] || 0,
+        estoque: row[12] || 0,
+        produzir: row[16] || 0,
+        prioridade: row[6]==='PRIORIDADE' ? true : false,
+        status: ''
       });
     }
 
-    currentData = items;
+    // Emitir para todos os dispositivos conectados
+    io.emit('update', producaoData);
 
-    // atualiza todos os clients via socket
-    io.emit('update', currentData);
-
-    res.json({ ok: true, total: items.length });
-  } catch (err) {
+    res.json({ok:true, total: producaoData.length});
+  } catch(err){
     console.error(err);
-    res.status(500).json({ ok: false, error: err.message });
+    res.json({ok:false});
   }
 });
 
-// Atualização de status de um item
-app.post('/update', express.json(), (req, res) => {
-  const { index, status } = req.body;
-  if (currentData[index]) {
-    currentData[index].status = status;
-    io.emit('update', currentData);
-    res.json({ ok: true });
-  } else {
-    res.status(400).json({ ok: false });
-  }
-});
-
+// ===== SOCKET.IO =====
 io.on('connection', (socket) => {
-  console.log('Novo client conectado');
-  // envia dados atuais
-  socket.emit('update', currentData);
+  console.log('Novo dispositivo conectado');
+
+  // enviar dados atuais
+  socket.emit('update', producaoData);
+
+  // atualizar status de produção
+  socket.on('statusUpdate', ({index, status}) => {
+    if(producaoData[index]){
+      producaoData[index].status = status;
+      io.emit('update', producaoData);
+    }
+  });
+
+  // adicionar item em carga
+  socket.on('addCargaItem', ({cargaIndex, nomeItem}) => {
+    if(!cargasData[cargaIndex]) return;
+    cargasData[cargaIndex].itens.push({nome: nomeItem, status:'Aguardando'});
+    io.emit('updateCargas', cargasData);
+  });
+
+  // atualizar status de item de carga
+  socket.on('updateCargaItem', ({cargaIndex, itemIndex, status}) => {
+    if(cargasData[cargaIndex] && cargasData[cargaIndex].itens[itemIndex]){
+      cargasData[cargaIndex].itens[itemIndex].status = status;
+      io.emit('updateCargas', cargasData);
+    }
+  });
+
+  // adicionar nova carga
+  socket.on('addCarga', () => {
+    cargasData.push({
+      titulo: `Carga ${cargasData.length+1}`,
+      status: 'Pendente',
+      itens: []
+    });
+    io.emit('updateCargas', cargasData);
+  });
 });
 
+// criar pasta uploads se não existir
+if(!fs.existsSync('uploads')) fs.mkdirSync('uploads');
+
+// iniciar servidor
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+server.listen(PORT, ()=>console.log(`Servidor rodando na porta ${PORT}`));
