@@ -28,18 +28,20 @@ app.post('/upload', upload.single('file'), (req, res) => {
     for (let i = 5; i < rows.length; i++) {
       const row = rows[i];
       if (!row || !row[0]) continue;
+
       items.push({
         item: row[0],
         maquina: row[7] || "Sem Máquina",
         vendido: row[10] || 0,
         estoque: row[12] || 0,
         produzir: row[16] || 0,
-        status: 'producao'
+        status: '',
+        prioridade: row[6] && row[6].toString().toUpperCase().includes('PRIORIDADE') // coluna G
       });
     }
 
     dados = items;
-    io.emit('atualizarDados', dados);
+    io.emit('atualizarDados', dados); // atualiza todos clientes conectados
     res.json({ ok: true, total: dados.length });
   } catch (err) {
     console.error(err);
@@ -55,14 +57,14 @@ io.on('connection', socket => {
 
   socket.on('alterarStatus', ({maquina, idx, status}) => {
     let cont = -1;
-    for (let i=0;i<dados.length;i++){
-      if (dados[i].maquina===maquina) cont++;
-      if (cont===idx){
-        dados[i].status=status;
+    for (let i = 0; i < dados.length; i++) {
+      if (dados[i].maquina === maquina) cont++;
+      if (cont === idx) {
+        dados[i].status = status;
         break;
       }
     }
-    io.emit('atualizarDados', dados);
+    io.emit('atualizarDados', dados); // envia atualização a todos
   });
 
   socket.on('disconnect', () => console.log('Cliente desconectado'));

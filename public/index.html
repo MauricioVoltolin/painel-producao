@@ -121,8 +121,9 @@ function renderizar(){
     const titulo=document.createElement('h3'); titulo.innerText=maquina; block.appendChild(titulo);
     grupos[maquina].forEach((i,idx)=>{
       const div=document.createElement('div'); div.className='item';
+      const prioridadeStyle = i.prioridade ? 'font-weight:bold;color:red;' : '';
       div.innerHTML=`
-        <div class="item-left">${i.item}</div>
+        <div class="item-left" style="${prioridadeStyle}">${i.item}</div>
         <div class="item-right">
           <div class="quant">
             <div>V: ${i.vendido}</div>
@@ -130,10 +131,11 @@ function renderizar(){
             <div>P: ${i.produzir}</div>
           </div>
           <select onchange="alterarStatusPorBloco('${maquina}', ${idx}, this.value)">
-            <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
-            <option value="producao-finalizada" ${i.status==='producao-finalizada'?'selected':''}>Produção Finalizada</option>
-            <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
-            <option value="acabamento-finalizado" ${i.status==='acabamento-finalizado'?'selected':''}>Acabamento Finalizado</option>
+            <option value="">Selecione etapa</option>
+            <option value="producao">Produção</option>
+            <option value="producao-finalizada">Produção Finalizada</option>
+            <option value="acabamento">Acabamento</option>
+            <option value="acabamento-finalizado">Acabamento Finalizado</option>
           </select>
         </div>`;
       block.appendChild(div);
