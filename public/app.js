@@ -2,241 +2,204 @@ const socket = io();
 
 /* ===== TABS ===== */
 function openTab(i){
-  const tabs = document.querySelectorAll('.tabs button');
-  const contents = document.querySelectorAll('.tab');
-  tabs.forEach(t=>t.classList.remove('active'));
-  contents.forEach(c=>c.classList.remove('active'));
-  tabs[i].classList.add('active');
-  contents[i].classList.add('active');
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tabs button')[i].classList.add('active');
+  document.querySelectorAll('.tab')[i].classList.add('active');
 }
 
-/* ===== PRODUÇÃO ===== */
+/* ================= PRODUÇÃO ================= */
+
 let producaoData = {};
 let producaoOriginal = {};
+let filtroAtual = 'todos';
 
-const xlsInput = document.getElementById('xls');
-xlsInput.addEventListener('change', function(e){
+document.getElementById('xls').addEventListener('change', carregarXLS);
+
+function carregarXLS(e){
   const file = e.target.files[0];
   if(!file) return;
 
-  const formData = new FormData();
-  formData.append('file', file);
+  const reader = new FileReader();
+  reader.onload = evt=>{
+    const wb = XLSX.read(evt.target.result,{type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    const linhas = data.slice(5);
 
-  fetch('/upload',{ method:'POST', body: formData })
-    .then(res=>res.json())
-    .then(r=>{
-      if(!r.success){ alert('Falha ao enviar XLS'); return; }
-      const reader = new FileReader();
-      reader.onload = function(evt){
-        const wb = XLSX.read(evt.target.result, { type:'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(ws,{header:1});
-        const linhas = data.slice(5); // da linha 6 pra baixo
-        let maquinas = {};
-        linhas.forEach(l=>{
-          const item = l[0];
-          const maquina = l[7];
-          const prioridade = l[6];
-          const venda = l[10];
-          const estoque = l[12];
-          const produzir = l[16];
-          if(!item || !maquina) return;
-          if(!maquinas[maquina]) maquinas[maquina]=[];
-          maquinas[maquina].push({
-            item, prioridade, venda, estoque, produzir,
-            status: 'Aguardando',  // frente do item
-            statusCarga: 'Pendente' // frente do titulo
-          });
-        });
-        producaoData = JSON.parse(JSON.stringify(maquinas));
-        producaoOriginal = JSON.parse(JSON.stringify(maquinas));
-        socket.emit('uploadProducao', producaoData);
-        renderProducao(producaoData);
-      };
-      reader.readAsArrayBuffer(file);
+    let maquinas = {};
+
+    linhas.forEach(l=>{
+      const item = l[0];
+      const maquina = l[7];
+      if(!item || !maquina) return;
+
+      if(!maquinas[maquina]) maquinas[maquina]=[];
+      maquinas[maquina].push({
+        item,
+        venda:l[10],
+        estoque:l[12],
+        produzir:l[16],
+        prioridade:l[6],
+        status:'-'
+      });
     });
-});
+
+    producaoData = JSON.parse(JSON.stringify(maquinas));
+    producaoOriginal = JSON.parse(JSON.stringify(maquinas));
+
+    socket.emit('uploadProducao', producaoData);
+    renderProducao();
+  };
+  reader.readAsArrayBuffer(file);
+}
 
 socket.on('atualizaProducao', data=>{
   producaoData = data;
-  renderProducao(producaoData);
+  renderProducao();
 });
 
-function renderProducao(maquinas){
+function renderProducao(){
   const filtro = document.getElementById('filtroMaquina');
   const div = document.getElementById('producao');
 
-  // Atualiza filtro
-  filtro.innerHTML = '<option value="">Todas</option>';
-  for(const m in maquinas) filtro.innerHTML += `<option value="${m}">${m}</option>`;
+  filtro.innerHTML = '<option value="todos">Todas</option>';
+  Object.keys(producaoData).forEach(m=>{
+    filtro.innerHTML += `<option value="${m}">${m}</option>`;
+  });
 
   div.innerHTML = '';
-  for(const m in maquinas){
-    if(filtro.value && filtro.value!==m) continue;
 
-    const box = document.createElement('div');
-    box.className='maquina';
-    let html = `<strong>${m}</strong>`;
-    maquinas[m].forEach((i,idx)=>{
-      html+=`<div class="item-producao">
-        <span>${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}</span>
-        <select onchange="atualizaProducaoItem('${m}',${idx},this)" class="${i.status==='Faturado'?'faturado':'aguardando'}">
-          <option ${i.status==='Aguardando'?'selected':''}>Aguardando</option>
-          <option ${i.status==='Faturado'?'selected':''}>Faturado</option>
-        </select>
-        <div class="item-valores">
-          <span>V:${i.venda||''}</span>
-          <span>E:${i.estoque||''}</span>
-          <span>P:${i.produzir||''}</span>
-        </div>
+  Object.keys(producaoData).forEach(m=>{
+    if(filtroAtual!=='todos' && filtroAtual!==m) return;
+
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML = `<h3>${m}</h3>
+      <div class="card-header">
+        <div class="item-left">Item</div>
+        <div class="item-right"><span>V</span><span>E</span><span>P</span><span>Status</span></div>
       </div>`;
+
+    producaoData[m].forEach((i,idx)=>{
+      const row = document.createElement('div');
+      row.className='desktop-row';
+      row.innerHTML = `
+        <div class="item-left">${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}</div>
+        <div class="item-right">
+          <span>${i.venda||''}</span>
+          <span>${i.estoque||''}</span>
+          <span>${i.produzir||''}</span>
+          <select class="status-producao ${i.status}"
+            onchange="atualizaStatusProducao('${m}',${idx},this)">
+            <option value="-">-</option>
+            <option value="producao">Produção</option>
+            <option value="producao_ok">Produção OK</option>
+            <option value="acabamento">Acabamento</option>
+            <option value="acabamento_ok">Acabamento OK</option>
+          </select>
+        </div>`;
+      card.appendChild(row);
     });
-    box.innerHTML=html;
-    div.appendChild(box);
-  }
+
+    div.appendChild(card);
+  });
 }
 
-function atualizaProducaoItem(maquina, idx, sel){
-  producaoData[maquina][idx].status = sel.value;
+function aplicarFiltroProducao(){
+  filtroAtual = document.getElementById('filtroMaquina').value;
+  renderProducao();
+}
+
+function atualizaStatusProducao(m,idx,sel){
+  producaoData[m][idx].status = sel.value;
   socket.emit('atualizaProducao', producaoData);
 }
 
-/* ===== Exportar Alterações ===== */
 function exportAlteracoes(){
-  let alteracoes = [];
+  let alt=[];
   for(const m in producaoData){
     producaoData[m].forEach((i,idx)=>{
-      if(i.status !== producaoOriginal[m][idx].status){
-        alteracoes.push({
-          Maquina: m,
-          Item: i.item,
-          Status: i.status
-        });
+      if(i.status!==producaoOriginal[m][idx].status){
+        alt.push({Maquina:m,Item:i.item,Status:i.status});
       }
     });
   }
-  if(alteracoes.length===0){ alert('Nenhuma alteração para exportar'); return; }
-  const ws = XLSX.utils.json_to_sheet(alteracoes);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Alteracoes');
+  if(!alt.length) return alert('Nenhuma alteração');
+  const ws=XLSX.utils.json_to_sheet(alt);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Alteracoes');
   XLSX.writeFile(wb,'alteracoes.xlsx');
 }
 
-/* ===== CARGAS ===== */
-let cargas = [];
+/* ================= CARGAS ================= */
+
+let cargas=[];
 
 function novaCarga(){
-  cargas.push({ titulo:`Carga ${cargas.length+1}`, itens:[], status:'Pendente' });
-  socket.emit('editarCarga', cargas);
+  cargas.push({titulo:`Carga ${String(cargas.length+1).padStart(2,'0')}`,itens:[]});
+  socket.emit('editarCarga',cargas);
 }
 
-function renderCargas(cargas){
-  const div = document.getElementById('cargas');
+function renderCargas(data){
+  const div=document.getElementById('cargas');
   div.innerHTML='';
-  cargas.forEach((c,idx)=>{
-    const card = document.createElement('div');
+  data.forEach((c,idx)=>{
+    const card=document.createElement('div');
     card.className='card';
-
-    // Header
-    card.innerHTML = `
+    card.innerHTML=`
       <div class="card-header">
-        <div class="card-header-left">
-          <div class="menu" onclick="toggleDropdown(${idx})">☰
-            <div class="dropdown" id="dropdown-${idx}">
-              <button onclick="editarItens(${idx})">Editar Itens</button>
-              <button onclick="excluirCarga(${idx})">Excluir Carga</button>
-            </div>
+        <strong>${c.titulo}</strong>
+        <div class="menu" onclick="toggleDropdown(${idx})">⋮
+          <div class="dropdown" id="dropdown-${idx}">
+            <button onclick="excluirCarga(${idx})">Excluir</button>
           </div>
-          <strong>${c.titulo}</strong>
-        </div>
-        <div class="card-header-right">
-          <select onchange="atualizaStatusCarga(${idx},this)" class="status-select ${c.status==='Pendente'?'aguardando':'faturado'}">
-            <option ${c.status==='Pendente'?'selected':''}>Pendente</option>
-            <option ${c.status==='Carregando'?'selected':''}>Carregando</option>
-            <option ${c.status==='Pronto'?'selected':''}>Pronto</option>
-          </select>
         </div>
       </div>
       <div class="card-itens" id="card-itens-${idx}"></div>
-      <button class="add-item" onclick="addItem(${idx})">+</button>
-    `;
+      <button class="add-item" onclick="addItem(${idx})">+</button>`;
     div.appendChild(card);
     renderItens(idx);
   });
 }
 
-function toggleDropdown(idx){
-  const dd = document.getElementById(`dropdown-${idx}`);
-  dd.style.display = dd.style.display==='block'?'none':'block';
+function toggleDropdown(i){
+  document.querySelectorAll('.dropdown').forEach(d=>d.style.display='none');
+  document.getElementById(`dropdown-${i}`).style.display='block';
 }
 
-function editarItens(idx){
-  const itensDiv = document.getElementById(`card-itens-${idx}`);
-  itensDiv.querySelectorAll('.item').forEach(it=>{
-    it.classList.add('editing');
+function excluirCarga(i){
+  cargas.splice(i,1);
+  socket.emit('editarCarga',cargas);
+}
+
+function addItem(i){
+  const n=prompt('Item:');
+  if(!n) return;
+  cargas[i].itens.push({nome:n,status:'Aguardando'});
+  socket.emit('editarCarga',cargas);
+}
+
+function renderItens(i){
+  const d=document.getElementById(`card-itens-${i}`);
+  d.innerHTML='';
+  cargas[i].itens.forEach((it,idx)=>{
+    d.innerHTML+=`
+      <div class="item">
+        <span>${it.nome}</span>
+        <select class="status-select ${it.status==='Faturado'?'faturado':'aguardando'}"
+          onchange="atualizaItemStatus(${i},${idx},this)">
+          <option>Aguardando</option>
+          <option>Faturado</option>
+        </select>
+      </div>`;
   });
 }
 
-function excluirCarga(idx){
-  if(confirm(`Deseja realmente excluir ${cargas[idx].titulo}?`)){
-    socket.emit('excluirCarga', idx);
-  }
+function atualizaItemStatus(c,i,s){
+  cargas[c].itens[i].status=s.value;
+  socket.emit('editarCarga',cargas);
 }
 
-function addItem(idx){
-  const nome = prompt('Nome do item:');
-  if(nome){
-    cargas[idx].itens.push({nome,status:'Aguardando'});
-    socket.emit('editarCarga', cargas);
-  }
-}
-
-function renderItens(idx){
-  const itensDiv = document.getElementById(`card-itens-${idx}`);
-  itensDiv.innerHTML='';
-  cargas[idx].itens.forEach((it,i)=>{
-    const itemEl = document.createElement('div');
-    itemEl.className='item';
-    itemEl.innerHTML = `
-      <span>${it.nome}</span>
-      <div class="item-icons">
-        <span onclick="renomearItem(${idx},${i})">✏️</span>
-        <span onclick="removerItem(${idx},${i})">🗑️</span>
-      </div>
-      <select onchange="atualizaItemStatus(${idx},${i},this)">
-        <option ${it.status==='Aguardando'?'selected':''}>Aguardando</option>
-        <option ${it.status==='Faturado'?'selected':''}>Faturado</option>
-      </select>
-    `;
-    itensDiv.appendChild(itemEl);
-  });
-}
-
-function renomearItem(cIdx,iIdx){
-  const novo = prompt('Novo nome:', cargas[cIdx].itens[iIdx].nome);
-  if(novo){
-    cargas[cIdx].itens[iIdx].nome = novo;
-    socket.emit('editarCarga', cargas);
-  }
-}
-
-function removerItem(cIdx,iIdx){
-  if(confirm('Deseja excluir este item?')){
-    cargas[cIdx].itens.splice(iIdx,1);
-    socket.emit('editarCarga', cargas);
-  }
-}
-
-function atualizaStatusCarga(idx,sel){
-  cargas[idx].status = sel.value;
-  socket.emit('editarCarga', cargas);
-}
-
-function atualizaItemStatus(cIdx,iIdx,sel){
-  cargas[cIdx].itens[iIdx].status = sel.value;
-  socket.emit('editarCarga', cargas);
-}
-
-/* ===== Socket eventos ===== */
-socket.on('initCargas', data=>{ cargas=data; renderCargas(cargas); });
-socket.on('atualizaCargas', data=>{ cargas=data; renderCargas(cargas); });
+socket.on('initCargas',d=>{cargas=d;renderCargas(cargas);});
+socket.on('atualizaCargas',d=>{cargas=d;renderCargas(cargas);});
