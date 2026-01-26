@@ -83,10 +83,6 @@ button, select {
   justify-content: space-between;
 }
 
-.desktop-row span {
-  width: 50px;
-}
-
 select.status-producao {
   padding: 5px;
   border-radius: 4px;
@@ -527,4 +523,27 @@ select.status-producao.acabamento_ok {
   .menu-wrapper {
     display: none !important;
   }
+}
+/* ===== MOBILE A07: STATUS EM BAIXO DO V/E/P ===== */
+@media (max-width: 768px) {
+
+  .status-area {
+    display: flex !important;
+    flex-direction: column !important; /* ISSO FAZ DESCER */
+    align-items: flex-end !important;
+    gap: 6px;
+  }
+
+  .valores {
+    order: 1;
+    justify-content: flex-end;
+  }
+
+  .status-wrapper {
+    order: 2;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+
 }

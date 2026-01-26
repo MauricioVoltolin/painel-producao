@@ -12,6 +12,8 @@ function openTab(i){
 
 let producaoData = {};
 let filtroAtual = 'todos';
+let producaoOriginal = {};
+
 
 /* ===== XLS ===== */
 document.getElementById('xls').addEventListener('change', carregarXLS);
@@ -53,6 +55,7 @@ function carregarXLS(e){
 /* ===== SOCKET PRODUÇÃO ===== */
 socket.on('initProducao', data=>{
   producaoData = data;
+  producaoOriginal = JSON.parse(JSON.stringify(data));
   renderProducao();
 });
 
@@ -82,6 +85,12 @@ Object.keys(producaoData).forEach(m=>{
     const card = document.createElement('div');
     card.className='card';
     card.innerHTML = `<h3>${m}</h3>`;
+    const addBtn = document.createElement('button');
+    addBtn.textContent = '+';
+    addBtn.className = 'add-item only-desktop';
+    addBtn.onclick = () => adicionarItem(m);
+    card.appendChild(addBtn);
+
 
     producaoData[m].forEach((i,idx)=>{
       const row = document.createElement('div');
@@ -310,13 +319,21 @@ function exportarAlterados(){
   XLSX.writeFile(wb, 'itens_alterados.xlsx');
 }
 function adicionarItem(maquina){
+  const item = prompt('Produto:');
+  if(!item) return;
+
+  const venda = prompt('Vendido:', '0');
+  const estoque = prompt('Estoque:', '0');
+  const produzir = prompt('Produzir:', '0');
+  const prioridade = confirm('É PRIORIDADE?');
+
   producaoData[maquina].push({
-    item:'NOVO ITEM',
-    venda:'',
-    estoque:'',
-    produzir:'',
-    prioridade:'',
-    status:'-'
+    item,
+    venda,
+    estoque,
+    produzir,
+    prioridade: prioridade ? 'PRIORIDADE' : '',
+    status: '-'
   });
 
   socket.emit('atualizaProducao', producaoData);
