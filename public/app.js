@@ -11,11 +11,10 @@ function openTab(i){
 /* ================= PRODUÇÃO ================= */
 
 let producaoData = {};
-let producaoOriginal = {};
 let filtroAtual = 'todos';
 
 /* ===== XLS ===== */
-document.getElementById('xls')?.addEventListener('change', carregarXLS);
+document.getElementById('xls').addEventListener('change', carregarXLS);
 
 function carregarXLS(e){
   const file = e.target.files[0];
@@ -51,10 +50,9 @@ function carregarXLS(e){
   reader.readAsArrayBuffer(file);
 }
 
-/* ===== SOCKET ===== */
+/* ===== SOCKET PRODUÇÃO ===== */
 socket.on('initProducao', data=>{
   producaoData = data;
-  producaoOriginal = JSON.parse(JSON.stringify(data));
   renderProducao();
 });
 
@@ -63,26 +61,18 @@ socket.on('atualizaProducao', data=>{
   renderProducao();
 });
 
-/* ===== UTIL ===== */
-function statusLabel(status){
-  switch(status){
-    case 'producao': return 'PROD';
-    case 'producao_ok': return 'PROD OK';
-    case 'acabamento': return 'ACAB';
-    case 'acabamento_ok': return 'ACAB OK';
-    default: return '-';
-  }
-}
-
-/* ===== RENDER ===== */
+/* ===== RENDER PRODUÇÃO ===== */
 function renderProducao(){
   const filtro = document.getElementById('filtroMaquina');
   const div = document.getElementById('producao');
 
-  filtro.innerHTML = `<option value="todos">Todas</option>`;
-  Object.keys(producaoData).forEach(m=>{
-    filtro.innerHTML += `<option value="${m}" ${filtroAtual===m?'selected':''}>${m}</option>`;
-  });
+  filtro.innerHTML = '<option value="todos">Todas</option>';
+
+Object.keys(producaoData).forEach(m=>{
+  const selected = filtroAtual === m ? 'selected' : '';
+  filtro.innerHTML += `<option value="${m}" ${selected}>${m}</option>`;
+});
+
 
   div.innerHTML = '';
 
@@ -91,63 +81,73 @@ function renderProducao(){
 
     const card = document.createElement('div');
     card.className='card';
-    card.innerHTML = `<h3>${m}</h3>
-
-      <div class="siglas-topo only-desktop">
-        <span>V</span><span>E</span><span>P</span>
-      </div>
-    `;
+    card.innerHTML = `<h3>${m}</h3>`;
 
     producaoData[m].forEach((i,idx)=>{
       const row = document.createElement('div');
       row.className='desktop-row';
 
+      /* prioridade */
       if(i.prioridade === 'PRIORIDADE'){
         row.style.background = '#fff59d';
         row.style.fontWeight = '700';
       }
 
+      /* status na linha */
+      row.classList.remove('producao','producao_ok','acabamento','acabamento_ok');
       if(i.status && i.status !== '-') row.classList.add(i.status);
 
       row.innerHTML = `
-        <div class="item-area">
-          ${i.item}
-        </div>
+        <div class="card-producao desktop">
 
-        <div class="status-area">
-
-          <div class="valores only-desktop">
-            <span>${i.venda ?? ''}</span>
-            <span>${i.estoque ?? ''}</span>
-            <span>${i.produzir ?? ''}</span>
+          <!-- ITEM -->
+          <div class="item-area">
+            ${i.item}
           </div>
 
-          <!-- DESKTOP -->
-          <select class="status-producao only-desktop ${i.status}"
-            onchange="atualizaStatusProducao('${m}',${idx},this)">
-            <option value="-">-</option>
-            <option value="producao">Produção</option>
-            <option value="producao_ok">Produção OK</option>
-            <option value="acabamento">Acabamento</option>
-            <option value="acabamento_ok">Acabamento OK</option>
-          </select>
+          <!-- STATUS -->
+          <div class="status-area">
+            <div class="valores">
+              <span>${i.venda}</span>
+              <span>${i.estoque}</span>
+              <span>${i.produzir}</span>
+              <select class="status-producao"
+                onchange="atualizaStatusProducao('${m}',${idx},this)">
+                <option value="-" ${i.status==='-'?'selected':''}>-</option>
+                <option value="producao" ${i.status==='producao'?'selected':''}>
+                  Produção
+                </option>
+                <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>
+                  Produção: OK
+                </option>
+                <option value="acabamento" ${i.status==='acabamento'?'selected':''}>
+                  Acabamento
+                </option>
+                <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>
+                  Acabamento: OK
+                </option>
+              </select>
 
-          <!-- MOBILE / A07 -->
-          <span class="status-chave only-mobile ${i.status}">
-            ${statusLabel(i.status)}
-          </span>
+            </div>
 
-          <div class="menu-wrapper only-desktop">
-            <span class="menu-btn" onclick="toggleItemMenu(this)">⋮</span>
-            <div class="dropdown item-menu">
-              <button onclick="abrirTrocarMaquina('${m}',${idx})">Trocar máquina</button>
-              <button onclick="abrirEditarItem('${m}',${idx})">Editar item</button>
+            <!-- MENU 3 PONTOS -->
+            <div class="menu-wrapper">
+              <span class="menu-btn"
+                onclick="toggleItemMenu('${m}',${idx},this)">⋮</span>
+
+              <div class="dropdown item-menu">
+                <button onclick="abrirTrocarMaquina('${m}',${idx})">
+                  Trocar de máquina
+                </button>
+                <button onclick="abrirEditarItem('${m}',${idx})">
+                  Editar item
+                </button>
+              </div>
             </div>
           </div>
 
         </div>
       `;
-
       card.appendChild(row);
     });
 
@@ -162,18 +162,92 @@ function aplicarFiltroProducao(){
 
 function atualizaStatusProducao(m,idx,sel){
   producaoData[m][idx].status = sel.value;
+  sel.className = 'status-producao ' + sel.value;
   socket.emit('atualizaProducao', producaoData);
 }
 
-/* ===== MENU ===== */
-function toggleItemMenu(el){
-  document.querySelectorAll('.item-menu').forEach(m=>m.style.display='none');
-  el.nextElementSibling.style.display='block';
+
+/* ================= CARGAS ================= */
+
+let cargas=[];
+
+function novaCarga(){
+  cargas.push({
+    titulo:`Carga ${String(cargas.length+1).padStart(2,'0')}`,
+    status:'Pendente'
+  });
+  socket.emit('editarCarga',cargas);
 }
 
+function renderCargas(data){
+  const div=document.getElementById('cargas');
+  div.innerHTML='';
+
+  data.forEach((c,idx)=>{
+    const card=document.createElement('div');
+    card.className='card';
+
+    card.innerHTML=`
+      <div class="card-header"
+        style="display:flex;justify-content:space-between;align-items:center">
+        <strong>${c.titulo}</strong>
+
+        <div style="display:flex;gap:8px;align-items:center">
+          <select onchange="atualizaStatusCarga(${idx},this)">
+            <option ${c.status==='Pendente'?'selected':''}>Pendente</option>
+            <option ${c.status==='Carregando'?'selected':''}>Carregando</option>
+            <option ${c.status==='Pronto'?'selected':''}>Pronto</option>
+          </select>
+
+          <span class="menu" onclick="toggleDropdown(${idx})">⋮</span>
+          <div class="dropdown" id="dropdown-${idx}">
+            <button onclick="excluirCarga(${idx})">Excluir</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="add-item" onclick="alert('Item manual em breve')">+</button>
+    `;
+
+    div.appendChild(card);
+  });
+}
+
+function atualizaStatusCarga(i,sel){
+  cargas[i].status = sel.value;
+  socket.emit('editarCarga',cargas);
+}
+
+function toggleDropdown(i){
+  document.querySelectorAll('.dropdown').forEach(d=>d.style.display='none');
+  document.getElementById(`dropdown-${i}`).style.display='block';
+}
+
+function excluirCarga(i){
+  cargas.splice(i,1);
+  socket.emit('editarCarga',cargas);
+}
+
+/* ===== SOCKET CARGAS ===== */
+socket.on('initCargas',d=>{
+  cargas=d;
+  renderCargas(cargas);
+});
+
+socket.on('atualizaCargas',d=>{
+  cargas=d;
+  renderCargas(cargas);
+});
+function toggleItemMenu(maquina, idx, el){
+  document.querySelectorAll('.item-menu').forEach(m=>m.style.display='none');
+  el.nextElementSibling.style.display = 'block';
+}
 function abrirTrocarMaquina(maquinaAtual, idx){
   const maquinas = Object.keys(producaoData);
-  const nova = prompt('Mover para qual máquina?\n' + maquinas.join('\n'));
+  const nova = prompt(
+    'Mover para qual máquina?\n' + maquinas.join('\n')
+  );
+
   if(!nova || !producaoData[nova]) return;
 
   const item = producaoData[maquinaAtual][idx];
@@ -182,20 +256,62 @@ function abrirTrocarMaquina(maquinaAtual, idx){
 
   socket.emit('atualizaProducao', producaoData);
 }
-
 function abrirEditarItem(maquina, idx){
   const item = producaoData[maquina][idx];
 
   const venda = prompt('Qtd vendida:', item.venda);
   const estoque = prompt('Estoque:', item.estoque);
   const produzir = prompt('Produzir:', item.produzir);
-  const prioridade = confirm('Marcar como PRIORIDADE?');
+  const prioridade = confirm('É PRIORIDADE?');
 
-  if(venda !== null && venda !== '') item.venda = venda;
-  if(estoque !== null && estoque !== '') item.estoque = estoque;
-  if(produzir !== null && produzir !== '') item.produzir = produzir;
+  item.venda = venda;
+  item.estoque = estoque;
+  item.produzir = produzir;
+  item.prioridade = prioridade ? 'PRIORIDADE' : '';
 
-  item.prioridade = prioridade ? 'PRIORIDADE' : item.prioridade;
+  socket.emit('atualizaProducao', producaoData);
+}
+function exportarAlterados(){
+  const linhas = [];
+
+  Object.keys(producaoData).forEach(m=>{
+    producaoData[m].forEach((i,idx)=>{
+      const orig = producaoOriginal[m]?.[idx];
+      if(!orig) return;
+
+      if(JSON.stringify(i) !== JSON.stringify(orig)){
+        linhas.push({
+          Maquina: m,
+          Item: i.item,
+          Venda: i.venda,
+          Estoque: i.estoque,
+          Produzir: i.produzir,
+          Status: i.status,
+          Prioridade: i.prioridade
+        });
+      }
+    });
+  });
+
+  if(!linhas.length){
+    alert('Nenhum item alterado');
+    return;
+  }
+
+  const ws = XLSX.utils.json_to_sheet(linhas);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Alterados');
+  XLSX.writeFile(wb, 'itens_alterados.xlsx');
+}
+function adicionarItem(maquina){
+  producaoData[maquina].push({
+    item:'NOVO ITEM',
+    venda:'',
+    estoque:'',
+    produzir:'',
+    prioridade:'',
+    status:'-'
+  });
 
   socket.emit('atualizaProducao', producaoData);
 }
