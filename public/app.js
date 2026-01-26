@@ -141,6 +141,7 @@ function renderProducao(){
           <button onclick="abrirTrocarMaquina('${m}',${idx})">Trocar de máquina</button>
           <button onclick="abrirEditarItem('${m}',${idx})">Editar item</button>
           <button onclick="excluirItem('${m}',${idx})" style="color:red;">Excluir item</button>
+          <button onclick="togglePrioridade('${m}',${idx})" style="color:orange;">Prioridade</button>
         </div>
       </div>
 
