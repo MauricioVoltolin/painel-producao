@@ -15,6 +15,7 @@ let producaoOriginal = {};
 
 /* ===== XLS ===== */
 document.getElementById('xls').addEventListener('change', carregarXLS);
+
 function carregarXLS(e){
   const file = e.target.files[0];
   if(!file) return;
@@ -27,6 +28,7 @@ function carregarXLS(e){
     const linhas = data.slice(5);
 
     let maquinas = {};
+
     linhas.forEach(l=>{
       const item = l[0];
       const maquina = l[7];
@@ -64,8 +66,8 @@ socket.on('atualizaProducao', data=>{
 function renderProducao(){
   const filtro = document.getElementById('filtroMaquina');
   const div = document.getElementById('producao');
-  filtro.innerHTML = '<option value="todos">Todas</option>';
 
+  filtro.innerHTML = '<option value="todos">Todas</option>';
   Object.keys(producaoData).forEach(m=>{
     const selected = filtroAtual === m ? 'selected' : '';
     filtro.innerHTML += `<option value="${m}" ${selected}>${m}</option>`;
@@ -81,95 +83,96 @@ function renderProducao(){
     card.innerHTML = `<h3>${m}</h3>`;
     div.appendChild(card);
 
+    // Botão adicionar item apenas no desktop
+    if(window.innerWidth > 768){
+      const addGlobal = document.createElement('button');
+      addGlobal.textContent = '+';
+      addGlobal.className = 'add-item-global only-desktop';
+      addGlobal.onclick = () => adicionarItemGlobal();
+      card.appendChild(addGlobal);
+    }
+
     producaoData[m].forEach((i,idx)=>{
       const row = document.createElement('div');
       row.className='desktop-row';
+
+      // prioridade
       if(i.prioridade === 'PRIORIDADE'){
         row.style.background = '#fff59d';
         row.style.fontWeight = '700';
       }
+
+      // status na linha
       row.classList.remove('producao','producao_ok','acabamento','acabamento_ok');
       if(i.status && i.status !== '-') row.classList.add(i.status);
 
-      const isMobile = window.innerWidth <= 768;
-
+      // Conteúdo
       row.innerHTML = `
-        <div class="card-producao desktop">
+  <div class="card-producao desktop">
 
-          <!-- DESCRIÇÃO -->
-          <div class="item-area">
-            ${i.item}
-          </div>
+    <!-- DESCRIÇÃO -->
+    <div class="item-area">
+      ${i.item}
+    </div>
 
-          <!-- DIREITA -->
-          <div class="status-area">
+    <!-- DIREITA -->
+    <div class="status-area">
 
-            <!-- V/E/P -->
-            <div class="valores" style="${isMobile?'order:1':''}">
-              <span>V:${i.venda}</span>
-              <span>E:${i.estoque}</span>
-              <span>P:${i.produzir}</span>
-            </div>
+      <!-- V / E / P -->
+      <div class="valores">
+        <span>V:${i.venda}</span>
+        <span>E:${i.estoque}</span>
+        <span>P:${i.produzir}</span>
+      </div>
 
-            <!-- STATUS DROPDOWN -->
-            <div class="status-wrapper" style="${isMobile?'order:2;margin-top:5px;':''}">
-              <select class="status-producao ${i.status}" onchange="atualizaStatusProducao('${m}',${idx},this)">
-                <option value="-" ${i.status==='-'?'selected':''}>-</option>
-                <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
-                <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>Produção: OK</option>
-                <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
-                <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>Acabamento: OK</option>
-              </select>
-            </div>
+      <!-- STATUS (APENAS DROPDOWN) -->
+      <div class="status-wrapper">
+        <select class="status-producao ${i.status}"
+          onchange="atualizaStatusProducao('${m}',${idx},this)">
+          <option value="-" ${i.status==='-'?'selected':''}>-</option>
+          <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
+          <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>Produção: OK</option>
+          <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
+          <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>Acabamento: OK</option>
+        </select>
+      </div>
 
-            <!-- MENU 3 PONTOS (SÓ DESKTOP) -->
-            <div class="menu-wrapper only-desktop">
-              <span class="menu-btn" onclick="toggleItemMenu('${m}',${idx},this)">⋮</span>
-              <div class="dropdown item-menu">
-                <button onclick="abrirTrocarMaquina('${m}',${idx})">Trocar de máquina</button>
-                <button onclick="abrirEditarItem('${m}',${idx})">Editar item</button>
-              </div>
-            </div>
+      <!-- MENU 3 PONTOS (SÓ DESKTOP) -->
+      <div class="menu-wrapper only-desktop">
+        <span class="menu-btn"
+          onclick="toggleItemMenu('${m}',${idx},this)">⋮</span>
 
-          </div>
+        <div class="dropdown item-menu">
+          <button onclick="abrirTrocarMaquina('${m}',${idx})">Trocar de máquina</button>
+          <button onclick="abrirEditarItem('${m}',${idx})">Editar item</button>
+          <button onclick="excluirItem('${m}',${idx})" style="color:red;">Excluir item</button>
         </div>
+      </div>
+
+    </div>
+  </div>
       `;
+
       card.appendChild(row);
     });
   });
-
-  // BOTÃO ADICIONAR ITEM GLOBAL (apenas desktop)
-  if(!document.querySelector('#producao .add-item-global')){
-    const addGlobal = document.createElement('button');
-    addGlobal.className = 'add-item add-item-global only-desktop';
-    addGlobal.textContent = '+ Adicionar Item';
-    addGlobal.onclick = adicionarItemGlobal;
-    div.appendChild(addGlobal);
-  }
 }
 
+// Filtrar máquina
 function aplicarFiltroProducao(){
   filtroAtual = document.getElementById('filtroMaquina').value;
   renderProducao();
 }
 
+// Atualiza status
 function atualizaStatusProducao(m,idx,sel){
   producaoData[m][idx].status = sel.value;
   sel.className = 'status-producao ' + sel.value;
   socket.emit('atualizaProducao', producaoData);
 }
 
-/* ===== ADICIONAR ITEM GLOBAL ===== */
-function adicionarItemGlobal(){
-  const maquinas = Object.keys(producaoData);
-  if(!maquinas.length){
-    alert('Nenhuma máquina carregada');
-    return;
-  }
-
-  const maquina = prompt('Adicionar em qual máquina?\n' + maquinas.join('\n'));
-  if(!maquina || !producaoData[maquina]) return;
-
+// Adicionar item específico de uma máquina
+function adicionarItem(maquina){
   const item = prompt('Produto:');
   if(!item) return;
   const venda = prompt('Vendido:', '0');
@@ -182,14 +185,28 @@ function adicionarItemGlobal(){
     venda,
     estoque,
     produzir,
-    prioridade: prioridade?'PRIORIDADE':'',
-    status:'-'
+    prioridade: prioridade ? 'PRIORIDADE' : '',
+    status: '-'
   });
-
   socket.emit('atualizaProducao', producaoData);
 }
 
-/* ===== EXPORTAR ITENS ALTERADOS ===== */
+// Adicionar item global (solicita máquina)
+function adicionarItemGlobal(){
+  const maquinas = Object.keys(producaoData);
+  const maquina = prompt('Em qual máquina deseja adicionar o item?\n' + maquinas.join('\n'));
+  if(!maquina || !producaoData[maquina]) return;
+  adicionarItem(maquina);
+}
+
+// Excluir item
+function excluirItem(maquina, idx){
+  if(!confirm('Deseja realmente excluir este item?')) return;
+  producaoData[maquina].splice(idx, 1);
+  socket.emit('atualizaProducao', producaoData);
+}
+
+// Exportar apenas itens alterados
 function exportarAlterados(){
   const linhas = [];
   Object.keys(producaoData).forEach(m=>{
@@ -209,10 +226,7 @@ function exportarAlterados(){
       }
     });
   });
-  if(!linhas.length){
-    alert('Nenhum item alterado');
-    return;
-  }
+  if(!linhas.length){ alert('Nenhum item alterado'); return; }
   const ws = XLSX.utils.json_to_sheet(linhas);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Alterados');
@@ -221,12 +235,18 @@ function exportarAlterados(){
 
 /* ================= CARGAS ================= */
 let cargas=[];
-function novaCarga(){ cargas.push({titulo:`Carga ${String(cargas.length+1).padStart(2,'0')}`,status:'Pendente'}); socket.emit('editarCarga',cargas); }
+
+function novaCarga(){
+  cargas.push({ titulo:`Carga ${String(cargas.length+1).padStart(2,'0')}`, status:'Pendente' });
+  socket.emit('editarCarga',cargas);
+}
+
 function renderCargas(data){
   const div=document.getElementById('cargas');
   div.innerHTML='';
   data.forEach((c,idx)=>{
-    const card=document.createElement('div'); card.className='card';
+    const card=document.createElement('div');
+    card.className='card';
     card.innerHTML=`
       <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
         <strong>${c.titulo}</strong>
@@ -242,19 +262,57 @@ function renderCargas(data){
           </div>
         </div>
       </div>
-      <button class="add-item" onclick="alert('Item manual em breve')">+</button>
     `;
     div.appendChild(card);
   });
 }
-function atualizaStatusCarga(i,sel){ cargas[i].status=sel.value; socket.emit('editarCarga',cargas); }
-function toggleDropdown(i){ document.querySelectorAll('.dropdown').forEach(d=>d.style.display='none'); document.getElementById(`dropdown-${i}`).style.display='block'; }
-function excluirCarga(i){ cargas.splice(i,1); socket.emit('editarCarga',cargas); }
+
+function atualizaStatusCarga(i,sel){
+  cargas[i].status = sel.value;
+  socket.emit('editarCarga',cargas);
+}
+
+function toggleDropdown(i){
+  document.querySelectorAll('.dropdown').forEach(d=>d.style.display='none');
+  document.getElementById(`dropdown-${i}`).style.display='block';
+}
+
+function excluirCarga(i){
+  cargas.splice(i,1);
+  socket.emit('editarCarga',cargas);
+}
 
 /* ===== SOCKET CARGAS ===== */
 socket.on('initCargas',d=>{ cargas=d; renderCargas(cargas); });
 socket.on('atualizaCargas',d=>{ cargas=d; renderCargas(cargas); });
 
-function toggleItemMenu(maquina, idx, el){ document.querySelectorAll('.item-menu').forEach(m=>m.style.display='none'); el.nextElementSibling.style.display='block'; }
-function abrirTrocarMaquina(maquinaAtual, idx){ const maquinas = Object.keys(producaoData); const nova = prompt('Mover para qual máquina?\n'+maquinas.join('\n')); if(!nova || !producaoData[nova]) return; const item = producaoData[maquinaAtual][idx]; producaoData[maquinaAtual].splice(idx,1); producaoData[nova].push(item); socket.emit('atualizaProducao', producaoData); }
-function abrirEditarItem(maquina, idx){ const item=producaoData[maquina][idx]; const venda=prompt('Qtd vendida:',item.venda); const estoque=prompt('Estoque:',item.estoque); const produzir=prompt('Produzir:',item.produzir); const prioridade=confirm('É PRIORIDADE?'); item.venda=venda; item.estoque=estoque; item.produzir=produzir; item.prioridade=prioridade?'PRIORIDADE':''; socket.emit('atualizaProducao', producaoData); }
+// Menu 3 pontinhos
+function toggleItemMenu(maquina, idx, el){
+  document.querySelectorAll('.item-menu').forEach(m=>m.style.display='none');
+  el.nextElementSibling.style.display = 'block';
+}
+
+function abrirTrocarMaquina(maquinaAtual, idx){
+  const maquinas = Object.keys(producaoData);
+  const nova = prompt('Mover para qual máquina?\n' + maquinas.join('\n'));
+  if(!nova || !producaoData[nova]) return;
+  const item = producaoData[maquinaAtual][idx];
+  producaoData[maquinaAtual].splice(idx,1);
+  producaoData[nova].push(item);
+  socket.emit('atualizaProducao', producaoData);
+}
+
+function abrirEditarItem(maquina, idx){
+  const item = producaoData[maquina][idx];
+  const venda = prompt('Qtd vendida:', item.venda);
+  const estoque = prompt('Estoque:', item.estoque);
+  const produzir = prompt('Produzir:', item.produzir);
+  const prioridade = confirm('É PRIORIDADE?');
+
+  item.venda = venda;
+  item.estoque = estoque;
+  item.produzir = produzir;
+  item.prioridade = prioridade ? 'PRIORIDADE' : '';
+
+  socket.emit('atualizaProducao', producaoData);
+}

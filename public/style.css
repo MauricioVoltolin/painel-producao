@@ -365,17 +365,6 @@ select.status-producao.acabamento_ok {
   font-weight: 700;
 }
 
-/* Prefixos V / E / P */
-.valores span:nth-child(1)::before {
-  content: "V: ";
-}
-.valores span:nth-child(2)::before {
-  content: "E: ";
-}
-.valores span:nth-child(3)::before {
-  content: "P: ";
-}
-
 /* ================= MOBILE – GALAXY A07 ================= */
 @media (max-width: 768px) {
 
