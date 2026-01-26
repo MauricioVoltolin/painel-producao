@@ -106,13 +106,25 @@ Object.keys(producaoData).forEach(m=>{
           </div>
 
           <!-- STATUS -->
-          <div class="status-area">
-            <div class="valores">
-              <span>${i.venda}</span>
-              <span>${i.estoque}</span>
-              <span>${i.produzir}</span>
-              <select class="status-producao"
-                onchange="atualizaStatusProducao('${m}',${idx},this)">
+                <div class="status-area">
+
+                <div class="valores">
+                  <span>V:${i.venda}</span>
+                  <span>E:${i.estoque}</span>
+                  <span>P:${i.produzir}</span>
+                </div>
+
+                <div class="status-wrapper">
+                  <select class="status-producao"
+                    onchange="atualizaStatusProducao('${m}',${idx},this)">
+                    <option value="-" ${i.status==='-'?'selected':''}>-</option>
+                    <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
+                    <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>Produção: OK</option>
+                    <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
+                    <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>Acabamento: OK</option>
+                  </select>
+                </div>
+
                 <option value="-" ${i.status==='-'?'selected':''}>-</option>
                 <option value="producao" ${i.status==='producao'?'selected':''}>
                   Produção
