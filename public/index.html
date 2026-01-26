@@ -29,9 +29,8 @@
     </select>
 
     <!-- ✅ BOTÃO ADICIONADO (não mexe no layout) -->
-    <button id="btnAddItem" class="only-desktop">
-  Adicionar Item
-</button>
+    <button onclick="adicionarItem('${m}')">+</button>
+
 
 card.innerHTML = `
   <h3>${m}</h3>
@@ -47,7 +46,8 @@ card.innerHTML = `
 
   <div class="producao-buttons only-desktop">
   <input type="file" id="xls">
-  <button>Exportar</button>
+  <button onclick="exportarAlterados()">Exportar</button>
+
 </div>
 
 

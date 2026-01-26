@@ -271,3 +271,50 @@ function abrirEditarItem(maquina, idx){
 
   socket.emit('atualizaProducao', producaoData);
 }
+function exportarAlterados(){
+  const linhas = [];
+
+  Object.keys(producaoData).forEach(m=>{
+    producaoData[m].forEach((i,idx)=>{
+      const orig = producaoOriginal[m]?.[idx];
+      if(!orig) return;
+
+      if(JSON.stringify(i) !== JSON.stringify(orig)){
+        linhas.push({
+          Maquina: m,
+          Item: i.item,
+          Venda: i.venda,
+          Estoque: i.estoque,
+          Produzir: i.produzir,
+          Status: i.status,
+          Prioridade: i.prioridade
+        });
+      }
+    });
+  });
+
+  if(!linhas.length){
+    alert('Nenhum item alterado');
+    return;
+  }
+
+  const ws = XLSX.utils.json_to_sheet(linhas);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Alterados');
+  XLSX.writeFile(wb, 'itens_alterados.xlsx');
+}
+function adicionarItem(maquina){
+  producaoData[maquina].push({
+    item:'NOVO ITEM',
+    venda:'',
+    estoque:'',
+    produzir:'',
+    prioridade:'',
+    status:'-'
+  });
+
+  socket.emit('atualizaProducao', producaoData);
+}
+if(novoValor !== ''){
+  item.venda = novoValor;
+}
