@@ -252,3 +252,26 @@ select.status-producao {
     display: none !important;
   }
 }
+.status-producao.producao {
+  background: #fff9c4;
+}
+
+.status-producao.producao_ok {
+  background: #fff59d;
+}
+
+.status-producao.acabamento {
+  background: #c8e6c9;
+}
+
+.status-producao.acabamento_ok {
+  background: #81c784;
+  color: #000;
+}
+.siglas-topo {
+  display: flex;
+  gap: 12px;
+  font-weight: bold;
+  font-size: 12px;
+  margin-bottom: 6px;
+}

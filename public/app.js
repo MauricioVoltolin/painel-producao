@@ -111,7 +111,23 @@ Object.keys(producaoData).forEach(m=>{
               <span>${i.venda}</span>
               <span>${i.estoque}</span>
               <span>${i.produzir}</span>
-              <span class="status-chave">${i.status || ''}</span>
+              <select class="status-producao"
+                onchange="atualizaStatusProducao('${m}',${idx},this)">
+                <option value="-" ${i.status==='-'?'selected':''}>-</option>
+                <option value="producao" ${i.status==='producao'?'selected':''}>
+                  Produção
+                </option>
+                <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>
+                  Produção: OK
+                </option>
+                <option value="acabamento" ${i.status==='acabamento'?'selected':''}>
+                  Acabamento
+                </option>
+                <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>
+                  Acabamento: OK
+                </option>
+              </select>
+
             </div>
 
             <!-- MENU 3 PONTOS -->
@@ -146,9 +162,10 @@ function aplicarFiltroProducao(){
 
 function atualizaStatusProducao(m,idx,sel){
   producaoData[m][idx].status = sel.value;
-  sel.className = 'status-producao status-' + sel.value;
+  sel.className = 'status-producao ' + sel.value;
   socket.emit('atualizaProducao', producaoData);
 }
+
 
 /* ================= CARGAS ================= */
 
