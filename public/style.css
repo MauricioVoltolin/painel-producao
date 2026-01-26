@@ -179,3 +179,23 @@ select.status-producao {
 
 .aguardando { background: orange; }
 .faturado { background: green; }
+
+@media (max-width: 768px) {
+  .desktop-row {
+    display: flex;
+  }
+
+  .desktop-row .item-left,
+  .desktop-row .item-right {
+    width: 50% !important;
+  }
+
+  .desktop-row .item-right {
+    align-items: flex-end;
+  }
+}
+@media (max-width: 768px) {
+  .only-desktop {
+    display: none;
+  }
+}

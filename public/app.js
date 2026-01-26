@@ -67,9 +67,12 @@ function renderProducao(){
   const div = document.getElementById('producao');
 
   filtro.innerHTML = '<option value="todos">Todas</option>';
-  Object.keys(producaoData).forEach(m=>{
-    filtro.innerHTML += `<option value="${m}">${m}</option>`;
-  });
+
+Object.keys(producaoData).forEach(m=>{
+  const selected = filtroAtual === m ? 'selected' : '';
+  filtro.innerHTML += `<option value="${m}" ${selected}>${m}</option>`;
+});
+
 
   div.innerHTML = '';
 
@@ -95,10 +98,21 @@ function renderProducao(){
       if(i.status && i.status !== '-') row.classList.add(i.status);
 
       row.innerHTML = `
-        <div class="item-left" style="width:70%">
-          ${i.item}
-        </div>
+        <div class="item-left" style="width:70%;display:flex;align-items:center;gap:8px">
+          <span>${i.item}</span>
 
+          <span class="menu"
+            onclick="toggleItemMenu('${m}',${idx},this)">⋮</span>
+
+          <div class="dropdown item-menu">
+            <button onclick="abrirTrocarMaquina('${m}',${idx})">
+              Trocar de máquina
+            </button>
+            <button onclick="abrirEditarItem('${m}',${idx})">
+              Editar item
+            </button>
+          </div>
+        </div>
         <div class="item-right"
           style="width:30%;display:flex;flex-direction:column;gap:4px">
 
@@ -208,3 +222,36 @@ socket.on('atualizaCargas',d=>{
   cargas=d;
   renderCargas(cargas);
 });
+function toggleItemMenu(maquina, idx, el){
+  document.querySelectorAll('.item-menu').forEach(m=>m.style.display='none');
+  el.nextElementSibling.style.display = 'block';
+}
+function abrirTrocarMaquina(maquinaAtual, idx){
+  const maquinas = Object.keys(producaoData);
+  const nova = prompt(
+    'Mover para qual máquina?\n' + maquinas.join('\n')
+  );
+
+  if(!nova || !producaoData[nova]) return;
+
+  const item = producaoData[maquinaAtual][idx];
+  producaoData[maquinaAtual].splice(idx,1);
+  producaoData[nova].push(item);
+
+  socket.emit('atualizaProducao', producaoData);
+}
+function abrirEditarItem(maquina, idx){
+  const item = producaoData[maquina][idx];
+
+  const venda = prompt('Qtd vendida:', item.venda);
+  const estoque = prompt('Estoque:', item.estoque);
+  const produzir = prompt('Produzir:', item.produzir);
+  const prioridade = confirm('É PRIORIDADE?');
+
+  item.venda = venda;
+  item.estoque = estoque;
+  item.produzir = produzir;
+  item.prioridade = prioridade ? 'PRIORIDADE' : '';
+
+  socket.emit('atualizaProducao', producaoData);
+}
