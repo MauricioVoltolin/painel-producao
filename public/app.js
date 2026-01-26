@@ -98,68 +98,62 @@ Object.keys(producaoData).forEach(m=>{
       if(i.status && i.status !== '-') row.classList.add(i.status);
 
       row.innerHTML = `
-        <div class="card-producao desktop">
+  <div class="card-producao desktop">
 
-          <!-- ITEM -->
-          <div class="item-area">
-            ${i.item}
-          </div>
+    <!-- DESCRIÇÃO -->
+    <div class="item-area">
+      ${i.item}
+    </div>
 
-          <!-- STATUS -->
-                <div class="status-area">
+    <!-- DIREITA -->
+    <div class="status-area">
 
-                <div class="valores">
-                  <span>V:${i.venda}</span>
-                  <span>E:${i.estoque}</span>
-                  <span>P:${i.produzir}</span>
-                </div>
+      <!-- V / E / P -->
+      <div class="valores">
+        <span>V:${i.venda}</span>
+        <span>E:${i.estoque}</span>
+        <span>P:${i.produzir}</span>
+      </div>
 
-                <div class="status-wrapper">
-                  <select class="status-producao"
-                    onchange="atualizaStatusProducao('${m}',${idx},this)">
-                    <option value="-" ${i.status==='-'?'selected':''}>-</option>
-                    <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
-                    <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>Produção: OK</option>
-                    <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
-                    <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>Acabamento: OK</option>
-                  </select>
-                </div>
+      <!-- STATUS (APENAS DROPDOWN) -->
+      <div class="status-wrapper">
+        <select class="status-producao ${i.status}"
+          onchange="atualizaStatusProducao('${m}',${idx},this)">
+          <option value="-" ${i.status==='-'?'selected':''}>-</option>
+          <option value="producao" ${i.status==='producao'?'selected':''}>
+            Produção
+          </option>
+          <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>
+            Produção: OK
+          </option>
+          <option value="acabamento" ${i.status==='acabamento'?'selected':''}>
+            Acabamento
+          </option>
+          <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>
+            Acabamento: OK
+          </option>
+        </select>
+      </div>
 
-                <option value="-" ${i.status==='-'?'selected':''}>-</option>
-                <option value="producao" ${i.status==='producao'?'selected':''}>
-                  Produção
-                </option>
-                <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>
-                  Produção: OK
-                </option>
-                <option value="acabamento" ${i.status==='acabamento'?'selected':''}>
-                  Acabamento
-                </option>
-                <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>
-                  Acabamento: OK
-                </option>
-              </select>
+      <!-- MENU 3 PONTOS (SÓ DESKTOP) -->
+      <div class="menu-wrapper only-desktop">
+        <span class="menu-btn"
+          onclick="toggleItemMenu('${m}',${idx},this)">⋮</span>
 
-            </div>
-
-            <!-- MENU 3 PONTOS -->
-            <div class="menu-wrapper">
-              <span class="menu-btn"
-                onclick="toggleItemMenu('${m}',${idx},this)">⋮</span>
-
-              <div class="dropdown item-menu">
-                <button onclick="abrirTrocarMaquina('${m}',${idx})">
-                  Trocar de máquina
-                </button>
-                <button onclick="abrirEditarItem('${m}',${idx})">
-                  Editar item
-                </button>
-              </div>
-            </div>
-          </div>
-
+        <div class="dropdown item-menu">
+          <button onclick="abrirTrocarMaquina('${m}',${idx})">
+            Trocar de máquina
+          </button>
+          <button onclick="abrirEditarItem('${m}',${idx})">
+            Editar item
+          </button>
         </div>
-      `;
+      </div>
+
+    </div>
+  </div>
+`;
+
       card.appendChild(row);
     });
 
