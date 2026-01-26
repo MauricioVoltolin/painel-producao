@@ -11,7 +11,6 @@ function openTab(i){
 /* ================= PRODUÇÃO ================= */
 
 let producaoData = {};
-let producaoOriginal = {};
 let filtroAtual = 'todos';
 
 /* ===== XLS ===== */
@@ -51,10 +50,9 @@ function carregarXLS(e){
   reader.readAsArrayBuffer(file);
 }
 
-/* ===== SOCKET ===== */
+/* ===== SOCKET PRODUÇÃO ===== */
 socket.on('initProducao', data=>{
   producaoData = data;
-  producaoOriginal = JSON.parse(JSON.stringify(data));
   renderProducao();
 });
 
@@ -80,50 +78,37 @@ function renderProducao(){
 
     const card = document.createElement('div');
     card.className='card';
-
-    card.innerHTML = `
-      <h3>${m}</h3>
-      <div class="card-header">
-        <div class="item-left">Item</div>
-        <div class="item-right">
-          <span>V</span><span>E</span><span>P</span><span>Status</span>
-        </div>
-      </div>
-    `;
+    card.innerHTML = `<h3>${m}</h3>`;
 
     producaoData[m].forEach((i,idx)=>{
       const row = document.createElement('div');
       row.className='desktop-row';
 
-      /* ===== PRIORIDADE (linha inteira) ===== */
+      /* prioridade */
       if(i.prioridade === 'PRIORIDADE'){
         row.style.background = '#fff59d';
         row.style.fontWeight = '700';
       }
 
-      /* ===== STATUS NA LINHA (não no select) ===== */
+      /* status na linha */
       row.classList.remove('producao','producao_ok','acabamento','acabamento_ok');
-      if(i.status && i.status !== '-'){
-        row.classList.add(i.status);
-      }
+      if(i.status && i.status !== '-') row.classList.add(i.status);
 
       row.innerHTML = `
-        <!-- ESQUERDA 70% -->
         <div class="item-left" style="width:70%">
           ${i.item}
         </div>
 
-        <!-- DIREITA 30% -->
         <div class="item-right"
-             style="width:30%;display:flex;flex-direction:column;gap:4px">
+          style="width:30%;display:flex;flex-direction:column;gap:4px">
 
-          <div style="display:flex;gap:12px;font-size:12px">
+          <div style="display:flex;gap:10px;font-size:12px">
             <span>V: ${i.venda ?? ''}</span>
             <span>E: ${i.estoque ?? ''}</span>
             <span>P: ${i.produzir ?? ''}</span>
           </div>
 
-          <select class="status-producao"
+          <select class="status-producao status-${i.status}"
             onchange="atualizaStatusProducao('${m}',${idx},this)">
             <option value="-" ${i.status==='-'?'selected':''}>-</option>
             <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
@@ -148,6 +133,7 @@ function aplicarFiltroProducao(){
 
 function atualizaStatusProducao(m,idx,sel){
   producaoData[m][idx].status = sel.value;
+  sel.className = 'status-producao status-' + sel.value;
   socket.emit('atualizaProducao', producaoData);
 }
 
@@ -158,8 +144,7 @@ let cargas=[];
 function novaCarga(){
   cargas.push({
     titulo:`Carga ${String(cargas.length+1).padStart(2,'0')}`,
-    status:'Pendente',
-    itens:[]
+    status:'Pendente'
   });
   socket.emit('editarCarga',cargas);
 }
@@ -173,7 +158,8 @@ function renderCargas(data){
     card.className='card';
 
     card.innerHTML=`
-      <div class="card-header" style="justify-content:space-between">
+      <div class="card-header"
+        style="display:flex;justify-content:space-between;align-items:center">
         <strong>${c.titulo}</strong>
 
         <div style="display:flex;gap:8px;align-items:center">
@@ -190,8 +176,7 @@ function renderCargas(data){
         </div>
       </div>
 
-      <div class="card-itens"></div>
-      <button class="add-item" onclick="addItem(${idx})">+</button>
+      <button class="add-item" onclick="alert('Item manual em breve')">+</button>
     `;
 
     div.appendChild(card);
