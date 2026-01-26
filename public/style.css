@@ -348,28 +348,63 @@ select.status-producao.acabamento {
 select.status-producao.acabamento_ok {
   background: #81c784;
 }
-/* CABEÇALHO DESCRIÇÃO */
-#tab-producao .card::before {
-  content: "DESCRIÇÃO";
-  display: block;
-  font-weight: 700;
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 4px;
-  padding-left: 4px;
-}
-/* CABEÇALHO V/E/P/STATUS */
-#tab-producao .desktop-row:first-of-type {
-  position: relative;
-  padding-top: 18px;
+/* ================= PRODUÇÃO – DESKTOP (MANTÉM TUDO EM UMA LINHA) ================= */
+
+.status-area {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: nowrap; /* garante 1 linha */
 }
 
-#tab-producao .desktop-row:first-of-type::before {
-  content: "V   E   P   STATUS";
-  position: absolute;
-  right: 0;
-  top: 0;
-  font-size: 12px;
+.valores {
+  display: flex;
+  gap: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.valores span::before {
   font-weight: 700;
-  color: #666;
+}
+
+/* Prefixos V / E / P */
+.valores span:nth-child(1)::before {
+  content: "V: ";
+}
+.valores span:nth-child(2)::before {
+  content: "E: ";
+}
+.valores span:nth-child(3)::before {
+  content: "P: ";
+}
+
+/* ================= MOBILE – GALAXY A07 ================= */
+@media (max-width: 768px) {
+
+  /* esconder tudo que não pode aparecer */
+  .menu-wrapper,
+  .add-item,
+  .producao-buttons {
+    display: none !important;
+  }
+
+  /* força duas linhas */
+  .status-area {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  /* primeira linha: V / E / P */
+  .valores {
+    order: 1;
+  }
+
+  /* segunda linha: STATUS */
+  select.status-producao {
+    order: 2;
+    width: 100%;
+  }
 }
