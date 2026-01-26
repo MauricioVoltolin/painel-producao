@@ -90,8 +90,11 @@ function renderProducao(){
 
       // prioridade
       if(i.prioridade === 'PRIORIDADE'){
-        row.style.background = '#fff59d';
+        row.style.backgroundColor = '#fff59d';
         row.style.fontWeight = '700';
+      } else {
+        row.style.backgroundColor = '';
+        row.style.fontWeight = '';
       }
 
       // status na linha
@@ -296,14 +299,16 @@ function abrirTrocarMaquina(maquinaAtual, idx){
 
 function abrirEditarItem(maquina, idx){
   const item = producaoData[maquina][idx];
+
   const venda = prompt('Qtd vendida:', item.venda);
   const estoque = prompt('Estoque:', item.estoque);
   const produzir = prompt('Produzir:', item.produzir);
   const prioridade = confirm('É PRIORIDADE?');
 
-  item.venda = venda;
-  item.estoque = estoque;
-  item.produzir = produzir;
+  if(venda !== null && venda.trim() !== '') item.venda = venda;
+  if(estoque !== null && estoque.trim() !== '') item.estoque = estoque;
+  if(produzir !== null && produzir.trim() !== '') item.produzir = produzir;
+
   item.prioridade = prioridade ? 'PRIORIDADE' : '';
 
   socket.emit('atualizaProducao', producaoData);
