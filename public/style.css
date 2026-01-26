@@ -252,3 +252,76 @@ select.status-producao {
     display: none !important;
   }
 }
+/* ================= PRODUÇÃO – DESKTOP (PADRÃO) ================= */
+
+#tab-producao .card {
+  width: 100%;
+}
+
+.card-producao.desktop {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.item-area {
+  width: 70%;
+  text-align: left;
+}
+
+.status-area {
+  width: 30%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.valores {
+  display: flex;
+  gap: 10px;
+  font-weight: bold;
+}
+
+.menu-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+/* ================= MOBILE – GALAXY A07 ================= */
+@media (max-width: 768px) {
+
+  .producao-buttons {
+    display: none !important;
+  }
+
+  .menu-wrapper {
+    display: none !important;
+  }
+
+  .card-producao.desktop {
+    display: flex;
+  }
+
+  .item-area {
+    width: 60% !important;
+  }
+
+  .status-area {
+    width: 40% !important;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .valores {
+    order: 1;
+    justify-content: flex-end;
+  }
+
+  select.status-producao {
+    order: 2;
+    width: 100%;
+  }
+}
