@@ -199,3 +199,56 @@ select.status-producao {
     display: none;
   }
 }
+.card-producao.desktop {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.item-area {
+  width: 70%;
+  text-align: left;
+}
+
+.status-area {
+  width: 30%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.valores {
+  display: flex;
+  gap: 10px;
+  font-weight: bold;
+}
+
+.status-chave {
+  margin-left: 10px;
+  font-weight: 700;
+}
+
+.menu-wrapper {
+  position: relative;
+}
+
+.menu-btn {
+  cursor: pointer;
+  font-size: 18px;
+  padding-left: 8px;
+}
+@media (max-width: 768px) {
+  .card-producao {
+    display: flex;
+  }
+
+  .item-area,
+  .status-area {
+    width: 50% !important;
+  }
+}
+@media (max-width: 768px) {
+  .only-desktop {
+    display: none !important;
+  }
+}
