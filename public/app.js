@@ -314,3 +314,12 @@ function abrirEditarItem(maquina, idx){
 
   socket.emit('atualizaProducao', producaoData);
 }
+function togglePrioridade(maquina, idx){
+  const item = producaoData[maquina][idx];
+
+  // Alterna entre PRIORIDADE e vazio
+  item.prioridade = item.prioridade === 'PRIORIDADE' ? '' : 'PRIORIDADE';
+
+  // Atualiza o cliente em tempo real
+  socket.emit('atualizaProducao', producaoData);
+}
