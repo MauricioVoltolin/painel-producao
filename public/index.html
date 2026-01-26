@@ -19,7 +19,7 @@
   <button onclick="openTab(2)">TV</button>
 </div>
 
-<!-- ABA PRODUÇÃO -->
+<!-- ================= ABA PRODUÇÃO ================= -->
 <div class="tab active" id="tab-producao">
 
   <div class="filtro-container">
@@ -27,6 +27,9 @@
     <select id="filtroMaquina" onchange="aplicarFiltroProducao()">
       <option value="todos">Todas</option>
     </select>
+
+    <!-- ✅ BOTÃO ADICIONADO (não mexe no layout) -->
+    <button id="btnAddManual">Adicionar Item</button>
   </div>
 
   <div id="producao" class="cards-container"></div>
@@ -38,13 +41,35 @@
 
 </div>
 
-<!-- ABA CARGAS -->
+<!-- ================= ABA CARGAS ================= -->
 <div class="tab" id="tab-cargas">
   <button id="novaCarga" onclick="novaCarga()">Nova Carga</button>
-  <div class="card-container" id="cargas"></div>
+
+  <div class="card-container" id="cargas">
+    <!-- Cards de carga são inseridos via JS -->
+    <!-- Estrutura esperada dentro do card:
+
+    <div class="card-carga">
+      <div class="card-header">
+        <span class="titulo-carga">Carga 01</span>
+
+        <div class="acoes-carga">
+          <select class="status-carga">
+            <option value="Pendente">Pendente</option>
+            <option value="Carregando">Carregando</option>
+            <option value="Pronto">Pronto</option>
+          </select>
+
+          <span class="three-dots">⋮</span>
+        </div>
+      </div>
+    </div>
+
+    -->
+  </div>
 </div>
 
-<!-- ABA TV -->
+<!-- ================= ABA TV ================= -->
 <div class="tab" id="tab-tv">
   <h2 style="text-align:center">Modo TV (em breve)</h2>
 </div>

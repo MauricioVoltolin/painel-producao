@@ -14,6 +14,7 @@ let producaoData = {};
 let producaoOriginal = {};
 let filtroAtual = 'todos';
 
+/* ===== XLS ===== */
 document.getElementById('xls').addEventListener('change', carregarXLS);
 
 function carregarXLS(e){
@@ -45,20 +46,24 @@ function carregarXLS(e){
       });
     });
 
-    producaoData = JSON.parse(JSON.stringify(maquinas));
-    producaoOriginal = JSON.parse(JSON.stringify(maquinas));
-
-    socket.emit('uploadProducao', producaoData);
-    renderProducao();
+    socket.emit('uploadProducao', maquinas);
   };
   reader.readAsArrayBuffer(file);
 }
+
+/* ===== RECEBE DO SERVIDOR ===== */
+socket.on('initProducao', data=>{
+  producaoData = data;
+  producaoOriginal = JSON.parse(JSON.stringify(data));
+  renderProducao();
+});
 
 socket.on('atualizaProducao', data=>{
   producaoData = data;
   renderProducao();
 });
 
+/* ===== RENDER ===== */
 function renderProducao(){
   const filtro = document.getElementById('filtroMaquina');
   const div = document.getElementById('producao');
@@ -75,17 +80,22 @@ function renderProducao(){
 
     const card = document.createElement('div');
     card.className='card';
-    card.innerHTML = `<h3>${m}</h3>
+    card.innerHTML = `
+      <h3>${m}</h3>
       <div class="card-header">
         <div class="item-left">Item</div>
-        <div class="item-right"><span>V</span><span>E</span><span>P</span><span>Status</span></div>
+        <div class="item-right">
+          <span>V</span><span>E</span><span>P</span><span>Status</span>
+        </div>
       </div>`;
 
     producaoData[m].forEach((i,idx)=>{
       const row = document.createElement('div');
       row.className='desktop-row';
       row.innerHTML = `
-        <div class="item-left">${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}</div>
+        <div class="item-left">
+          ${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}
+        </div>
         <div class="item-right">
           <span>${i.venda||''}</span>
           <span>${i.estoque||''}</span>
@@ -116,51 +126,69 @@ function atualizaStatusProducao(m,idx,sel){
   socket.emit('atualizaProducao', producaoData);
 }
 
-function exportAlteracoes(){
-  let alt=[];
-  for(const m in producaoData){
-    producaoData[m].forEach((i,idx)=>{
-      if(i.status!==producaoOriginal[m][idx].status){
-        alt.push({Maquina:m,Item:i.item,Status:i.status});
-      }
-    });
-  }
-  if(!alt.length) return alert('Nenhuma alteração');
-  const ws=XLSX.utils.json_to_sheet(alt);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Alteracoes');
-  XLSX.writeFile(wb,'alteracoes.xlsx');
-}
+/* ===== ITEM MANUAL ===== */
+document.getElementById('btnAddManual').onclick = ()=>{
+  const maquina = prompt('Máquina:');
+  const item = prompt('Item:');
+  if(!maquina || !item) return;
+
+  if(!producaoData[maquina]) producaoData[maquina]=[];
+  producaoData[maquina].push({
+    item,
+    venda:'',
+    estoque:'',
+    produzir:'',
+    prioridade:'',
+    status:'-'
+  });
+
+  socket.emit('atualizaProducao', producaoData);
+};
 
 /* ================= CARGAS ================= */
 
 let cargas=[];
 
 function novaCarga(){
-  cargas.push({titulo:`Carga ${String(cargas.length+1).padStart(2,'0')}`,itens:[]});
+  cargas.push({
+    titulo:`Carga ${String(cargas.length+1).padStart(2,'0')}`,
+    status:'Pendente',
+    itens:[]
+  });
   socket.emit('editarCarga',cargas);
 }
 
 function renderCargas(data){
   const div=document.getElementById('cargas');
   div.innerHTML='';
+
   data.forEach((c,idx)=>{
     const card=document.createElement('div');
     card.className='card';
     card.innerHTML=`
       <div class="card-header">
         <strong>${c.titulo}</strong>
-        <div class="menu" onclick="toggleDropdown(${idx})">⋮
+
+        <div style="display:flex;gap:8px;align-items:center">
+          <select onchange="atualizaStatusCarga(${idx},this)">
+            <option ${c.status==='Pendente'?'selected':''}>Pendente</option>
+            <option ${c.status==='Carregando'?'selected':''}>Carregando</option>
+            <option ${c.status==='Pronto'?'selected':''}>Pronto</option>
+          </select>
+
+          <span class="menu" onclick="toggleDropdown(${idx})">⋮</span>
           <div class="dropdown" id="dropdown-${idx}">
             <button onclick="excluirCarga(${idx})">Excluir</button>
           </div>
         </div>
-      </div>
-      <div class="card-itens" id="card-itens-${idx}"></div>
-      <button class="add-item" onclick="addItem(${idx})">+</button>`;
+      </div>`;
     div.appendChild(card);
-    renderItens(idx);
   });
+}
+
+function atualizaStatusCarga(i,sel){
+  cargas[i].status = sel.value;
+  socket.emit('editarCarga',cargas);
 }
 
 function toggleDropdown(i){
@@ -173,33 +201,13 @@ function excluirCarga(i){
   socket.emit('editarCarga',cargas);
 }
 
-function addItem(i){
-  const n=prompt('Item:');
-  if(!n) return;
-  cargas[i].itens.push({nome:n,status:'Aguardando'});
-  socket.emit('editarCarga',cargas);
-}
+/* ===== SOCKET CARGAS ===== */
+socket.on('initCargas',d=>{
+  cargas=d;
+  renderCargas(cargas);
+});
 
-function renderItens(i){
-  const d=document.getElementById(`card-itens-${i}`);
-  d.innerHTML='';
-  cargas[i].itens.forEach((it,idx)=>{
-    d.innerHTML+=`
-      <div class="item">
-        <span>${it.nome}</span>
-        <select class="status-select ${it.status==='Faturado'?'faturado':'aguardando'}"
-          onchange="atualizaItemStatus(${i},${idx},this)">
-          <option>Aguardando</option>
-          <option>Faturado</option>
-        </select>
-      </div>`;
-  });
-}
-
-function atualizaItemStatus(c,i,s){
-  cargas[c].itens[i].status=s.value;
-  socket.emit('editarCarga',cargas);
-}
-
-socket.on('initCargas',d=>{cargas=d;renderCargas(cargas);});
-socket.on('atualizaCargas',d=>{cargas=d;renderCargas(cargas);});
+socket.on('atualizaCargas',d=>{
+  cargas=d;
+  renderCargas(cargas);
+});
