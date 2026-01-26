@@ -179,3 +179,8 @@ select.status-producao.acabamento_ok { background-color: #81c784 !important; }
 .status-pendente { background-color: #ffecb3; }
 .status-carregando { background-color: #fff59d; }
 .status-pronto { background-color: #c8e6c9; }
+@media (max-width: 768px) {
+  .only-desktop {
+    display: none !important;
+  }
+}
