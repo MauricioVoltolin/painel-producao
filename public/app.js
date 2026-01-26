@@ -93,22 +93,40 @@ function renderProducao(){
       const row = document.createElement('div');
       row.className='desktop-row';
       row.innerHTML = `
-        <div class="item-left">
-          ${i.item} ${i.prioridade==='PRIORIDADE'?'⚠️':''}
-        </div>
-        <div class="item-right">
-          <span>${i.venda||''}</span>
-          <span>${i.estoque||''}</span>
-          <span>${i.produzir||''}</span>
-          <select class="status-producao ${i.status}"
-            onchange="atualizaStatusProducao('${m}',${idx},this)">
-            <option value="-">-</option>
-            <option value="producao">Produção</option>
-            <option value="producao_ok">Produção OK</option>
-            <option value="acabamento">Acabamento</option>
-            <option value="acabamento_ok">Acabamento OK</option>
-          </select>
-        </div>`;
+  <!-- ESQUERDA 50% -->
+  <div class="item-left" style="width:50%">
+    <span style="${i.prioridade==='PRIORIDADE'
+      ? 'background:#fff59d;font-weight:700;padding:2px 6px;border-radius:4px'
+      : ''}">
+      ${i.item}
+    </span>
+    ${i.prioridade==='PRIORIDADE' ? ' ⚠️' : ''}
+  </div>
+
+  <!-- DIREITA 50% -->
+  <div class="item-right"
+       style="width:50%;display:flex;flex-direction:column;gap:4px">
+
+    <!-- V / E / P EM CIMA -->
+    <div style="display:flex;gap:12px;font-size:12px">
+      <span>V: ${i.venda !== undefined ? i.venda : ''}</span>
+      <span>E: ${i.estoque !== undefined ? i.estoque : ''}</span>
+      <span>P: ${i.produzir !== undefined ? i.produzir : ''}</span>
+    </div>
+
+    <!-- STATUS EMBAIXO -->
+    <select class="status-producao ${i.status}"
+      onchange="atualizaStatusProducao('${m}',${idx},this)">
+      <option value="-">-</option>
+      <option value="producao">Produção</option>
+      <option value="producao_ok">Produção OK</option>
+      <option value="acabamento">Acabamento</option>
+      <option value="acabamento_ok">Acabamento OK</option>
+    </select>
+
+  </div>
+`;
+
       card.appendChild(row);
     });
 
@@ -165,6 +183,7 @@ function renderCargas(data){
   data.forEach((c,idx)=>{
     const card=document.createElement('div');
     card.className='card';
+
     card.innerHTML=`
       <div class="card-header">
         <strong>${c.titulo}</strong>
@@ -181,10 +200,17 @@ function renderCargas(data){
             <button onclick="excluirCarga(${idx})">Excluir</button>
           </div>
         </div>
-      </div>`;
+      </div>
+
+      <div class="card-itens" id="card-itens-${idx}"></div>
+      <button class="add-item" onclick="addItem(${idx})">+</button>
+    `;
+
     div.appendChild(card);
+    renderItens(idx);
   });
 }
+
 
 function atualizaStatusCarga(i,sel){
   cargas[i].status = sel.value;
