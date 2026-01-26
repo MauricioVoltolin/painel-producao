@@ -325,3 +325,51 @@ select.status-producao {
     width: 100%;
   }
 }
+/* FORÇAR COR NO SELECT DE STATUS (DESKTOP) */
+select.status-producao {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  color: #000;
+  font-weight: 600;
+}
+
+/* manter cores cadastradas */
+select.status-producao.producao {
+  background: #fff9c4;
+}
+select.status-producao.producao_ok {
+  background: #fff176;
+}
+select.status-producao.acabamento {
+  background: #c8e6c9;
+}
+select.status-producao.acabamento_ok {
+  background: #81c784;
+}
+/* CABEÇALHO DESCRIÇÃO */
+#tab-producao .card::before {
+  content: "DESCRIÇÃO";
+  display: block;
+  font-weight: 700;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+  padding-left: 4px;
+}
+/* CABEÇALHO V/E/P/STATUS */
+#tab-producao .desktop-row:first-of-type {
+  position: relative;
+  padding-top: 18px;
+}
+
+#tab-producao .desktop-row:first-of-type::before {
+  content: "V   E   P   STATUS";
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #666;
+}
