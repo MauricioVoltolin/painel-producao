@@ -1,4 +1,4 @@
-/* ===== GERAL ===== */
+/* ================== GERAL ================== */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -10,7 +10,7 @@ button, select {
   cursor: pointer;
 }
 
-/* ===== TABS ===== */
+/* ================== TABS ================== */
 .tabs {
   display: flex;
   gap: 10px;
@@ -26,7 +26,7 @@ button, select {
 
 .tabs button.active {
   background: #007bff;
-  color: white;
+  color: #fff;
 }
 
 .tab {
@@ -37,7 +37,7 @@ button, select {
   display: block;
 }
 
-/* ===== PRODUÇÃO ===== */
+/* ================== PRODUÇÃO ================== */
 .filtro-container {
   text-align: center;
   margin-bottom: 20px;
@@ -50,7 +50,7 @@ button, select {
 }
 
 .card {
-  background: white;
+  background: #fff;
   padding: 12px;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0,0,0,.1);
@@ -61,68 +61,94 @@ button, select {
   margin-bottom: 10px;
 }
 
-.card-header,
+/* ===== LINHA PRODUÇÃO ===== */
 .desktop-row {
-  display: flex;
-  align-items: center;
   border-top: 1px solid #eee;
   padding: 6px 0;
 }
 
-.card-header {
-  font-weight: bold;
-}
-
-.item-left {
-  width: 50%;
-}
-
-.item-right {
-  width: 50%;
+/* ===== CARD PRODUÇÃO (DESKTOP) ===== */
+.card-producao.desktop {
   display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* ITEM */
+.item-area {
+  width: 70%;
+  text-align: left;
+  padding-right: 8px;
+}
+
+/* STATUS + MENU */
+.status-area {
+  width: 30%;
+  display: flex;
+  align-items: center;
   justify-content: space-between;
 }
 
-.desktop-row span {
-  width: 50px;
+/* V / E / P */
+.valores {
+  display: flex;
+  gap: 10px;
+  font-weight: bold;
+  font-size: 13px;
 }
 
+/* SIGLAS NO TOPO (DESKTOP) */
+.siglas-topo {
+  display: flex;
+  gap: 12px;
+  font-weight: bold;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+/* ===== STATUS SELECT ===== */
 select.status-producao {
   padding: 5px;
   border-radius: 4px;
   border: 1px solid #ccc;
+  min-width: 120px;
+  display: inline-block;
 }
 
-/* STATUS PRODUÇÃO */
-.status-producao.producao { background: #fff9c4; }
-.status-producao.producao_ok { background: #fff176; }
-.status-producao.acabamento { background: #c8e6c9; }
-.status-producao.acabamento_ok { background: #81c784; }
-
-/* ===== CARGAS ===== */
-#novaCarga {
-  margin-bottom: 20px;
-  padding: 12px 25px;
-  font-size: 16px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 6px;
+/* ===== CORES STATUS ===== */
+.status-producao.producao {
+  background: #fff9c4;
 }
 
-.card-container {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+.status-producao.producao_ok {
+  background: #fff59d;
+  font-weight: bold;
 }
 
-@media(max-width:600px) {
-  .card-container { grid-template-columns: 1fr; }
+.status-producao.acabamento {
+  background: #c8e6c9;
 }
 
-.menu {
-  cursor: pointer;
+.status-producao.acabamento_ok {
+  background: #81c784;
+  font-weight: bold;
+}
+
+/* ===== PRIORIDADE ===== */
+.desktop-row.prioridade {
+  background: #fff59d;
+  font-weight: 700;
+}
+
+/* ===== MENU 3 PONTOS ===== */
+.menu-wrapper {
   position: relative;
+}
+
+.menu-btn {
+  cursor: pointer;
+  font-size: 18px;
+  padding-left: 8px;
 }
 
 .dropdown {
@@ -130,7 +156,7 @@ select.status-producao {
   position: absolute;
   right: 0;
   top: 20px;
-  background: white;
+  background: #fff;
   border: 1px solid #ccc;
   border-radius: 5px;
   z-index: 10;
@@ -148,15 +174,25 @@ select.status-producao {
   background: #eee;
 }
 
-.card-itens {
-  margin-top: 10px;
+/* ================== CARGAS ================== */
+#novaCarga {
+  margin-bottom: 20px;
+  padding: 12px 25px;
+  font-size: 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
 }
 
-.item {
-  display: flex;
-  justify-content: space-between;
-  padding: 5px 0;
-  border-bottom: 1px solid #ddd;
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.card-itens {
+  margin-top: 10px;
 }
 
 .add-item {
@@ -167,111 +203,30 @@ select.status-producao {
   color: white;
   font-size: 24px;
   border: none;
-  align-self: center;
   margin-top: 10px;
 }
 
-.status-select {
-  padding: 4px 6px;
-  border-radius: 4px;
-  color: white;
-}
-
-.aguardando { background: orange; }
-.faturado { background: green; }
-
+/* ================== MOBILE / A07 ================== */
 @media (max-width: 768px) {
-  .desktop-row {
-    display: flex;
-  }
 
-  .desktop-row .item-left,
-  .desktop-row .item-right {
-    width: 50% !important;
-  }
-
-  .desktop-row .item-right {
-    align-items: flex-end;
-  }
-}
-@media (max-width: 768px) {
-  .only-desktop {
-    display: none;
-  }
-}
-.card-producao.desktop {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.item-area {
-  width: 70%;
-  text-align: left;
-}
-
-.status-area {
-  width: 30%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.valores {
-  display: flex;
-  gap: 10px;
-  font-weight: bold;
-}
-
-.status-chave {
-  margin-left: 10px;
-  font-weight: 700;
-}
-
-.menu-wrapper {
-  position: relative;
-}
-
-.menu-btn {
-  cursor: pointer;
-  font-size: 18px;
-  padding-left: 8px;
-}
-@media (max-width: 768px) {
+  /* produção 50 / 50 */
   .card-producao {
     display: flex;
+    flex-direction: row;
   }
 
   .item-area,
   .status-area {
     width: 50% !important;
   }
-}
-@media (max-width: 768px) {
-  .only-desktop {
-    display: none !important;
+
+  /* esconder menu no mobile */
+  .menu-wrapper {
+    display: none;
   }
-}
-.status-producao.producao {
-  background: #fff9c4;
-}
 
-.status-producao.producao_ok {
-  background: #fff59d;
-}
-
-.status-producao.acabamento {
-  background: #c8e6c9;
-}
-
-.status-producao.acabamento_ok {
-  background: #81c784;
-  color: #000;
-}
-.siglas-topo {
-  display: flex;
-  gap: 12px;
-  font-weight: bold;
-  font-size: 12px;
-  margin-bottom: 6px;
+  /* cargas em 1 coluna */
+  .card-container {
+    grid-template-columns: 1fr;
+  }
 }

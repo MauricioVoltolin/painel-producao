@@ -5,14 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel de Produção</title>
 
+  <!-- LIB XLS -->
   <script src="lib/xlsx.full.min.js"></script>
+
+  <!-- SOCKET.IO -->
   <script src="/socket.io/socket.io.js"></script>
 
+  <!-- CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- TABS -->
+<!-- ================= TABS ================= -->
 <div class="tabs">
   <button class="active" onclick="openTab(0)">Produção</button>
   <button onclick="openTab(1)">Cargas</button>
@@ -22,63 +26,34 @@
 <!-- ================= ABA PRODUÇÃO ================= -->
 <div class="tab active" id="tab-producao">
 
+  <!-- FILTRO -->
   <div class="filtro-container">
     <label>Filtrar máquina:</label>
     <select id="filtroMaquina" onchange="aplicarFiltroProducao()">
       <option value="todos">Todas</option>
     </select>
-
-    <!-- ✅ BOTÃO ADICIONADO (não mexe no layout) -->
-    <button onclick="adicionarItem('${m}')">+</button>
-
-
-card.innerHTML = `
-  <h3>${m}</h3>
-  <div class="siglas-topo">
-    <span>V</span>
-    <span>E</span>
-    <span>P</span>
-    <span>Status</span>
   </div>
-`;
 
+  <!-- CARDS DE PRODUÇÃO (JS INSERE AQUI) -->
   <div id="producao" class="cards-container"></div>
 
+  <!-- AÇÕES DESKTOP -->
   <div class="producao-buttons only-desktop">
-  <input type="file" id="xls">
-  <button onclick="exportarAlterados()">Exportar</button>
-
-</div>
-
+    <input type="file" id="xls">
+    <button onclick="exportarAlterados()">Exportar</button>
+  </div>
 
 </div>
 
 <!-- ================= ABA CARGAS ================= -->
 <div class="tab" id="tab-cargas">
+
   <button id="novaCarga" onclick="novaCarga()">Nova Carga</button>
 
   <div class="card-container" id="cargas">
-    <!-- Cards de carga são inseridos via JS -->
-    <!-- Estrutura esperada dentro do card:
-
-    <div class="card-carga">
-      <div class="card-header">
-        <span class="titulo-carga">Carga 01</span>
-
-        <div class="acoes-carga">
-          <select class="status-carga">
-            <option value="Pendente">Pendente</option>
-            <option value="Carregando">Carregando</option>
-            <option value="Pronto">Pronto</option>
-          </select>
-
-          <span class="three-dots">⋮</span>
-        </div>
-      </div>
-    </div>
-
-    -->
+    <!-- Cards inseridos via JS -->
   </div>
+
 </div>
 
 <!-- ================= ABA TV ================= -->
@@ -86,6 +61,8 @@ card.innerHTML = `
   <h2 style="text-align:center">Modo TV (em breve)</h2>
 </div>
 
+<!-- ================= JS ================= -->
 <script src="app.js"></script>
+
 </body>
 </html>
