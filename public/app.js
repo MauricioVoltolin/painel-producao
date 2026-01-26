@@ -51,7 +51,7 @@ function carregarXLS(e){
   reader.readAsArrayBuffer(file);
 }
 
-/* ===== RECEBE DO SERVIDOR ===== */
+/* ===== SOCKET ===== */
 socket.on('initProducao', data=>{
   producaoData = data;
   producaoOriginal = JSON.parse(JSON.stringify(data));
@@ -63,7 +63,7 @@ socket.on('atualizaProducao', data=>{
   renderProducao();
 });
 
-/* ===== RENDER ===== */
+/* ===== RENDER PRODUÇÃO ===== */
 function renderProducao(){
   const filtro = document.getElementById('filtroMaquina');
   const div = document.getElementById('producao');
@@ -80,6 +80,7 @@ function renderProducao(){
 
     const card = document.createElement('div');
     card.className='card';
+
     card.innerHTML = `
       <h3>${m}</h3>
       <div class="card-header">
@@ -87,45 +88,51 @@ function renderProducao(){
         <div class="item-right">
           <span>V</span><span>E</span><span>P</span><span>Status</span>
         </div>
-      </div>`;
+      </div>
+    `;
 
     producaoData[m].forEach((i,idx)=>{
       const row = document.createElement('div');
       row.className='desktop-row';
+
+      /* ===== PRIORIDADE (linha inteira) ===== */
+      if(i.prioridade === 'PRIORIDADE'){
+        row.style.background = '#fff59d';
+        row.style.fontWeight = '700';
+      }
+
+      /* ===== STATUS NA LINHA (não no select) ===== */
+      row.classList.remove('producao','producao_ok','acabamento','acabamento_ok');
+      if(i.status && i.status !== '-'){
+        row.classList.add(i.status);
+      }
+
       row.innerHTML = `
-  <!-- ESQUERDA 50% -->
-  <div class="item-left" style="width:50%">
-    <span style="${i.prioridade==='PRIORIDADE'
-      ? 'background:#fff59d;font-weight:700;padding:2px 6px;border-radius:4px'
-      : ''}">
-      ${i.item}
-    </span>
-    ${i.prioridade==='PRIORIDADE' ? ' ⚠️' : ''}
-  </div>
+        <!-- ESQUERDA 70% -->
+        <div class="item-left" style="width:70%">
+          ${i.item}
+        </div>
 
-  <!-- DIREITA 50% -->
-  <div class="item-right"
-       style="width:50%;display:flex;flex-direction:column;gap:4px">
+        <!-- DIREITA 30% -->
+        <div class="item-right"
+             style="width:30%;display:flex;flex-direction:column;gap:4px">
 
-    <!-- V / E / P EM CIMA -->
-    <div style="display:flex;gap:12px;font-size:12px">
-      <span>V: ${i.venda !== undefined ? i.venda : ''}</span>
-      <span>E: ${i.estoque !== undefined ? i.estoque : ''}</span>
-      <span>P: ${i.produzir !== undefined ? i.produzir : ''}</span>
-    </div>
+          <div style="display:flex;gap:12px;font-size:12px">
+            <span>V: ${i.venda ?? ''}</span>
+            <span>E: ${i.estoque ?? ''}</span>
+            <span>P: ${i.produzir ?? ''}</span>
+          </div>
 
-    <!-- STATUS EMBAIXO -->
-    <select class="status-producao ${i.status}"
-      onchange="atualizaStatusProducao('${m}',${idx},this)">
-      <option value="-">-</option>
-      <option value="producao">Produção</option>
-      <option value="producao_ok">Produção OK</option>
-      <option value="acabamento">Acabamento</option>
-      <option value="acabamento_ok">Acabamento OK</option>
-    </select>
-
-  </div>
-`;
+          <select class="status-producao"
+            onchange="atualizaStatusProducao('${m}',${idx},this)">
+            <option value="-" ${i.status==='-'?'selected':''}>-</option>
+            <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
+            <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>Produção OK</option>
+            <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
+            <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>Acabamento OK</option>
+          </select>
+        </div>
+      `;
 
       card.appendChild(row);
     });
@@ -143,25 +150,6 @@ function atualizaStatusProducao(m,idx,sel){
   producaoData[m][idx].status = sel.value;
   socket.emit('atualizaProducao', producaoData);
 }
-
-/* ===== ITEM MANUAL ===== */
-document.getElementById('btnAddManual').onclick = ()=>{
-  const maquina = prompt('Máquina:');
-  const item = prompt('Item:');
-  if(!maquina || !item) return;
-
-  if(!producaoData[maquina]) producaoData[maquina]=[];
-  producaoData[maquina].push({
-    item,
-    venda:'',
-    estoque:'',
-    produzir:'',
-    prioridade:'',
-    status:'-'
-  });
-
-  socket.emit('atualizaProducao', producaoData);
-};
 
 /* ================= CARGAS ================= */
 
@@ -185,7 +173,7 @@ function renderCargas(data){
     card.className='card';
 
     card.innerHTML=`
-      <div class="card-header">
+      <div class="card-header" style="justify-content:space-between">
         <strong>${c.titulo}</strong>
 
         <div style="display:flex;gap:8px;align-items:center">
@@ -202,15 +190,13 @@ function renderCargas(data){
         </div>
       </div>
 
-      <div class="card-itens" id="card-itens-${idx}"></div>
+      <div class="card-itens"></div>
       <button class="add-item" onclick="addItem(${idx})">+</button>
     `;
 
     div.appendChild(card);
-    renderItens(idx);
   });
 }
-
 
 function atualizaStatusCarga(i,sel){
   cargas[i].status = sel.value;
