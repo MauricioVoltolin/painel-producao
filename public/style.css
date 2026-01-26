@@ -441,3 +441,51 @@ select.status-producao.acabamento_ok {
     text-align-last: right;
   }
 }
+/* ===== MOBILE – FORÇAR STATUS EM NOVA LINHA ===== */
+@media (max-width: 768px) {
+
+  .status-area {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+  }
+
+  .valores {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  select.status-producao {
+    display: block !important;   /* 🔑 isso força descer */
+    width: 100%;
+    margin-top: 4px;
+  }
+}
+/* ===== STATUS PRODUÇÃO – FIXAR COR (DESKTOP + MOBILE) ===== */
+select.status-producao {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  border: 1px solid #999;
+  font-weight: 600;
+  background-clip: padding-box;
+}
+
+/* cores fixas por status */
+select.status-producao.producao {
+  background-color: #fff9c4 !important;
+}
+
+select.status-producao.producao_ok {
+  background-color: #fff176 !important;
+}
+
+select.status-producao.acabamento {
+  background-color: #c8e6c9 !important;
+}
+
+select.status-producao.acabamento_ok {
+  background-color: #81c784 !important;
+}
