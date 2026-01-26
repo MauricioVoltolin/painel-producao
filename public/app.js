@@ -323,3 +323,14 @@ function togglePrioridade(maquina, idx){
   // Atualiza o cliente em tempo real
   socket.emit('atualizaProducao', producaoData);
 }
+// Fecha qualquer menu aberto quando clicar fora
+document.addEventListener('click', function(e){
+  const openMenus = document.querySelectorAll('.item-menu');
+  
+  openMenus.forEach(menu => {
+    // Se o clique NÃO for no menu nem no botão que abre o menu
+    if (!menu.contains(e.target) && !e.target.classList.contains('menu-btn')) {
+      menu.style.display = 'none';
+    }
+  });
+});

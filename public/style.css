@@ -550,3 +550,18 @@ select.status-producao.acabamento_ok {
 #add-item-global-btn:hover {
   background: #218838;
 }
+.filtro-container select {
+  padding: 8px 12px;       /* maior espaço interno */
+  font-size: 16px;         /* texto maior */
+  border-radius: 6px;      /* cantos arredondados */
+  border: 1px solid #ccc;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: 0.2s all;
+}
+
+.filtro-container select:hover {
+  border-color: #007bff;
+  box-shadow: 0 2px 6px rgba(0,123,255,0.3);
+}
