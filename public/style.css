@@ -536,3 +536,17 @@ select.status-producao.acabamento_ok {
   }
 
 }
+#add-item-global-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: #28a745;
+  color: white;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+}
+
+#add-item-global-btn:hover {
+  background: #218838;
+}

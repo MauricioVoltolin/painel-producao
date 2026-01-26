@@ -27,11 +27,10 @@
     <select id="filtroMaquina" onchange="aplicarFiltroProducao()">
       <option value="todos">Todas</option>
     </select>
-
-    <!-- ✅ BOTÃO ADICIONADO (não mexe no layout) -->
-    <button onclick="adicionarItem('${m}')">+</button>
-
-
+<div class="producao-buttons only-desktop" style="text-align:right; margin-bottom:10px;">
+  <button id="add-item-global-btn" onclick="adicionarItemGlobal()">+</button>
+  <button onclick="exportarAlterados()">Exportar</button>
+</div>
 
   <div id="producao" class="cards-container"></div>
 

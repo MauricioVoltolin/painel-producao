@@ -83,14 +83,6 @@ function renderProducao(){
     card.innerHTML = `<h3>${m}</h3>`;
     div.appendChild(card);
 
-    // Botão adicionar item apenas no desktop
-    if(window.innerWidth > 768){
-      const addGlobal = document.createElement('button');
-      addGlobal.textContent = '+';
-      addGlobal.className = 'add-item-global only-desktop';
-      addGlobal.onclick = () => adicionarItemGlobal();
-      card.appendChild(addGlobal);
-    }
 
     producaoData[m].forEach((i,idx)=>{
       const row = document.createElement('div');
