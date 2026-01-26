@@ -3,78 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel de Produção</title>
+  <title>Painel de Produção e Cargas</title>
 
+  <!-- XLSX e Socket.io -->
   <script src="lib/xlsx.full.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
 
+  <!-- CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- TABS -->
-<div class="tabs">
-  <button class="active" onclick="openTab(0)">Produção</button>
-  <button onclick="openTab(1)">Cargas</button>
-  <button onclick="openTab(2)">TV</button>
-</div>
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="active" onclick="openTab(0)">Produção</button>
+    <button onclick="openTab(1)">Cargas</button>
+  </div>
 
-<!-- ================= ABA PRODUÇÃO ================= -->
-<div class="tab active" id="tab-producao">
+  <!-- ================= ABA PRODUÇÃO ================= -->
+  <div class="tab active" id="tab-producao">
 
-  <div class="filtro-container">
-    <label>Filtrar máquina:</label>
-    <select id="filtroMaquina" onchange="aplicarFiltroProducao()">
-      <option value="todos">Todas</option>
-    </select>
-<div class="producao-buttons only-desktop" style="text-align:right; margin-bottom:10px;">
-  <button id="add-item-global-btn" onclick="adicionarItemGlobal()">+</button>
-</div>
-
-  <div id="producao" class="cards-container"></div>
-
-  <div class="producao-buttons only-desktop">
-  <input type="file" id="xls">
-
-
-</div>
-
-
-</div>
-
-<!-- ================= ABA CARGAS ================= -->
-<div class="tab" id="tab-cargas">
-  <button id="novaCarga" onclick="novaCarga()">Nova Carga</button>
-
-  <div class="card-container" id="cargas">
-    <!-- Cards de carga são inseridos via JS -->
-    <!-- Estrutura esperada dentro do card:
-
-    <div class="card-carga">
-      <div class="card-header">
-        <span class="titulo-carga">Carga 01</span>
-
-        <div class="acoes-carga">
-          <select class="status-carga">
-            <option value="Pendente">Pendente</option>
-            <option value="Carregando">Carregando</option>
-            <option value="Pronto">Pronto</option>
-          </select>
-
-          <span class="three-dots">⋮</span>
-        </div>
-      </div>
+    <div class="filtro-container">
+      <label>Filtrar máquina:</label>
+      <select id="filtroMaquina" onchange="aplicarFiltroProducao()">
+        <option value="todos">Todas</option>
+      </select>
     </div>
 
-    -->
+    <div id="producao" class="cards-container"></div>
+
+    <!-- Botão + global ficará no canto superior direito via JS -->
   </div>
-</div>
 
-<!-- ================= ABA TV ================= -->
-<div class="tab" id="tab-tv">
-  <h2 style="text-align:center">Modo TV (em breve)</h2>
-</div>
+  <!-- ================= ABA CARGAS ================= -->
+  <div class="tab" id="tab-cargas">
+    <button id="novaCarga" onclick="novaCarga()">Nova Carga</button>
 
-<script src="app.js"></script>
+    <div class="card-container" id="cargas">
+      <!-- Cards de carga serão inseridos via JS -->
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script src="app.js"></script>
 </body>
 </html>
