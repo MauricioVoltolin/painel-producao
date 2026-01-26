@@ -408,3 +408,36 @@ select.status-producao.acabamento_ok {
     width: 100%;
   }
 }
+/* ================= AJUSTE FINO – MOBILE (A07) ================= */
+@media (max-width: 768px) {
+
+  /* garante separação clara esquerda / direita */
+  .card-producao.desktop {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  /* descrição sempre à esquerda */
+  .item-area {
+    width: 60% !important;
+    text-align: left !important;
+  }
+
+  /* bloco direito alinhado à direita */
+  .status-area {
+    width: 40% !important;
+    align-items: flex-end !important;
+    text-align: right;
+  }
+
+  /* linha V/E/P */
+  .valores {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  /* status embaixo, alinhado à direita */
+  select.status-producao {
+    text-align-last: right;
+  }
+}
