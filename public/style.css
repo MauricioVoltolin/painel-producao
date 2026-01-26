@@ -489,3 +489,42 @@ select.status-producao.acabamento {
 select.status-producao.acabamento_ok {
   background-color: #81c784 !important;
 }
+/* ===== AJUSTE MOBILE A07: V/E/P EM CIMA, STATUS EM BAIXO ===== */
+@media (max-width: 768px) {
+
+  .card-producao {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .item-area {
+    width: 55% !important;
+    text-align: left;
+  }
+
+  .status-area {
+    width: 45% !important;
+    display: flex;
+    flex-direction: column;   /* <<< ISSO FAZ O STATUS DESCER */
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .valores {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .status-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* menu 3 pontinhos NÃO aparece no mobile */
+  .menu-wrapper {
+    display: none !important;
+  }
+}
