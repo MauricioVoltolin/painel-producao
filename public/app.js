@@ -115,10 +115,11 @@ function renderProducao(){
 
       <!-- V / E / P -->
       <div class="valores">
-        <span>V:${i.venda}</span>
-        <span>E:${i.estoque}</span>
-        <span>P:${i.produzir}</span>
+        <span>V:${i.venda || '000'}</span>
+        <span>E:${i.estoque || '000'}</span>
+        <span>P:${i.produzir || '000'}</span>
       </div>
+
 
       <!-- STATUS (APENAS DROPDOWN) -->
       <div class="status-wrapper">
