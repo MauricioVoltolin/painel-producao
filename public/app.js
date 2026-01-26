@@ -63,16 +63,25 @@ socket.on('atualizaProducao', data=>{
   renderProducao();
 });
 
-/* ===== RENDER PRODUÇÃO ===== */
+/* ===== UTIL ===== */
+function statusLabel(status){
+  switch(status){
+    case 'producao': return 'PROD';
+    case 'producao_ok': return 'PROD OK';
+    case 'acabamento': return 'ACAB';
+    case 'acabamento_ok': return 'ACAB OK';
+    default: return '-';
+  }
+}
+
+/* ===== RENDER ===== */
 function renderProducao(){
   const filtro = document.getElementById('filtroMaquina');
   const div = document.getElementById('producao');
 
   filtro.innerHTML = `<option value="todos">Todas</option>`;
   Object.keys(producaoData).forEach(m=>{
-    filtro.innerHTML += `
-      <option value="${m}" ${filtroAtual===m?'selected':''}>${m}</option>
-    `;
+    filtro.innerHTML += `<option value="${m}" ${filtroAtual===m?'selected':''}>${m}</option>`;
   });
 
   div.innerHTML = '';
@@ -82,59 +91,57 @@ function renderProducao(){
 
     const card = document.createElement('div');
     card.className='card';
-    card.innerHTML = `<h3>${m}</h3>`;
+    card.innerHTML = `<h3>${m}</h3>
+
+      <div class="siglas-topo only-desktop">
+        <span>V</span><span>E</span><span>P</span>
+      </div>
+    `;
 
     producaoData[m].forEach((i,idx)=>{
       const row = document.createElement('div');
       row.className='desktop-row';
 
-      /* PRIORIDADE */
       if(i.prioridade === 'PRIORIDADE'){
         row.style.background = '#fff59d';
         row.style.fontWeight = '700';
       }
 
-      /* STATUS COR */
-      row.classList.remove('producao','producao_ok','acabamento','acabamento_ok');
       if(i.status && i.status !== '-') row.classList.add(i.status);
 
       row.innerHTML = `
-        <!-- ITEM -->
-        <div class="item-left">
+        <div class="item-area">
           ${i.item}
         </div>
 
-        <!-- DIREITA -->
-        <div class="item-right">
+        <div class="status-area">
 
-          <!-- V E P -->
-          <div class="valores">
-            <span>V: ${i.venda ?? ''}</span>
-            <span>E: ${i.estoque ?? ''}</span>
-            <span>P: ${i.produzir ?? ''}</span>
+          <div class="valores only-desktop">
+            <span>${i.venda ?? ''}</span>
+            <span>${i.estoque ?? ''}</span>
+            <span>${i.produzir ?? ''}</span>
           </div>
 
-          <!-- STATUS -->
-          <select class="status-producao ${i.status}"
+          <!-- DESKTOP -->
+          <select class="status-producao only-desktop ${i.status}"
             onchange="atualizaStatusProducao('${m}',${idx},this)">
-            <option value="-" ${i.status==='-'?'selected':''}>-</option>
-            <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
-            <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>Produção: OK</option>
-            <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
-            <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>Acabamento: OK</option>
+            <option value="-">-</option>
+            <option value="producao">Produção</option>
+            <option value="producao_ok">Produção OK</option>
+            <option value="acabamento">Acabamento</option>
+            <option value="acabamento_ok">Acabamento OK</option>
           </select>
 
-          <!-- MENU -->
-          <div class="menu-wrapper">
-            <span class="menu-btn"
-              onclick="toggleItemMenu('${m}',${idx},this)">⋮</span>
+          <!-- MOBILE / A07 -->
+          <span class="status-chave only-mobile ${i.status}">
+            ${statusLabel(i.status)}
+          </span>
+
+          <div class="menu-wrapper only-desktop">
+            <span class="menu-btn" onclick="toggleItemMenu(this)">⋮</span>
             <div class="dropdown item-menu">
-              <button onclick="abrirTrocarMaquina('${m}',${idx})">
-                Trocar de máquina
-              </button>
-              <button onclick="abrirEditarItem('${m}',${idx})">
-                Editar item
-              </button>
+              <button onclick="abrirTrocarMaquina('${m}',${idx})">Trocar máquina</button>
+              <button onclick="abrirEditarItem('${m}',${idx})">Editar item</button>
             </div>
           </div>
 
@@ -158,10 +165,10 @@ function atualizaStatusProducao(m,idx,sel){
   socket.emit('atualizaProducao', producaoData);
 }
 
-/* ===== MENU ITEM ===== */
-function toggleItemMenu(maquina, idx, el){
+/* ===== MENU ===== */
+function toggleItemMenu(el){
   document.querySelectorAll('.item-menu').forEach(m=>m.style.display='none');
-  el.nextElementSibling.style.display = 'block';
+  el.nextElementSibling.style.display='block';
 }
 
 function abrirTrocarMaquina(maquinaAtual, idx){
@@ -182,12 +189,13 @@ function abrirEditarItem(maquina, idx){
   const venda = prompt('Qtd vendida:', item.venda);
   const estoque = prompt('Estoque:', item.estoque);
   const produzir = prompt('Produzir:', item.produzir);
-  const prioridade = confirm('É PRIORIDADE?');
+  const prioridade = confirm('Marcar como PRIORIDADE?');
 
   if(venda !== null && venda !== '') item.venda = venda;
   if(estoque !== null && estoque !== '') item.estoque = estoque;
   if(produzir !== null && produzir !== '') item.produzir = produzir;
-  item.prioridade = prioridade ? 'PRIORIDADE' : '';
+
+  item.prioridade = prioridade ? 'PRIORIDADE' : item.prioridade;
 
   socket.emit('atualizaProducao', producaoData);
 }
