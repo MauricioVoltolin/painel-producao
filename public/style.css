@@ -580,3 +580,33 @@ body {
   font-size: 15px;
   background: #fff;
 }
+/* ===== CONTAINER CENTRAL – PRODUÇÃO ===== */
+#tab-producao {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* centraliza em coluna */
+}
+
+/* largura padrão desktop */
+#tab-producao .filtro-container,
+#tab-producao .cards-container,
+#tab-producao .producao-buttons {
+  width: 80%;
+  max-width: 1200px;
+}
+
+/* cards não esticarem estranho */
+#tab-producao .card {
+  width: 100%;
+}
+
+/* ===== MOBILE – GALAXY A07 ===== */
+@media (max-width: 768px) {
+
+  #tab-producao .filtro-container,
+  #tab-producao .cards-container,
+  #tab-producao .producao-buttons {
+    width: 90%;
+  }
+
+}
