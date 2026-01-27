@@ -335,3 +335,87 @@ document.addEventListener('click', function(e){
     }
   });
 });
+function exportarProducaoEmAndamento(){
+  const linhas = [];
+
+  Object.keys(producaoData).forEach(maquina => {
+    producaoData[maquina].forEach(item => {
+      if (
+        item.status === 'producao' ||
+        item.status === 'producao_ok' ||
+        item.status === 'acabamento'
+      ) {
+        linhas.push({
+          Maquina: maquina,
+          Item: item.item,
+          Venda: item.venda,
+          Estoque: item.estoque,
+          Produzir: item.produzir,
+          Status: item.status,
+          Prioridade: item.prioridade
+        });
+      }
+    });
+  });
+
+  if (!linhas.length) {
+    alert('Nenhum item em produção/acabamento.');
+    return;
+  }
+
+  const ws = XLSX.utils.json_to_sheet(linhas);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Produção_Andamento');
+
+  const data = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `producao_${data}.xlsx`);
+}
+const fs = require('fs');
+const path = require('path');
+
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+io.on('connection', socket => {
+
+  socket.on('salvarRelatorioDiario', producaoData => {
+
+    const hoje = new Date().toISOString().slice(0,10);
+    const arquivo = path.join(DATA_DIR, `producao-${hoje}.json`);
+
+    const filtrado = {};
+
+    Object.keys(producaoData).forEach(maquina => {
+      const itens = producaoData[maquina].filter(i =>
+        i.status === 'producao' ||
+        i.status === 'producao_ok' ||
+        i.status === 'acabamento'
+      );
+
+      if (itens.length) filtrado[maquina] = itens;
+    });
+
+    fs.writeFileSync(arquivo, JSON.stringify(filtrado, null, 2));
+
+    socket.emit('relatorioSalvo', hoje);
+  });
+
+});
+socket.on('buscarRelatorioAnterior', () => {
+
+  const ontem = new Date(Date.now() - 86400000)
+    .toISOString()
+    .slice(0,10);
+
+  const arquivo = path.join(DATA_DIR, `producao-${ontem}.json`);
+
+  if (!fs.existsSync(arquivo)) {
+    socket.emit('relatorioAnterior', null);
+    return;
+  }
+
+  const data = JSON.parse(fs.readFileSync(arquivo));
+  socket.emit('relatorioAnterior', { data, dataRef: ontem });
+});
+function salvarRelatorioHoje(){
+  socket.emit('salvarRelatorioDiario', producaoData);
+}

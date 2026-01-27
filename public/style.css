@@ -550,3 +550,33 @@ select.status-producao.acabamento_ok {
 #add-item-global-btn:hover {
   background: #218838;
 }
+/* ===== ESPAÇO NO FINAL DA PÁGINA ===== */
+body {
+  padding-bottom: 80px; /* respiro geral */
+}
+
+#tab-producao,
+#tab-cargas {
+  padding-bottom: 40px;
+}
+/* ===== FILTRO DE MÁQUINAS ===== */
+.filtro-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.filtro-container label {
+  font-weight: 600;
+}
+
+#filtroMaquina {
+  padding: 10px 14px;
+  min-width: 220px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+  background: #fff;
+}
