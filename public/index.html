@@ -9,6 +9,39 @@
   <script src="/socket.io/socket.io.js"></script>
 
   <link rel="stylesheet" href="style.css">
+
+  <style>
+    /* ====================== BOTÕES FINAIS ====================== */
+    .botoes-finais {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    .btn-padrao {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .btn-padrao:hover {
+      background-color: #0056b3;
+    }
+
+    /* Esconder no mobile pequeno (ex: Galaxy A07) */
+    @media (max-width: 360px) {
+      .only-desktop {
+        display: none !important;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -23,51 +56,49 @@
 <div class="tab active" id="tab-producao">
 
   <div class="filtro-container">
-    <label>Filtrar máquina:</label>
     <select id="filtroMaquina" onchange="aplicarFiltroProducao()">
       <option value="todos">Todas</option>
     </select>
-<div class="producao-buttons only-desktop" style="text-align:right; margin-bottom:10px;">
-  <button id="add-item-global-btn" onclick="adicionarItemGlobal()">+</button>
-</div>
+    <div class="producao-buttons only-desktop" style="text-align:right; margin-bottom:10px;">
+      <button id="add-item-global-btn" onclick="adicionarItemGlobal()">+</button>
+    </div>
+  </div>
 
   <div id="producao" class="cards-container"></div>
+<!-- Card fixo de Produção / Acabamento Anterior -->
+<div id="producaoAnterior" class="cards-container"></div>
 
-  <div class="producao-buttons only-desktop">
-  <input type="file" id="xls">
+  <!-- ===== BOTÕES FINAIS (SÓ DESKTOP) ===== -->
+  <div class="botoes-finais only-desktop">
 
+    <!-- Botão 1: escolher XLS produção -->
+    <label class="btn-padrao">
+      Escolher Produção
+      <input type="file" id="xls" hidden>
+    </label>
 
-</div>
+    <!-- Botão 2: exportar acabamento -->
+    <button class="btn-padrao" onclick="gerarRelatorioAcabamento()">
+      Exportar Acabamento
+    </button>
 
+    <!-- Botão 3: enviar acabamento -->
+    <label class="btn-padrao">
+      Enviar Acabamento
+      <input type="file" id="xlsAcabamento" accept=".xls,.xlsx" hidden>
+    </label>
+
+  </div>
+
+  <!-- Card de Acabamento Final -->
+  <div id="acabamentoAnterior"></div>
 
 </div>
 
 <!-- ================= ABA CARGAS ================= -->
 <div class="tab" id="tab-cargas">
   <button id="novaCarga" onclick="novaCarga()">Nova Carga</button>
-
-  <div class="card-container" id="cargas">
-    <!-- Cards de carga são inseridos via JS -->
-    <!-- Estrutura esperada dentro do card:
-
-    <div class="card-carga">
-      <div class="card-header">
-        <span class="titulo-carga">Carga 01</span>
-
-        <div class="acoes-carga">
-          <select class="status-carga">
-            <option value="Pendente">Pendente</option>
-            <option value="Carregando">Carregando</option>
-            <option value="Pronto">Pronto</option>
-          </select>
-
-          <span class="three-dots">⋮</span>
-        </div>
-      </div>
-    </div>
-
-    -->
-  </div>
+  <div class="card-container" id="cargas"></div>
 </div>
 
 <!-- ================= ABA TV ================= -->

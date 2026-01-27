@@ -11,53 +11,48 @@ function openTab(i){
 /* ================= PRODUÇÃO ================= */
 let producaoData = {};
 let filtroAtual = 'todos';
-let producaoOriginal = {};
+let producaoAnteriorData = []; // dados globais da produção anterior
+let acabamentoData = []; // guarda os dados recebidos do servidor
 
-/* ===== XLS ===== */
-document.getElementById('xls').addEventListener('change', carregarXLS);
-
-function carregarXLS(e){
+/* ===== XLS DE PRODUÇÃO ===== */
+document.getElementById('xls').addEventListener('change', e => {
   const file = e.target.files[0];
   if(!file) return;
 
   const reader = new FileReader();
-  reader.onload = evt=>{
-    const wb = XLSX.read(evt.target.result,{type:'array'});
+  reader.onload = evt => {
+    const wb = XLSX.read(evt.target.result, { type:'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-    const linhas = data.slice(5);
+    const data = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' }).slice(5);
 
     let maquinas = {};
-
-    linhas.forEach(l=>{
+    data.forEach(l => {
       const item = l[0];
       const maquina = l[7];
       if(!item || !maquina) return;
 
-      if(!maquinas[maquina]) maquinas[maquina]=[];
+      if(!maquinas[maquina]) maquinas[maquina] = [];
       maquinas[maquina].push({
         item,
-        venda:l[10],
-        estoque:l[12],
-        produzir:l[16],
-        prioridade:l[6],
-        status:'-'
+        venda: l[10],
+        estoque: l[12],
+        produzir: l[16],
+        prioridade: l[6],
+        status: '-'
       });
     });
 
     socket.emit('uploadProducao', maquinas);
   };
   reader.readAsArrayBuffer(file);
-}
-
-/* ===== SOCKET PRODUÇÃO ===== */
-socket.on('initProducao', data=>{
-  producaoData = data;
-  producaoOriginal = JSON.parse(JSON.stringify(data));
-  renderProducao();
 });
 
-socket.on('atualizaProducao', data=>{
+/* ===== SOCKET PRODUÇÃO ===== */
+socket.on('initProducao', data => {
+  producaoData = data;
+  renderProducao();
+});
+socket.on('atualizaProducao', data => {
   producaoData = data;
   renderProducao();
 });
@@ -67,108 +62,83 @@ function renderProducao(){
   const filtro = document.getElementById('filtroMaquina');
   const div = document.getElementById('producao');
 
+  // Filtro de máquinas
   filtro.innerHTML = '<option value="todos">Todas</option>';
   Object.keys(producaoData).forEach(m=>{
-    const selected = filtroAtual === m ? 'selected' : '';
-    filtro.innerHTML += `<option value="${m}" ${selected}>${m}</option>`;
+    filtro.innerHTML += `<option value="${m}" ${filtroAtual===m?'selected':''}>${m}</option>`;
   });
 
   div.innerHTML = '';
 
   Object.keys(producaoData).forEach(m=>{
-    if(filtroAtual!=='todos' && filtroAtual!==m) return;
+    if(filtroAtual !== 'todos' && filtroAtual !== m) return;
 
     const card = document.createElement('div');
-    card.className='card';
+    card.className = 'card';
     card.innerHTML = `<h3>${m}</h3>`;
     div.appendChild(card);
 
-
-    producaoData[m].forEach((i,idx)=>{
+    producaoData[m].forEach((i, idx)=>{
       const row = document.createElement('div');
-      row.className='desktop-row';
-
-      // prioridade
+      row.className = 'desktop-row';
       if(i.prioridade === 'PRIORIDADE'){
         row.style.backgroundColor = '#fff59d';
         row.style.fontWeight = '700';
-      } else {
-        row.style.backgroundColor = '';
-        row.style.fontWeight = '';
       }
-
-      // status na linha
       row.classList.remove('producao','producao_ok','acabamento','acabamento_ok');
       if(i.status && i.status !== '-') row.classList.add(i.status);
 
-      // Conteúdo
       row.innerHTML = `
-  <div class="card-producao desktop">
-
-    <!-- DESCRIÇÃO -->
-    <div class="item-area">
-      ${i.item}
-    </div>
-
-    <!-- DIREITA -->
-    <div class="status-area">
-
-      <!-- V / E / P -->
-      <div class="valores">
-    <span>V:${i.venda || '000'}</span>
-    <span>E:${i.estoque || '000'}</span>
-    <span>P:${i.produzir || '000'}</span>
-  </div>
-
-
-      <!-- STATUS (APENAS DROPDOWN) -->
-      <div class="status-wrapper">
-        <select class="status-producao ${i.status}"
-          onchange="atualizaStatusProducao('${m}',${idx},this)">
-          <option value="-" ${i.status==='-'?'selected':''}>-</option>
-          <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
-          <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>Produção: OK</option>
-          <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
-          <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>Acabamento: OK</option>
-        </select>
-      </div>
-
-      <!-- MENU 3 PONTOS (SÓ DESKTOP) -->
-      <div class="menu-wrapper only-desktop">
-        <span class="menu-btn"
-          onclick="toggleItemMenu('${m}',${idx},this)">⋮</span>
-
-        <div class="dropdown item-menu">
-          <button onclick="abrirTrocarMaquina('${m}',${idx})">Trocar de máquina</button>
-          <button onclick="abrirEditarItem('${m}',${idx})">Editar item</button>
-          <button onclick="excluirItem('${m}',${idx})" style="color:red;">Excluir item</button>
-          <button onclick="togglePrioridade('${m}',${idx})" style="color:orange;">Prioridade</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-      `;
-
+        <div class="card-producao desktop">
+          <div class="item-area">${i.item}</div>
+          <div class="status-area">
+            <div class="valores">
+              <span>V:${i.venda || '000'}</span>
+              <span>E:${i.estoque || '000'}</span>
+              <span>P:${i.produzir || '000'}</span>
+            </div>
+            <div class="status-wrapper">
+              <select class="status-producao ${i.status}" onchange="atualizaStatusProducao('${m}',${idx},this)">
+                <option value="-" ${i.status==='-'?'selected':''}>-</option>
+                <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
+                <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>Produção OK</option>
+                <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
+                <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>Acabamento OK</option>
+              </select>
+            </div>
+            <div class="menu-wrapper only-desktop">
+              <span class="menu-btn" onclick="toggleItemMenu('${m}',${idx},this)">⋮</span>
+              <div class="dropdown item-menu">
+                <button onclick="abrirTrocarMaquina('${m}',${idx})">Trocar de máquina</button>
+                <button onclick="abrirEditarItem('${m}',${idx})">Editar item</button>
+                <button onclick="excluirItem('${m}',${idx})" style="color:red;">Excluir item</button>
+                <button onclick="togglePrioridade('${m}',${idx})" style="color:orange;">Prioridade</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
       card.appendChild(row);
     });
   });
+
+  // Adiciona card da Produção Anterior logo após os cards das máquinas
+  renderProducaoAnterior(producaoAnteriorData);
 }
 
-// Filtrar máquina
+/* ===== FILTRO ===== */
 function aplicarFiltroProducao(){
   filtroAtual = document.getElementById('filtroMaquina').value;
   renderProducao();
 }
 
-// Atualiza status
-function atualizaStatusProducao(m,idx,sel){
+/* ===== ATUALIZA STATUS ===== */
+function atualizaStatusProducao(m, idx, sel){
   producaoData[m][idx].status = sel.value;
   sel.className = 'status-producao ' + sel.value;
   socket.emit('atualizaProducao', producaoData);
 }
 
-// Adicionar item específico de uma máquina
+/* ===== ADICIONAR / EXCLUIR ITENS ===== */
 function adicionarItem(maquina){
   const item = prompt('Produto:');
   if(!item) return;
@@ -178,60 +148,28 @@ function adicionarItem(maquina){
   const prioridade = confirm('É PRIORIDADE?');
 
   producaoData[maquina].push({
-    item,
-    venda,
-    estoque,
-    produzir,
+    item, venda, estoque, produzir,
     prioridade: prioridade ? 'PRIORIDADE' : '',
     status: '-'
   });
   socket.emit('atualizaProducao', producaoData);
 }
 
-// Adicionar item global (solicita máquina)
 function adicionarItemGlobal(){
   const maquinas = Object.keys(producaoData);
-  const maquina = prompt('Em qual máquina deseja adicionar o item?\n' + maquinas.join('\n'));
+  const maquina = prompt('Em qual máquina?\n'+maquinas.join('\n'));
   if(!maquina || !producaoData[maquina]) return;
   adicionarItem(maquina);
 }
 
-// Excluir item
 function excluirItem(maquina, idx){
   if(!confirm('Deseja realmente excluir este item?')) return;
   producaoData[maquina].splice(idx, 1);
   socket.emit('atualizaProducao', producaoData);
 }
 
-// Exportar apenas itens alterados
-function exportarAlterados(){
-  const linhas = [];
-  Object.keys(producaoData).forEach(m=>{
-    producaoData[m].forEach((i,idx)=>{
-      const orig = producaoOriginal[m]?.[idx];
-      if(!orig) return;
-      if(JSON.stringify(i) !== JSON.stringify(orig)){
-        linhas.push({
-          Maquina: m,
-          Item: i.item,
-          Venda: i.venda,
-          Estoque: i.estoque,
-          Produzir: i.produzir,
-          Status: i.status,
-          Prioridade: i.prioridade
-        });
-      }
-    });
-  });
-  if(!linhas.length){ alert('Nenhum item alterado'); return; }
-  const ws = XLSX.utils.json_to_sheet(linhas);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Alterados');
-  XLSX.writeFile(wb, 'itens_alterados.xlsx');
-}
-
-/* ================= CARGAS ================= */
-let cargas=[];
+/* ===== CARGAS ===== */
+let cargas = [];
 
 function novaCarga(){
   cargas.push({ titulo:`Carga ${String(cargas.length+1).padStart(2,'0')}`, status:'Pendente' });
@@ -239,12 +177,12 @@ function novaCarga(){
 }
 
 function renderCargas(data){
-  const div=document.getElementById('cargas');
+  const div = document.getElementById('cargas');
   div.innerHTML='';
-  data.forEach((c,idx)=>{
-    const card=document.createElement('div');
-    card.className='card';
-    card.innerHTML=`
+  data.forEach((c, idx)=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
       <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
         <strong>${c.titulo}</strong>
         <div style="display:flex;gap:8px;align-items:center">
@@ -258,15 +196,14 @@ function renderCargas(data){
             <button onclick="excluirCarga(${idx})">Excluir</button>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
     div.appendChild(card);
   });
 }
 
-function atualizaStatusCarga(i,sel){
+function atualizaStatusCarga(i, sel){
   cargas[i].status = sel.value;
-  socket.emit('editarCarga',cargas);
+  socket.emit('editarCarga', cargas);
 }
 
 function toggleDropdown(i){
@@ -276,14 +213,13 @@ function toggleDropdown(i){
 
 function excluirCarga(i){
   cargas.splice(i,1);
-  socket.emit('editarCarga',cargas);
+  socket.emit('editarCarga', cargas);
 }
 
-/* ===== SOCKET CARGAS ===== */
-socket.on('initCargas',d=>{ cargas=d; renderCargas(cargas); });
-socket.on('atualizaCargas',d=>{ cargas=d; renderCargas(cargas); });
+socket.on('initCargas', d => { cargas=d; renderCargas(cargas); });
+socket.on('atualizaCargas', d => { cargas=d; renderCargas(cargas); });
 
-// Menu 3 pontinhos
+/* ===== MENU 3 PONTOS ===== */
 function toggleItemMenu(maquina, idx, el){
   document.querySelectorAll('.item-menu').forEach(m=>m.style.display='none');
   el.nextElementSibling.style.display = 'block';
@@ -291,7 +227,7 @@ function toggleItemMenu(maquina, idx, el){
 
 function abrirTrocarMaquina(maquinaAtual, idx){
   const maquinas = Object.keys(producaoData);
-  const nova = prompt('Mover para qual máquina?\n' + maquinas.join('\n'));
+  const nova = prompt('Mover para qual máquina?\n'+maquinas.join('\n'));
   if(!nova || !producaoData[nova]) return;
   const item = producaoData[maquinaAtual][idx];
   producaoData[maquinaAtual].splice(idx,1);
@@ -301,121 +237,94 @@ function abrirTrocarMaquina(maquinaAtual, idx){
 
 function abrirEditarItem(maquina, idx){
   const item = producaoData[maquina][idx];
-
   const venda = prompt('Qtd vendida:', item.venda);
   const estoque = prompt('Estoque:', item.estoque);
   const produzir = prompt('Produzir:', item.produzir);
   const prioridade = confirm('É PRIORIDADE?');
 
-  if(venda !== null && venda.trim() !== '') item.venda = venda;
-  if(estoque !== null && estoque.trim() !== '') item.estoque = estoque;
-  if(produzir !== null && produzir.trim() !== '') item.produzir = produzir;
+  if(venda) item.venda=venda;
+  if(estoque) item.estoque=estoque;
+  if(produzir) item.produzir=produzir;
 
   item.prioridade = prioridade ? 'PRIORIDADE' : '';
-
   socket.emit('atualizaProducao', producaoData);
 }
+
 function togglePrioridade(maquina, idx){
   const item = producaoData[maquina][idx];
-
-  // Alterna entre PRIORIDADE e vazio
-  item.prioridade = item.prioridade === 'PRIORIDADE' ? '' : 'PRIORIDADE';
-
-  // Atualiza o cliente em tempo real
+  item.prioridade = item.prioridade==='PRIORIDADE' ? '' : 'PRIORIDADE';
   socket.emit('atualizaProducao', producaoData);
 }
-// Fecha qualquer menu aberto quando clicar fora
-document.addEventListener('click', function(e){
-  const openMenus = document.querySelectorAll('.item-menu');
-  
-  openMenus.forEach(menu => {
-    // Se o clique NÃO for no menu nem no botão que abre o menu
-    if (!menu.contains(e.target) && !e.target.classList.contains('menu-btn')) {
-      menu.style.display = 'none';
+
+/* ===== PRODUÇÃO ANTERIOR ===== */
+// Container único
+let containerProducaoAnterior = document.getElementById("producao-anterior-container");
+if(!containerProducaoAnterior){
+  containerProducaoAnterior = document.createElement("div");
+  containerProducaoAnterior.id = "producao-anterior-container";
+  document.getElementById("producao").appendChild(containerProducaoAnterior);
+}
+
+function renderProducaoAnterior(itens){
+  const container = containerProducaoAnterior;
+  if(!container) return;
+  container.innerHTML = '';
+  if(!itens || !itens.length) return;
+
+  const card = document.createElement("div");
+  card.className = "card";
+  card.style.margin = "20px auto";
+  card.style.width = "90%";
+
+  const titulo = document.createElement("h3");
+  titulo.innerText = "Produção Anterior";
+  card.appendChild(titulo);
+
+  itens.forEach((i, idx) => {
+    const row = document.createElement("div");
+    row.className = "desktop-row";
+    if(i.prioridade === 'PRIORIDADE'){
+      row.style.backgroundColor = '#fff59d';
+      row.style.fontWeight = '700';
     }
+
+    row.innerHTML = `
+      <div class="card-producao desktop">
+        <div class="item-area">${i.item}</div>
+        <div class="status-area">
+          <div class="valores">
+            <span>V:${i.venda || '000'}</span>
+            <span>E:${i.estoque || '000'}</span>
+            <span>P:${i.produzir || '000'}</span>
+          </div>
+          <div class="status-wrapper">
+            <select class="status-producao ${i.status || '-'}" onchange="atualizaStatusProducaoAnterior(${idx}, this)">
+              <option value="-" ${i.status==='-'?'selected':''}>-</option>
+              <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
+              <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>Produção OK</option>
+              <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
+              <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>Acabamento OK</option>
+            </select>
+          </div>
+        </div>
+      </div>`;
+    card.appendChild(row);
   });
-});
-function exportarProducaoEmAndamento(){
-  const linhas = [];
 
-  Object.keys(producaoData).forEach(maquina => {
-    producaoData[maquina].forEach(item => {
-      if (
-        item.status === 'producao' ||
-        item.status === 'producao_ok' ||
-        item.status === 'acabamento'
-      ) {
-        linhas.push({
-          Maquina: maquina,
-          Item: item.item,
-          Venda: item.venda,
-          Estoque: item.estoque,
-          Produzir: item.produzir,
-          Status: item.status,
-          Prioridade: item.prioridade
-        });
-      }
-    });
-  });
-
-  if (!linhas.length) {
-    alert('Nenhum item em produção/acabamento.');
-    return;
-  }
-
-  const ws = XLSX.utils.json_to_sheet(linhas);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Produção_Andamento');
-
-  const data = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, `producao_${data}.xlsx`);
+  container.appendChild(card);
 }
-const fs = require('fs');
-const path = require('path');
 
-const DATA_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
-io.on('connection', socket => {
-
-  socket.on('salvarRelatorioDiario', producaoData => {
-
-    const hoje = new Date().toISOString().slice(0,10);
-    const arquivo = path.join(DATA_DIR, `producao-${hoje}.json`);
-
-    const filtrado = {};
-
-    Object.keys(producaoData).forEach(maquina => {
-      const itens = producaoData[maquina].filter(i =>
-        i.status === 'producao' ||
-        i.status === 'producao_ok' ||
-        i.status === 'acabamento'
-      );
-
-      if (itens.length) filtrado[maquina] = itens;
-    });
-
-    fs.writeFileSync(arquivo, JSON.stringify(filtrado, null, 2));
-
-    socket.emit('relatorioSalvo', hoje);
-  });
-
-});
-socket.on('buscarRelatorioAnterior', () => {
-
-  const ontem = new Date(Date.now() - 86400000)
-    .toISOString()
-    .slice(0,10);
-
-  const arquivo = path.join(DATA_DIR, `producao-${ontem}.json`);
-
-  if (!fs.existsSync(arquivo)) {
-    socket.emit('relatorioAnterior', null);
-    return;
-  }
-
-  const data = JSON.parse(fs.readFileSync(arquivo));
-  socket.emit('relatorioAnterior', { data, dataRef: ontem });
-});
-function salvarRelatorioHoje(){
-  socket.emit('salvarRelatorioDiario', producaoData);
+function atualizaStatusProducaoAnterior(idx, sel){
+  producaoAnteriorData[idx].status = sel.value;
+  sel.className = 'status-producao ' + sel.value;
+  socket.emit('atualizaAcabamento', producaoAnteriorData);
 }
+
+socket.on('initAcabamento', data => {
+  producaoAnteriorData = data;
+  renderProducaoAnterior(producaoAnteriorData);
+});
+socket.on('atualizaAcabamento', data => {
+  producaoAnteriorData = data;
+  renderProducaoAnterior(producaoAnteriorData);
+});

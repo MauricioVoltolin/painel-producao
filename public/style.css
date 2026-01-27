@@ -484,12 +484,12 @@ select.status-producao.acabamento_ok {
   }
 
   .item-area {
-    width: 55% !important;
+    width: 40% !important;
     text-align: left;
   }
 
   .status-area {
-    width: 45% !important;
+    width: 50% !important;
     display: flex;
     flex-direction: column;   /* <<< ISSO FAZ O STATUS DESCER */
     align-items: flex-end;
@@ -559,27 +559,8 @@ body {
 #tab-cargas {
   padding-bottom: 40px;
 }
-/* ===== FILTRO DE MÁQUINAS ===== */
-.filtro-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 25px;
-}
 
-.filtro-container label {
-  font-weight: 600;
-}
 
-#filtroMaquina {
-  padding: 10px 14px;
-  min-width: 220px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 15px;
-  background: #fff;
-}
 /* ===== CONTAINER CENTRAL – PRODUÇÃO ===== */
 #tab-producao {
   display: flex;
@@ -591,8 +572,8 @@ body {
 #tab-producao .filtro-container,
 #tab-producao .cards-container,
 #tab-producao .producao-buttons {
-  width: 80%;
-  max-width: 1200px;
+  width: 90%;
+  max-width: 95%;
 }
 
 /* cards não esticarem estranho */
@@ -606,7 +587,165 @@ body {
   #tab-producao .filtro-container,
   #tab-producao .cards-container,
   #tab-producao .producao-buttons {
-    width: 90%;
+    width: 100%;
   }
 
+}
+/* ===== CORREÇÃO SCROLL LATERAL – MOBILE (A07) ===== */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* garante que nada passe da tela */
+* {
+  box-sizing: border-box;
+}
+/* ===== CENTRALIZAR TEXTO DO STATUS DE PRODUÇÃO ===== */
+select.status-producao {
+  text-align: center;        /* desktop */
+  text-align-last: center;   /* Chrome / mobile */
+}
+/* ===== FILTRO DE MÁQUINAS – VISUAL AZUL ===== */
+#filtroMaquina {
+  padding: 12px 18px;
+  min-width: 260px;
+  border-radius: 7px;
+  font-size: 16px;
+  font-weight: 400;
+  outline: none;
+}
+
+/* efeito ao focar */
+
+
+/* MOBILE – GALAXY A07 */
+@media (max-width: 768px) {
+  #filtroMaquina {
+    width: 50%;
+    min-width: unset;
+    font-size: 17px;
+    
+  }
+}
+/* ===== CENTRALIZAR TEXTO DO FILTRO DE MÁQUINAS ===== */
+#filtroMaquina {
+  text-align: center;        /* desktop */
+  text-align-last: center;   /* Chrome / mobile (A07) */
+}
+/* ===== BOTÃO ACABAMENTO ANTERIOR ===== */
+.acabamento-anterior-container {
+  margin: 40px auto 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+#btnAcabamentoAnterior {
+  padding: 14px 26px;
+  border-radius: 16px;
+  border: none;
+  background: #0d6efd;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+#btnAcabamentoAnterior:hover {
+  background: #084298;
+}
+/* ===== CARD ACABAMENTO ANTERIOR ===== */
+.card.acabamento-anterior {
+  width: 100%;
+  max-width: 900px;
+  margin: 20px auto;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.lista-acabamento {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.linha-acabamento {
+  display: flex;
+  justify-content: space-between;
+  background: #f1f5ff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+.acabamento-container {
+  margin: 40px auto 20px;
+  text-align: center;
+}
+
+.btn-acabamento {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.btn-acabamento:hover {
+  background: #125ca1;
+}
+
+#acABAMENTOAnterior {
+  margin-bottom: 40px;
+}
+.cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  padding-bottom: 80px; /* espaço no fim da página */
+}
+
+
+@media (max-width: 768px) {
+  .card {
+    width: 95%;
+  }
+}
+.status-producao.producao { background:#fff3cd; }
+.status-producao.producao_ok { background:#d4edda; }
+.status-producao.acabamento { background:#cce5ff; }
+/* ===== BOTÕES FINAIS – PADRÃO ÚNICO ===== */
+.botoes-finais {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 30px auto 60px;
+  flex-wrap: wrap;
+}
+
+.btn-padrao {
+  background: #0d6efd;
+  color: #fff;
+  padding: 10px 15px;
+  border-radius: 7px;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-padrao:hover {
+  background: #084298;
 }
