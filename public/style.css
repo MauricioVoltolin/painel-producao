@@ -90,8 +90,8 @@ select.status-producao {
 }
 
 /* STATUS PRODUÇÃO */
-.status-producao.producao { background: #fff9c4; }
-.status-producao.producao_ok { background: #fff176; }
+.status-producao.producao { background: #cce5ff; }
+.status-producao.producao_ok { background: #66b0ff ; }
 .status-producao.acabamento { background: #c8e6c9; }
 .status-producao.acabamento_ok { background: #81c784; }
 
@@ -224,10 +224,6 @@ select.status-producao {
   font-weight: 700;
 }
 
-.menu-wrapper {
-  position: relative;
-}
-
 .menu-btn {
   cursor: pointer;
   font-size: 18px;
@@ -279,19 +275,10 @@ select.status-producao {
   font-weight: bold;
 }
 
-.menu-wrapper {
-  display: flex;
-  align-items: center;
-}
-
 /* ================= MOBILE – GALAXY A07 ================= */
 @media (max-width: 768px) {
 
   .producao-buttons {
-    display: none !important;
-  }
-
-  .menu-wrapper {
     display: none !important;
   }
 
@@ -331,19 +318,6 @@ select.status-producao {
   font-weight: 600;
 }
 
-/* manter cores cadastradas */
-select.status-producao.producao {
-  background: #fff9c4;
-}
-select.status-producao.producao_ok {
-  background: #fff176;
-}
-select.status-producao.acabamento {
-  background: #c8e6c9;
-}
-select.status-producao.acabamento_ok {
-  background: #81c784;
-}
 /* ================= PRODUÇÃO – DESKTOP (MANTÉM TUDO EM UMA LINHA) ================= */
 
 .status-area {
@@ -369,7 +343,6 @@ select.status-producao.acabamento_ok {
 @media (max-width: 768px) {
 
   /* esconder tudo que não pode aparecer */
-  .menu-wrapper,
   .add-item,
   .producao-buttons {
     display: none !important;
@@ -458,22 +431,6 @@ select.status-producao {
   background-clip: padding-box;
 }
 
-/* cores fixas por status */
-select.status-producao.producao {
-  background-color: #fff9c4 !important;
-}
-
-select.status-producao.producao_ok {
-  background-color: #fff176 !important;
-}
-
-select.status-producao.acabamento {
-  background-color: #c8e6c9 !important;
-}
-
-select.status-producao.acabamento_ok {
-  background-color: #81c784 !important;
-}
 /* ===== AJUSTE MOBILE A07: V/E/P EM CIMA, STATUS EM BAIXO ===== */
 @media (max-width: 768px) {
 
@@ -508,10 +465,6 @@ select.status-producao.acabamento_ok {
     justify-content: flex-end;
   }
 
-  /* menu 3 pontinhos NÃO aparece no mobile */
-  .menu-wrapper {
-    display: none !important;
-  }
 }
 /* ===== MOBILE A07: STATUS EM BAIXO DO V/E/P ===== */
 @media (max-width: 768px) {
@@ -632,6 +585,7 @@ select.status-producao {
 #filtroMaquina {
   text-align: center;        /* desktop */
   text-align-last: center;   /* Chrome / mobile (A07) */
+  padding-top: 15px;
 }
 /* ===== BOTÃO ACABAMENTO ANTERIOR ===== */
 .acabamento-anterior-container {
@@ -718,11 +672,7 @@ select.status-producao {
   .card {
     width: 95%;
   }
-}
-.status-producao.producao { background:#fff3cd; }
-.status-producao.producao_ok { background:#d4edda; }
-.status-producao.acabamento { background:#cce5ff; }
-/* ===== BOTÕES FINAIS – PADRÃO ÚNICO ===== */
+
 .botoes-finais {
   display: flex;
   justify-content: center;
@@ -730,7 +680,6 @@ select.status-producao {
   margin: 30px auto 60px;
   flex-wrap: wrap;
 }
-
 .btn-padrao {
   background: #0d6efd;
   color: #fff;
@@ -748,4 +697,758 @@ select.status-producao {
 
 .btn-padrao:hover {
   background: #084298;
+}
+}
+/* desktop */
+.menu-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+/* mobile */
+@media (max-width: 768px) {
+  .menu-wrapper {
+    display: none !important;
+  }
+}
+/* ===== BOTÕES FINAIS – FIX DEFINITIVO ===== */
+.botoes-finais {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 30px auto 60px;
+  flex-wrap: wrap;
+}
+
+.btn-padrao {
+  background: #0d6efd;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+/* ===== TV ===== */
+.tv-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  height: 80vh;
+  gap: 20px;
+}
+
+.tv-card {
+  padding: 20px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tv-card h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+/* ===== CABEÇALHO ===== */
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  padding: 10px 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.1);
+}
+
+.logo img {
+  height: 55px;
+}
+
+.data-atual {
+  font-weight: 600;
+  color: #333;
+}
+
+/* abas centralizadas */
+.topo .tabs {
+  display: flex;
+  gap: 10px;
+}
+.status-producao {
+  color: #fff;
+  font-weight: bold;
+}
+
+.status-text {
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: bold;
+}
+
+.status-text.producao { background:#f39c12; }
+.status-text.producao_ok { background:#27ae60; }
+.status-text.acabamento { background:#2980b9; }
+.status-text.acabamento_ok { background:#16a085; }
+.card-producao.prioridade {
+  border-left: 6px solid #f1c40f;
+  background: #fff9db;
+}
+.menu-wrapper {
+  position: relative;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 999;
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+}
+.tabs {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+
+
+.filtro-container {
+  margin-top: 20px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+}
+.producao-buttons {
+  display: flex;
+  justify-content: flex-end;
+}
+#novaCarga {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+.card > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.card select {
+  margin-left: auto;
+}
+.card .add-item {
+  display: block;
+  margin: 15px auto 5px auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  font-size: 22px;
+  border: none;
+  background: #2ecc71;
+  color: #fff;
+  cursor: pointer;
+}
+
+.card .add-item:hover {
+  background: #27ae60;
+}
+#cargas .card {
+  padding: 15px;
+}
+.item-carga select[value="aguardando"],
+.item-carga select option[value="aguardando"] {
+  background: #ffa726;
+}
+
+.item-carga select[value="pronto"],
+.item-carga select option[value="pronto"] {
+  background: #66bb6a;
+}
+/* =========================
+   ABA CARGAS
+========================= */
+
+/* Card da carga */
+.card-carga {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  font-family: Arial, sans-serif;
+}
+
+/* Container de itens dentro do card */
+.card-itens-carga {
+  margin-top: 8px;
+  padding-left: 10px;
+  font-size: 14px;
+}
+
+/* Botão + para adicionar item */
+.add-item-wrapper-carga button.btn-add-carga {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.add-item-wrapper-carga button.btn-add-carga:hover {
+  background-color: #45a049;
+}
+
+/* Dropdown do menu ⋮ */
+.dropdown-carga {
+  display: none;
+  position: absolute;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  border-radius: 4px;
+  margin-top: 5px;
+  z-index: 100;
+}
+
+/* Botões dentro do dropdown */
+.dropdown-carga button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdown-carga button:hover {
+  background-color: #f0f0f0;
+}
+
+/* Menu ⋮ */
+.menu-carga {
+  cursor: pointer;
+  font-size: 18px;
+  padding: 2px 5px;
+}
+
+/* Select status da carga */
+.select-carga {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  font-size: 14px;
+}
+
+/* Flex container do topo do card */
+.card-carga > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Responsividade para mobile */
+@media (max-width: 768px) {
+  .card-carga {
+    font-size: 14px;
+  }
+  .select-carga {
+    font-size: 12px;
+  }
+  .add-item-wrapper-carga button.btn-add-carga {
+    font-size: 14px;
+    padding: 2px 6px;
+  }
+}
+/* =========================
+   ABA CARGAS
+========================= */
+
+/* Wrapper botão Nova Carga */
+.nova-carga-wrapper {
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* Botão Nova Carga */
+.nova-carga-wrapper button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+}
+
+.nova-carga-wrapper button:hover {
+  background-color: #45a049;
+}
+
+/* Container de cards - responsivo */
+.card-container-carga {
+  display: grid;
+  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* 2 por linha no desktop */
+  padding: 0 10px 20px;
+}
+
+/* Card de cada carga */
+.card-carga {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  min-height: 120px;
+}
+
+/* Topo do card - título e menu */
+.card-carga .card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Lista de itens */
+.card-itens-carga {
+  margin-top: 10px;
+  padding-left: 10px;
+  font-size: 14px;
+  flex-grow: 1;
+}
+
+/* Botão + dentro do card, centralizado embaixo */
+.add-item-wrapper-carga {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.add-item-wrapper-carga button.btn-add-carga {
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: none;
+  background-color: #2196F3;
+  color: white;
+  cursor: pointer;
+}
+
+.add-item-wrapper-carga button.btn-add-carga:hover {
+  background-color: #1976D2;
+}
+
+/* Dropdown menu ⋮ */
+.dropdown-carga {
+  display: none;
+  position: absolute;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  border-radius: 4px;
+  margin-top: 5px;
+  z-index: 100;
+}
+
+.dropdown-carga button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdown-carga button:hover {
+  background-color: #f0f0f0;
+}
+
+/* Menu ⋮ */
+.menu-carga {
+  cursor: pointer;
+  font-size: 18px;
+  padding: 2px 5px;
+}
+
+/* Select status da carga */
+.select-carga {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  font-size: 14px;
+}
+
+/* RESPONSIVO: A07 ou telas pequenas */
+@media (max-width: 768px) {
+  .card-container-carga {
+    grid-template-columns: 1fr; /* 1 card por linha */
+  }
+
+  .add-item-wrapper-carga button.btn-add-carga {
+    width: 100%;
+  }
+}
+.card-carga {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.card-itens-carga {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-grow: 1;
+}
+
+.item-carga {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.item-carga button {
+  margin-left: 5px;
+}
+
+.add-item-wrapper-carga {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.btn-add-carga {
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: none;
+  background-color: #2196F3;
+  color: white;
+  cursor: pointer;
+}
+
+.btn-add-carga:hover {
+  background-color: #1976D2;
+}
+
+.btn-ok-edicao {
+  margin-top: 10px;
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+}
+
+.btn-ok-edicao:hover {
+  background-color: #45a049;
+}
+
+.dropdown-carga {
+  display: none;
+  position: absolute;
+  right: 10px;
+  top: 30px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  z-index: 100;
+}
+
+.dropdown-carga button {
+  display: block;
+  width: 100%;
+  padding: 5px 10px;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .card-container-carga {
+    grid-template-columns: 1fr;
+  }
+}
+.card-carga {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.card-itens-carga {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.item-carga {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.item-carga button {
+  margin-left: 5px;
+}
+
+.add-item-wrapper-carga {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.btn-add-carga, .btn-ok-edicao {
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.btn-add-carga {
+  background-color: #2196F3;
+}
+
+.btn-add-carga:hover { background-color: #1976D2; }
+
+.btn-ok-edicao { background-color: #4CAF50; }
+.btn-ok-edicao:hover { background-color: #45a049; }
+
+.dropdown-carga {
+  display: none;
+  position: absolute;
+  right: 10px;
+  top: 30px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  z-index: 100;
+}
+
+.dropdown-carga button {
+  display: block;
+  width: 100%;
+  padding: 5px 10px;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+@media (min-width: 769px) {
+  #cargas { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 768px) {
+  #cargas { grid-template-columns: 1fr; }
+}
+.item-carga {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+}
+
+.item-carga .btn-editar-item,
+.item-carga .btn-excluir-item {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.item-carga .nome-item {
+  flex: 1;
+}
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.top-left {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* espaçamento entre menu e título */
+}
+
+.menu-carga {
+  cursor: pointer;
+}
+
+.top-right select {
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+/* ===== ESPAÇO ENTRE ITENS ===== */
+.card-itens .card-item {
+  margin-bottom: 12px; /* aumenta espaço entre itens */
+  padding: 6px 10px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ===== BOTÃO + ===== */
+.add-item-wrapper button {
+  background-color: #1976d2; /* mesmo tom do botão nova carga */
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-item-wrapper button:hover {
+  background-color: #115293; /* hover escuro */
+}
+
+/* ===== BOTÃO NOVA CARGA ===== */
+#btn-nova-carga {
+  background-color: #1976d2;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#btn-nova-carga:hover {
+  background-color: #115293;
+
+}
+
+/* ===== STATUS ITEM DROPDOWN ===== */
+.item-status {
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+}
+/* ===== BOTÃO + CENTRALIZADO ===== */
+.add-item-wrapper {
+  display: flex;
+  justify-content: center; /* centraliza horizontalmente */
+  margin-top: 10px;       /* espaçamento do último item */
+}
+
+.add-item-wrapper button {
+  background-color: #1976d2; /* mesmo tom do botão nova carga */
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-item-wrapper button:hover {
+  background-color: #115293; /* hover escuro */
+}
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* importante para mobile */
+  padding: 10px;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+}
+
+/* ================= MENU CARGA – MOBILE ================= */
+@media (max-width: 768px) {
+  /* mostra o menu ⋮ no mobile */
+  .menu-wrapper {
+    display: flex !important;
+    align-items: center;
+  }
+
+  /* topo do card: menu + título separados */
+  .card-top .top-left {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* separa título do menu */
+  }
+
+  .card-top .menu-carga {
+    font-size: 20px;
+    padding: 2px 5px;
+  }
+
+  /* garante que o título não grude */
+  .card-top .titulo-carga {
+    font-weight: 600;
+    font-size: 16px;
+  }
+}
+/* ================= ESCONDER MENU ⋮ NO MOBILE ================= */
+@media (max-width: 768px) {
+  /* Aba Produção */
+  .card-producao .menu-btn {
+    display: none !important;
+  }
+
+  /* Aba Cargas */
+  .card-carga .menu-carga {
+    display: none !important;
+  }
+}
+.only-desktop {
+  display: inline-block; /* padrão desktop */
+}
+
+@media (max-width: 768px) {
+  .only-desktop {
+    display: none !important; /* mobile esconde */
+  }
+
+  #tab-tv {
+    display: none !important; /* força esconder a aba TV */
+  }
 }
