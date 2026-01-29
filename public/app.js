@@ -22,21 +22,15 @@ function openTab(index) {
   document.querySelectorAll('.tabs button')[index].classList.add('active');
 
   // render correto por aba
-  if (index === 0) {
-    renderProducao();
-  }
-
-  if (index === 1) {
-    renderCargas();
-  }
+  if (index === 0) renderProducao();
+  if (index === 1) renderCargas();
+  if (index === 2) renderTV(); // 🔥 TV / Expedição / Faturamento
 }
-
 
 /* ================= PRODUÇÃO ================= */
 let producaoData = {};
 let filtroAtual = 'todos';
 let producaoAnteriorData = []; // dados globais da produção anterior
-
 /* ===== XLS DE PRODUÇÃO ===== */
 document.getElementById('xls').addEventListener('change', e => {
   const file = e.target.files[0];
@@ -69,7 +63,6 @@ document.getElementById('xls').addEventListener('change', e => {
   };
   reader.readAsArrayBuffer(file);
 });
-
 function gerarRelatorioAcabamento() {
   let itens = [];
 
@@ -123,9 +116,6 @@ function gerarRelatorioAcabamento() {
   const data = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
   XLSX.writeFile(wb, `acabamento_${data}.xlsx`);
 }
-
-
-
 document.getElementById('xlsAcabamento').addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -151,15 +141,11 @@ document.getElementById('xlsAcabamento').addEventListener('change', e => {
 
   reader.readAsArrayBuffer(file);
 });
-
-
 /* ===== SOCKETS ===== */
 socket.on('initProducao', data => { producaoData = data; renderProducao(); });
 socket.on('atualizaProducao', data => { producaoData = data; renderProducao(); });
-
 socket.on('initAcabamento', data => { producaoAnteriorData = data; renderProducaoAnterior(); });
 socket.on('atualizaAcabamento', data => { producaoAnteriorData = data; renderProducaoAnterior(); });
-
 /* ===== RENDER PRODUÇÃO ===== */
 function renderProducao() {
   const abaAtiva = document.getElementById('tab-producao');
@@ -183,12 +169,19 @@ function renderProducao() {
   Object.keys(producaoData)
     .sort((a, b) => a.localeCompare(b, 'pt-BR'))
     .forEach(m => {
+
+      // ordena os itens da máquina
+      producaoData[m].sort((a, b) =>
+        a.item.localeCompare(b.item, 'pt-BR')
+      );
+
       filtro.innerHTML += `
         <option value="${m}" ${filtroAtual === m ? 'selected' : ''}>
           ${m}
         </option>
       `;
     });
+
 
   /* ===== CARDS DE PRODUÇÃO ===== */
   Object.keys(producaoData).forEach(m => {
@@ -273,7 +266,6 @@ function renderProducao() {
   /* ===== ACABAMENTO (PRODUÇÃO ANTERIOR) ===== */
   renderProducaoAnterior();
 }
-
 /* ===== RENDER PRODUÇÃO ANTERIOR (ACABAMENTO) ===== */
 function renderProducaoAnterior(){
   if (filtroAtual !== 'todos' && filtroAtual !== 'acabamento') return;
@@ -391,12 +383,12 @@ function normalizarMaquina(valor){
 
     'D': 'DIGITAL',
 
-    '1': 'MÁQUINA 01',
-    '2': 'MÁQUINA 02',
-    '3': 'MÁQUINA 03',
-    '4': 'MÁQUINA 04',
-    '5': 'MÁQUINA 05',
-    '6': 'MÁQUINA 06',
+    '1': 'MAQUINA 01',
+    '2': 'MAQUINA 02',
+    '3': 'MAQUINA 03',
+    '4': 'MAQUINA 04',
+    '5': 'MAQUINA 05',
+    '6': 'MAQUINA 06',
 
     'P': 'PLOTER',
     'R': 'RISCADOR'
@@ -408,7 +400,6 @@ function normalizarMaquina(valor){
 let cargas = [];
 socket.on('initCargas', d => { cargas = d; renderCargas(); });
 socket.on('atualizaCargas', d => { cargas = d; renderCargas(); });
-
 function novaCarga() {
   cargas.push({
     titulo: `Carga ${cargas.length + 1}`,
@@ -524,7 +515,6 @@ function adicionarItemCarga(cIdx) {
   socket.emit('editarCarga', cargas);
   renderCargas();
 }
-
 function editarCarga(idx) {
   const div = document.getElementById('cargas');
   div.setAttribute('data-edit-mode', 'true');
@@ -547,18 +537,75 @@ function excluirItemCarga(cIdx, iIdx) {
   socket.emit('editarCarga', cargas);
   renderCargas();
 }
-function atualizaStatusCarga(idx, select){
-  cargas[idx].status = select.value;
-  const colors = { 'Pendente':'#FFA726', 'Carregando':'#FFD54F', 'Pronto':'#66BB6A' };
-  select.style.backgroundColor = colors[select.value];
-  socket.emit('editarCarga', cargas);
+function atualizaStatusCarga(cIdx, iIdx, select) {
+  const item = cargas[cIdx].itens[iIdx];
+  const statusAnterior = item.status;
+  const novoStatus = select.value.trim().toLowerCase();
+
+  // detecta transição para faturado
+  if (novoStatus === 'faturado' && statusAnterior !== 'faturado') {
+
+    const valor = prompt('Informe o valor faturado:');
+
+    if (!valor) {
+      select.value = statusAnterior;
+      return;
+    }
+
+    const valorNum = parseFloat(
+      valor.replace('R$', '').replace(/\./g, '').replace(',', '.')
+    );
+
+    if (isNaN(valorNum)) {
+      alert('Valor inválido');
+      select.value = statusAnterior;
+      return;
+    }
+
+    item.valorFaturado = valorNum;
+  }
+
+  item.status = novoStatus;
+  socket.emit('atualizaCargas', cargas);
 }
-function atualizaStatusItem(idxCarga, idxItem, select){
-  if (!cargas[idxCarga].itensStatus) cargas[idxCarga].itensStatus = [];
-  cargas[idxCarga].itensStatus[idxItem] = select.value;
+function atualizaStatusItem(cIdx, iIdx, select){
+  if (!cargas[cIdx].itensStatus) cargas[cIdx].itensStatus = [];
+
+  const statusAnterior = cargas[cIdx].itensStatus[iIdx] || 'Pendente';
+  const novoStatus = select.value;
+
+  // 🔥 TRANSIÇÃO PARA FATURADO
+  if (novoStatus === 'Faturado' && statusAnterior !== 'Faturado') {
+    const valor = prompt('Informe o valor faturado:');
+
+    if (!valor) {
+      select.value = statusAnterior;
+      return;
+    }
+
+    const valorNum = parseFloat(
+      valor.replace('R$', '').replace(/\./g, '').replace(',', '.')
+    );
+
+    if (isNaN(valorNum)) {
+      alert('Valor inválido');
+      select.value = statusAnterior;
+      return;
+    }
+
+    // salva o valor faturado no item
+    if (!cargas[cIdx].valoresFaturados) cargas[cIdx].valoresFaturados = [];
+    cargas[cIdx].valoresFaturados[iIdx] = valorNum;
+  }
+
+  cargas[cIdx].itensStatus[iIdx] = novoStatus;
+
   const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
-  select.style.backgroundColor = colors[select.value];
+  select.style.backgroundColor = colors[novoStatus];
+
+  socket.emit('atualizaCargas', cargas);
 }
+
 function atualizarData() {
   const el = document.getElementById('dataAtual');
   if (!el) return;
@@ -608,12 +655,12 @@ function editarItemProducao(m, idx){
 }
 function trocarMaquina(m, idx){
   const entrada = prompt(
-    'Nova máquina:\nUse: CV, CVR, D, 1–6, P, R'
+    'Nova maquina:\nUse: CV, CVR, D, 1–6, P, R'
   );
 
   const nova = normalizarMaquina(entrada);
   if(!nova){
-    alert('Máquina inválida');
+    alert('Maquina inválida');
     return;
   }
 
@@ -682,118 +729,165 @@ document.addEventListener('click', e => {
     });
   }
 });
-// === FUNÇÃO TV ===
 function renderTV() {
-  renderTVCargas();
-  renderTVProducao();
-  renderTVPrioridades();
-}
+  const dashboard = document.getElementById('tv-dashboard');
+  const abaTV = document.getElementById('tab-tv');
 
-/* --- CARD 1: CARGAS --- */
-function renderTVCargas() {
-  const container = document.getElementById("tv-cargas-lista");
-  container.innerHTML = "";
+  if (!dashboard || !abaTV || !abaTV.classList.contains('active')) return;
 
-  cargas.forEach(carga => {
-    const div = document.createElement("div");
-    div.classList.add("carga-item");
+  /* =========================
+     PRODUÇÃO (IMPRESSORAS ETC)
+  ========================= */
+  document.querySelectorAll('.tv-card').forEach(card => {
+    const nomeTV = card.dataset.tv;
+    const content = card.querySelector('.tv-content');
+    content.innerHTML = '';
 
-    // Título da carga
-    const titulo = document.createElement("div");
-    titulo.classList.add("carga-titulo");
-    titulo.textContent = carga.titulo;
+    // ignora acabamento e expedição aqui
+    if (nomeTV === 'ACABAMENTO' || nomeTV === 'EXPEDIÇÃO' || nomeTV === 'FATURAMENTO') {
+      return;
+    }
 
-    // Linha de progresso
-    const progressoBg = document.createElement("div");
-    progressoBg.classList.add("progresso-bg");
+    const maquinasRelacionadas = mapaTV[nomeTV] || [];
 
-    const progressoBar = document.createElement("div");
-    progressoBar.classList.add("progresso-bar");
+    maquinasRelacionadas.forEach(maquina => {
+      if (!producaoData[maquina]) return;
 
-    // calcula % de itens faturados
-    const total = carga.itens.length;
-    const faturado = carga.itensStatus ? carga.itensStatus.filter(s => s === "Faturado").length : 0;
-    const porcentagem = total > 0 ? (faturado / total) * 100 : 0;
+      producaoData[maquina].forEach(item => {
+        if (!item.item) return;
 
-    progressoBar.style.width = porcentagem + "%";
+        const linha = document.createElement('div');
+        linha.className = `tv-linha status-${item.status || ''}`;
 
-    progressoBg.appendChild(progressoBar);
-    div.appendChild(titulo);
-    div.appendChild(progressoBg);
-    container.appendChild(div);
-  });
-}
+        linha.innerHTML = `
+          <div class="tv-item">${item.item}</div>
+          <div class="tv-qtd">
+            <span>V:${item.venda || 0}</span>
+            <span>P:${item.produzir || 0}</span>
+          </div>
+        `;
 
-/* --- CARD 2: PRODUÇÃO ATUAL --- */
-function renderTVProducao() {
-  const container = document.getElementById("tv-producao-lista");
-  container.innerHTML = "";
-
-  Object.keys(producaoData).forEach(maquinaNome => {
-    const itens = producaoData[maquinaNome];
-    if (!itens || itens.length === 0) return;
-
-    const div = document.createElement("div");
-    div.classList.add("maquina-container");
-
-    const nome = document.createElement("div");
-    nome.classList.add("maquina-nome");
-    nome.textContent = maquinaNome;
-
-    const lista = document.createElement("div");
-    lista.classList.add("itens-maquina");
-
-    itens
-      .filter(i => i.status === "producao")
-      .forEach(i => {
-        const itemDiv = document.createElement("div");
-        itemDiv.classList.add("item-maquina");
-        itemDiv.textContent = i.item;
-        lista.appendChild(itemDiv);
+        content.appendChild(linha);
       });
-
-    div.appendChild(nome);
-    div.appendChild(lista);
-    container.appendChild(div);
-  });
-}
-
-/* --- CARD 3: PRIORIDADES --- */
-function renderTVPrioridades() {
-  const container = document.getElementById("tv-prioridades-lista");
-  container.innerHTML = "";
-
-  Object.keys(producaoData).forEach(maquinaNome => {
-    const itens = producaoData[maquinaNome].filter(i => i.prioridade === "alta");
-    if (itens.length === 0) return;
-
-    // Linha separadora da máquina
-    const linha = document.createElement("hr");
-    container.appendChild(linha);
-
-    const maquinaDiv = document.createElement("div");
-    maquinaDiv.classList.add("prioridade-maquina");
-    maquinaDiv.textContent = maquinaNome;
-    container.appendChild(maquinaDiv);
-
-    itens.forEach(i => {
-      const itemDiv = document.createElement("div");
-      itemDiv.classList.add("item-prioridade");
-
-      const nome = document.createElement("span");
-      nome.textContent = i.item;
-
-      const status = document.createElement("span");
-      status.classList.add("status", i.status);
-      status.textContent = i.status;
-
-      itemDiv.appendChild(nome);
-      itemDiv.appendChild(status);
-      container.appendChild(itemDiv);
     });
   });
+    /* =========================
+     EXPEDIÇÃO
+  ========================= */
+  const cardExpedicao = document.querySelector(
+    '.tv-card[data-tv="EXPEDIÇÃO"] .tv-content'
+  );
+
+  let totalFaturamentoGeral = 0;
+
+  if (cardExpedicao) {
+    cardExpedicao.innerHTML = '';
+
+    cargas.forEach((carga, cIdx) => {
+      const total = carga.itens?.length || 0;
+      if (!total) return;
+
+      const statusItens = carga.itensStatus || [];
+      const valores = carga.valoresFaturados || [];
+
+      let faturados = 0;
+      let valorCarga = 0;
+
+      statusItens.forEach((st, i) => {
+        if (st === 'Faturado') {
+          faturados++;
+          valorCarga += Number(valores[i] || 0);
+        }
+      });
+
+      totalFaturamentoGeral += valorCarga;
+
+      const percentual = Math.round((faturados / total) * 100);
+
+      const linha = document.createElement('div');
+      linha.className = 'tv-carga';
+
+      linha.innerHTML = `
+        <div class="tv-carga-topo">
+          <span class="tv-carga-titulo">${carga.titulo}</span>
+          <span class="tv-carga-status">${carga.status}</span>
+        </div>
+
+        <div class="tv-barra">
+          <div class="tv-barra-preenchimento" style="width:${percentual}%"></div>
+        </div>
+
+        <div class="tv-carga-info">
+          ${faturados} de ${total} faturados — R$ ${valorCarga.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+        </div>
+      `;
+
+      cardExpedicao.appendChild(linha);
+    });
+  }
+
+  /* =========================
+     FATURAMENTO TOTAL
+  ========================= */
+  const cardFaturamento = document.querySelector(
+    '.tv-card[data-tv="FATURAMENTO"] .tv-content'
+  );
+
+  if (cardFaturamento) {
+    cardFaturamento.innerHTML = `
+      <div class="tv-faturamento-total">
+        R$ ${totalFaturamentoGeral.toLocaleString('pt-BR', {
+          minimumFractionDigits: 2
+        })}
+      </div>
+    `;
+  }
+
+  /* =========================
+     ACABAMENTO
+  ========================= */
+  const cardAcabamento = document.querySelector(
+    '.tv-card[data-tv="ACABAMENTO"] .tv-content'
+  );
+
+  if (cardAcabamento) {
+    cardAcabamento.innerHTML = '';
+
+    if (Array.isArray(producaoAnteriorData)) {
+      producaoAnteriorData.forEach(item => {
+        if (!item.item) return;
+
+        const linha = document.createElement('div');
+        linha.className = `tv-linha status-${item.status || ''}`;
+
+        linha.innerHTML = `
+          <div class="tv-item">${item.item}</div>
+          <div class="tv-qtd">
+            <span>V:${item.venda || 0}</span>
+            <span>P:${item.produzir || 0}</span>
+          </div>
+        `;
+
+        cardAcabamento.appendChild(linha);
+      });
+    }
+  }
 }
 
-// Atualização periódica
-setInterval(renderTV, 2000);
-renderTV();
+const mapaTV = {
+  "IMPRESSORA 01": ["MAQUINA 01"],
+  "IMPRESSORA 02": ["MAQUINA 02"],
+  "IMPRESSORA 03": ["MAQUINA 03"],
+  "IMPRESSORA 04": ["MAQUINA 04"],
+  "IMPRESSORA 05": ["MAQUINA 05"],
+  "IMPRESSORA 06": ["MAQUINA 06"],
+
+  "CORTE E VINCO PLANA": ["C.V. PLANA"],
+  "CORTE E VINCO ROTATIVA": ["C.V. ROTATIVA"],
+
+  "RISCADOR": ["RISCADOR"],
+  "ACABAMENTO": ["ACABAMENTO"],
+
+  "EXPEDIÇÃO": ["EXPEDIÇÃO"], // hoje vazio, mas já preparado
+  "FATURAMENTO": ["FATURAMENTO"] // idem
+};

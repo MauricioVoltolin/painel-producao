@@ -28,20 +28,11 @@
   },
   {
     "maquina": "C.V. ROTATIVA",
-    "item": "NIGRO CX. PP ACESSORIO A",
-    "venda": 800,
-    "estoque": 39,
-    "produzir": "0",
-    "status": "acabamento",
-    "prioridade": ""
-  },
-  {
-    "maquina": "C.V. ROTATIVA",
     "item": "NIGRO CX. PP ACESSORIO B",
     "venda": 800,
     "estoque": 18,
     "produzir": "0",
     "status": "producao_ok",
-    "prioridade": ""
+    "prioridade": "alta"
   }
 ]

@@ -1452,3 +1452,271 @@ select.status-producao {
     display: none !important; /* força esconder a aba TV */
   }
 }
+/* Container dos botões finais */
+.botoes-finais {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+/* Wrapper do menu */
+.menu-wrapper {
+  position: relative;
+}
+
+/* Botão dos 3 pontinhos */
+.menu-btn {
+  font-size: 22px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  user-select: none;
+}
+
+.menu-btn:hover {
+  background: #eaeaea;
+}
+
+/* Quando ativo (seu JS já controla isso) */
+.dropdown.show {
+  display: block;
+}
+/* ===== TV DASHBOARD ===== */
+#tv-dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 16px;
+  height: calc(100vh - 80px);
+}
+
+/* CARD */
+.tv-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TÍTULO */
+.tv-card h2 {
+  font-size: 18px;
+  text-align: center;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #333;
+  padding-bottom: 6px;
+}
+
+/* CONTEÚDO DINÂMICO */
+.tv-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  overflow: hidden;
+}
+
+/* ===== TV ONLY ===== */
+@media (max-width: 900px) {
+  #tv-dashboard {
+    display: none;
+  }
+}
+.tv-item {
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.tv-item.producao {
+  background: #1e3a8a;
+}
+
+.tv-item.producao_ok {
+  background: #065f46;
+}
+
+.tv-item.acabamento {
+  background: #92400e;
+}
+
+.tv-item.acabamento_ok {
+  background: #064e3b;
+}
+.tv-item {
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+
+}
+
+/* cores por status */
+.tv-item.producao {
+  background: #fff3cd;
+}
+
+.tv-item.producao_ok {
+  background: #d4edda;
+}
+
+.tv-item.acabamento {
+  background: #cce5ff;
+}
+
+.tv-item.acabamento_ok {
+  background: #b8f2d0;
+}
+/* ===============================
+   TV – ITENS
+================================ */
+
+.tv-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* linha do item */
+.tv-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  font-size: 12px;              /* fonte menor */
+  line-height: 1.2;
+  border-bottom: 1px solid #e6e6e6; /* linha clarinha */
+  white-space: nowrap;          /* tudo em uma linha */
+  overflow: hidden;
+}
+
+/* nome do item */
+.tv-item {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* V / P alinhado à direita */
+.tv-qtd {
+  display: flex;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 11px;
+  margin-left: 8px;
+}
+
+/* ===============================
+   STATUS – CORES / GRIFO
+================================ */
+
+.tv-linha.status-producao {
+  background: #e8f1ff;
+  border-left: 4px solid #4a90e2;
+  color: #000;
+
+}
+
+.tv-linha.status-producao_ok {
+  background: #e7f7ee;
+  border-left: 4px solid #2ecc71;
+}
+
+.tv-linha.status-acabamento {
+  background: #fff4e5;
+  border-left: 4px solid #f5a623;
+}
+
+.tv-linha.status-acabamento_ok {
+  background: #eefaf3;
+  border-left: 4px solid #27ae60;
+}
+
+/* prioridade */
+.tv-linha.prioridade {
+  font-weight: 700;
+}
+
+/* ===============================
+   TV – FATURAMENTO (CENTRO)
+================================ */
+
+.tv-faturamento-total {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 100%;
+  font-size: 42px;
+  font-weight: 800;
+  color: #2ecc71;
+}
+/* ===== TV - EXPEDIÇÃO ===== */
+
+.tv-card[data-tv="EXPEDIÇÃO"] .tv-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* cada carga */
+.tv-carga {
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 10px;
+  font-size: 13px;
+}
+
+/* topo: título + status */
+.tv-carga-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* título da carga */
+.tv-carga-titulo {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* status da carga */
+.tv-carga-status {
+  font-size: 12px;
+  opacity: 0.8;
+  text-transform: uppercase;
+}
+
+/* barra de progresso */
+.tv-barra {
+  width: 100%;
+  height: 6px;
+  background: #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 6px 0;
+}
+
+.tv-barra-preenchimento {
+  height: 100%;
+  background: #4caf50;
+  transition: width 0.3s ease;
+}
+
+/* linha inferior (valor faturado) */
+.tv-carga-info {
+  font-size: 12px;
+  opacity: 0.85;
+}
+/* TÍTULO DA CARGA - MAIOR */
+.tv-carga-titulo {
+  font-weight: 800;
+  font-size: 18px; /* antes 14px */
+}

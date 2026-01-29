@@ -1,120 +1,137 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const multer = require('multer');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
-const upload = multer({ dest: 'uploads/' });
+// =======================
+// CONFIG
+// =======================
+const PUBLIC_DIR = path.join(__dirname, 'public');
+const DATA_DIR = path.join(__dirname, 'uploads');
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+const PRODUCAO_FILE = path.join(DATA_DIR, 'producao.json');
+const CARGAS_FILE = path.join(DATA_DIR, 'cargas.json');
+const ACABAMENTO_FILE = path.join(DATA_DIR, 'acabamento.json');
 
-// Arquivo para salvar acabamento
-const ACABAMENTO_FILE = path.join(__dirname, 'uploads', 'acabamento.json');
-
-
-// ===== Dados iniciais =====
-let cargas = [];
-let producaoData = {};
-let acabamentoGlobal = [];
-
-// Carregar acabamento salvo se existir
-if (fs.existsSync(ACABAMENTO_FILE)) {
-  try {
-    const data = fs.readFileSync(ACABAMENTO_FILE, 'utf8');
-    acabamentoGlobal = JSON.parse(data);
-  } catch (err) {
-    console.error('Erro ao ler acabamento.json:', err);
-  }
+// cria pasta uploads se não existir
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR);
 }
 
-// ===== Rota para upload de XLS (opcional) =====
-app.post('/upload', upload.single('file'), (req, res) => {
-  if (req.file) {
-    const tmpPath = path.join(__dirname, 'uploads', 'ultimaProducao.xlsx');
-    fs.renameSync(req.file.path, tmpPath);
-    res.json({ success: true });
-  } else {
-    res.status(400).json({ success: false });
-  }
-});
+// =======================
+// APP
+// =======================
+app.use(express.static(PUBLIC_DIR));
+app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
-// ===== Socket.io =====
+// =======================
+// DADOS EM MEMÓRIA
+// =======================
+let producaoData = {};
+let cargas = [];
+let acabamentoGlobal = [];
+
+// =======================
+// FUNÇÕES DE PERSISTÊNCIA
+// =======================
+function loadJSON(file, fallback) {
+  try {
+    if (fs.existsSync(file)) {
+      return JSON.parse(fs.readFileSync(file, 'utf8'));
+    }
+  } catch (err) {
+    console.error(`Erro ao ler ${file}`, err);
+  }
+  return fallback;
+}
+
+function saveJSON(file, data) {
+  fs.writeFile(file, JSON.stringify(data, null, 2), err => {
+    if (err) console.error(`Erro ao salvar ${file}`, err);
+  });
+}
+
+// =======================
+// LOAD INICIAL (BOOT)
+// =======================
+producaoData = loadJSON(PRODUCAO_FILE, {});
+cargas = loadJSON(CARGAS_FILE, []);
+acabamentoGlobal = loadJSON(ACABAMENTO_FILE, []);
+
+// =======================
+// SOCKET.IO
+// =======================
 io.on('connection', socket => {
-  console.log('Novo cliente conectado');
+  console.log('🟢 Cliente conectado');
 
-  // Envia dados iniciais
-  socket.emit('initCargas', cargas);
+  // envia tudo ao conectar
   socket.emit('initProducao', producaoData);
+  socket.emit('initCargas', cargas);
+  socket.emit('initAcabamento', acabamentoGlobal);
 
-  // Lê o acabamento salvo (se existir) e envia
- // ===== ACABAMENTO =====
-// envia dados persistidos ou vazio ao conectar
-socket.emit('initAcabamento', acabamentoGlobal);
-
-// recebe atualizações do frontend e envia para todos
-socket.on('atualizaAcabamento', dados => {
-  acabamentoGlobal = dados;
-
-  // salva no arquivo
-  fs.writeFile(ACABAMENTO_FILE, JSON.stringify(acabamentoGlobal, null, 2), err => {
-    if (err) console.error('Erro ao salvar acabamento.json:', err);
-  });
-
-  // envia para todos os clientes conectados
-  io.emit('atualizaAcabamento', acabamentoGlobal);
-});
-
-
-  // ===== CARGAS =====
-  socket.on('editarCarga', novoEstado => {
-    novoEstado.forEach((c, i) => c.titulo = `Carga ${i + 1}`);
-    cargas = novoEstado;
-    io.emit('atualizaCargas', cargas);
-  });
-
-  socket.on('excluirCarga', idx => {
-    cargas.splice(idx, 1);
-    cargas.forEach((c, i) => c.titulo = `Carga ${i + 1}`);
-    io.emit('atualizaCargas', cargas);
-  });
-
-  // ===== PRODUÇÃO =====
+  // =======================
+  // PRODUÇÃO
+  // =======================
   socket.on('uploadProducao', data => {
     producaoData = data;
+    saveJSON(PRODUCAO_FILE, producaoData);
     io.emit('atualizaProducao', producaoData);
   });
 
   socket.on('atualizaProducao', data => {
     producaoData = data;
+    saveJSON(PRODUCAO_FILE, producaoData);
     io.emit('atualizaProducao', producaoData);
   });
 
-  // ===== ACABAMENTO =====
-socket.on('atualizaAcabamento', dados => {
-  acabamentoGlobal = dados;
-
-  // salva no arquivo
-  fs.writeFile(ACABAMENTO_FILE, JSON.stringify(acabamentoGlobal, null, 2), err => {
-    if (err) console.error('Erro ao salvar acabamento.json:', err);
+  socket.on('limparProducao', () => {
+    producaoData = {};
+    saveJSON(PRODUCAO_FILE, producaoData);
+    io.emit('atualizaProducao', producaoData);
   });
 
-  // envia para todos os clientes
-  io.emit('atualizaAcabamento', acabamentoGlobal);
-});
+  // =======================
+  // CARGAS
+  // =======================
+  socket.on('editarCarga', data => {
+    data.forEach((c, i) => {
+      if (!c.titulo) c.titulo = `Carga ${i + 1}`;
+    });
+    cargas = data;
+    saveJSON(CARGAS_FILE, cargas);
+    io.emit('atualizaCargas', cargas);
+  });
 
+  socket.on('atualizaCargas', data => {
+    cargas = data;
+    saveJSON(CARGAS_FILE, cargas);
+    io.emit('atualizaCargas', cargas);
+  });
+
+  // =======================
+  // ACABAMENTO
+  // =======================
+  socket.on('atualizaAcabamento', data => {
+    acabamentoGlobal = data;
+    saveJSON(ACABAMENTO_FILE, acabamentoGlobal);
+    io.emit('atualizaAcabamento', acabamentoGlobal);
+  });
 
   socket.on('disconnect', () => {
-    console.log('Cliente desconectou');
+    console.log('🔴 Cliente desconectado');
   });
 });
 
-// ===== Inicia servidor =====
+// =======================
+// START SERVER
+// =======================
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+http.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+});
