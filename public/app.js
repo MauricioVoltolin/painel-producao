@@ -845,20 +845,21 @@ function renderTV() {
   /* =========================
      ACABAMENTO
   ========================= */
-  const cardAcabamento = document.querySelector(
-    '.tv-card[data-tv="ACABAMENTO"] .tv-content'
-  );
 
-  if (cardAcabamento) {
-    cardAcabamento.innerHTML = '';
+const cardAcabamento = document.querySelector(
+  '.tv-card[data-tv="ACABAMENTO"] .tv-content'
+);
 
-    if (Array.isArray(producaoAnteriorData)) {
-      producaoAnteriorData.forEach(item => {
-        if (!item.item) return;
+if (cardAcabamento) {
+  cardAcabamento.innerHTML = '';
 
+  // 1️⃣ Itens da produção com status prodesco_ok, acabamento, acabamento_ok
+  Object.keys(producaoData).forEach(maquina => {
+    producaoData[maquina].forEach(item => {
+      if (!item.item) return;
+      if (['producao_ok','acabamento','acabamento_ok'].includes(item.status)) {
         const linha = document.createElement('div');
-        linha.className = `tv-linha status-${item.status || ''}`;
-
+        linha.className = `tv-linha status-${item.status}`;
         linha.innerHTML = `
           <div class="tv-item">${item.item}</div>
           <div class="tv-qtd">
@@ -866,11 +867,29 @@ function renderTV() {
             <span>P:${item.produzir || 0}</span>
           </div>
         `;
-
         cardAcabamento.appendChild(linha);
-      });
-    }
+      }
+    });
+  });
+
+  // 2️⃣ Itens do acabamento antigo (upload XLS ou anterior)
+  if (Array.isArray(producaoAnteriorData)) {
+    producaoAnteriorData.forEach(item => {
+      if (!item.item) return;
+      const linha = document.createElement('div');
+      linha.className = `tv-linha status-${item.status || ''}`;
+      linha.innerHTML = `
+        <div class="tv-item">${item.item}</div>
+        <div class="tv-qtd">
+          <span>V:${item.venda || 0}</span>
+          <span>P:${item.produzir || 0}</span>
+        </div>
+      `;
+      cardAcabamento.appendChild(linha);
+    });
   }
+}
+
 }
 
 const mapaTV = {
