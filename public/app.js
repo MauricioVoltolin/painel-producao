@@ -143,7 +143,7 @@ document.getElementById('xlsAcabamento').addEventListener('change', e => {
 });
 /* ===== SOCKETS ===== */
 socket.on('initProducao', data => { producaoData = data; renderProducao(); });
-socket.on('atualizaProducao', data => { producaoData = data; renderProducao(); });
+socket.on('atualizaProducao', data => { producaoData = data; renderProducao(); renderTV(); });
 socket.on('initAcabamento', data => { producaoAnteriorData = data; renderProducaoAnterior(); });
 socket.on('atualizaAcabamento', data => { producaoAnteriorData = data; renderProducaoAnterior(); });
 /* ===== RENDER PRODUÇÃO ===== */
@@ -605,7 +605,6 @@ function atualizaStatusItem(cIdx, iIdx, select){
 
   socket.emit('atualizaCargas', cargas);
 }
-
 function atualizarData() {
   const el = document.getElementById('dataAtual');
   if (!el) return;
