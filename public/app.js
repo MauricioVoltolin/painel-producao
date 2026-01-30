@@ -413,10 +413,18 @@ function renderCargas() {
   const div = document.getElementById('cargas');
   div.innerHTML = '';
 
+  // garante que cargas seja sempre um array
+  cargas = cargas || [];
+
   // detectar se está em modo edição
   const editMode = div.getAttribute('data-edit-mode') === 'true';
 
   cargas.forEach((c, idx) => {
+    // garante que c.itens sempre exista
+    c.itens = c.itens || [];
+    c.itensStatus = c.itensStatus || [];
+    c.valoresFaturados = c.valoresFaturados || [];
+
     const card = document.createElement('div');
     card.className = 'card';
 
@@ -424,16 +432,16 @@ function renderCargas() {
     const cardTop = document.createElement('div');
     cardTop.className = 'card-top';
     cardTop.innerHTML = `
-      <div class="top-left menu-wrapper"> <!-- ADICIONE menu-wrapper -->
+      <div class="top-left menu-wrapper">
         <span class="menu-carga" onclick="toggleDropdownCarga(${idx})">⋮</span>
-        <strong class="titulo-carga">${c.titulo}</strong>
+        <strong class="titulo-carga">${c.titulo || `Carga ${idx+1}`}</strong>
         <div class="dropdown" id="dropdown-carga-${idx}">
           <button onclick="editarCarga(${idx})">Editar</button>
           <button onclick="excluirCarga(${idx})" style="color:red">Excluir</button>
         </div>
       </div>
       <div class="top-right">
-        <select class="select-carga ${c.status.toLowerCase()}" onchange="atualizaStatusCarga(${idx}, this)">
+        <select class="select-carga ${c.status ? c.status.toLowerCase() : ''}" onchange="atualizaStatusCarga(${idx}, 0, this)">
           <option value="Pendente" ${c.status==='Pendente'?'selected':''}>Pendente</option>
           <option value="Carregando" ${c.status==='Carregando'?'selected':''}>Carregando</option>
           <option value="Pronto" ${c.status==='Pronto'?'selected':''}>Pronto</option>
@@ -445,31 +453,29 @@ function renderCargas() {
     // itens do card
     const itensContainer = document.createElement('div');
     itensContainer.className = 'card-itens';
-      c.itens.forEach((item, iidx) => {
-  // garante que o status do item existe
-  if (!cargas[idx].itensStatus) cargas[idx].itensStatus = [];
-  if (!cargas[idx].itensStatus[iidx]) cargas[idx].itensStatus[iidx] = 'Pendente';
 
-  const status = cargas[idx].itensStatus[iidx];
-  const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
+    c.itens.forEach((item, iidx) => {
+      const status = c.itensStatus[iidx] || 'Pendente';
+      const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
 
-  const divItem = document.createElement('div');
-  divItem.className = 'card-item';
-  divItem.innerHTML = `
-    <span class="item-nome">${item}</span>
-    ${editMode ? `
-      <span class="item-actions">
-        <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
-        <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
-      </span>
-    ` : ''}
-    <select class="item-status" style="float:right; background-color:${colors[status]};" onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
-      <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
-      <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
-    </select>
-  `;
-  itensContainer.appendChild(divItem);
-});
+      const divItem = document.createElement('div');
+      divItem.className = 'card-item';
+      divItem.innerHTML = `
+        <span class="item-nome">${item || ''}</span>
+        ${editMode ? `
+          <span class="item-actions">
+            <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
+            <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
+          </span>
+        ` : ''}
+        <select class="item-status" style="float:right; background-color:${colors[status]};" onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
+          <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
+          <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
+        </select>
+      `;
+      itensContainer.appendChild(divItem);
+    });
+
     card.appendChild(itensContainer);
 
     // botão + no final do card
@@ -493,6 +499,7 @@ function renderCargas() {
     div.appendChild(card);
   });
 }
+
 // Funções de interação com dropdown
 function toggleDropdownCarga(idx) {
   document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
