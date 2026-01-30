@@ -445,7 +445,7 @@ function renderCargas() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // topo do card com título e menu de editar/excluir card
+    // Topo do card
     const cardTop = document.createElement('div');
     cardTop.className = 'card-top';
     cardTop.innerHTML = `
@@ -458,7 +458,7 @@ function renderCargas() {
         </div>
       </div>
       <div class="top-right">
-        <select class="select-carga ${c.status.toLowerCase()}" onchange="atualizaStatusCarga(${idx}, null, this)">
+        <select class="select-carga ${c.status.toLowerCase()}" onchange="atualizaStatusCarga(${idx}, this)">
           <option value="Pendente" ${c.status==='Pendente'?'selected':''}>Pendente</option>
           <option value="Carregando" ${c.status==='Carregando'?'selected':''}>Carregando</option>
           <option value="Pronto" ${c.status==='Pronto'?'selected':''}>Pronto</option>
@@ -467,59 +467,46 @@ function renderCargas() {
     `;
     card.appendChild(cardTop);
 
-    // container de itens
+    // Itens do card
     const itensContainer = document.createElement('div');
     itensContainer.className = 'card-itens';
 
     c.itens.forEach((item, iidx) => {
       if (!cargas[idx].itensStatus) cargas[idx].itensStatus = [];
       if (!cargas[idx].itensStatus[iidx]) cargas[idx].itensStatus[iidx] = 'Pendente';
+
       const status = cargas[idx].itensStatus[iidx];
       const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
 
       const divItem = document.createElement('div');
       divItem.className = 'card-item';
-
-      // nome do item
-      divItem.innerHTML = `<span class="item-nome">${item}</span>`;
-
-      // atalhos só no modo edição
-      if (editModeIdx === idx) {
-        const actions = document.createElement('span');
-        actions.className = 'item-actions';
-        actions.innerHTML = `
-          <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
-          <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
-          <button class="editar-valor" onclick="editarValorFaturado(${idx}, ${iidx})">💰</button>
-        `;
-        divItem.appendChild(actions);
-      }
-
-      // select de status sempre visível
-      const select = document.createElement('select');
-      select.className = 'item-status';
-      select.style.float = 'right';
-      select.style.backgroundColor = colors[status];
-      select.innerHTML = `
-        <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
-        <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
+      divItem.innerHTML = `
+        <span class="item-nome">${item}</span>
+        ${editModeIdx === idx ? `
+          <span class="item-actions">
+            <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
+            <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
+            <button class="editar-valor" onclick="editarValorFaturado(${idx}, ${iidx})">💰</button>
+          </span>
+        ` : ''}
+        <select class="item-status" style="float:right; background-color:${colors[status]};" onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
+          <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
+          <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
+        </select>
       `;
-      select.onchange = () => atualizaStatusItem(idx, iidx, select);
-      divItem.appendChild(select);
-
       itensContainer.appendChild(divItem);
     });
 
     card.appendChild(itensContainer);
 
-    // Botão "+" sempre visível, centralizado
+    // Botão + sempre visível no final do card
     const addBtn = document.createElement('button');
     addBtn.className = 'btn-add-item';
     addBtn.innerText = '+';
     addBtn.onclick = () => adicionarItemCarga(idx);
     card.appendChild(addBtn);
 
-    // Botão "OK" aparece só no modo edição
+    // Botão OK apenas no modo edição
     if (editModeIdx === idx) {
       const okBtn = document.createElement('button');
       okBtn.className = 'btn-ok-edicao';
@@ -534,8 +521,6 @@ function renderCargas() {
     div.appendChild(card);
   });
 }
-
-
 function editarCarga(idx) {
   const div = document.getElementById('cargas');
   div.setAttribute('data-edit-mode', idx);
