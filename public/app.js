@@ -906,7 +906,6 @@ function renderTV() {
     }
   }
 }
-
 // ==============================
 // AUTO-REFRESH TV
 // ==============================
@@ -916,7 +915,6 @@ setInterval(() => {
     renderTV();
   }
 }, 5000);
-
 const mapaTV = {
   "IMPRESSORA 01": ["MAQUINA 01"],
   "IMPRESSORA 02": ["MAQUINA 02"],
@@ -934,3 +932,9 @@ const mapaTV = {
   "EXPEDIÇÃO": ["EXPEDIÇÃO"], // hoje vazio, mas já preparado
   "FATURAMENTO": ["FATURAMENTO"] // idem
 };
+function limparBanco() {
+  if (!confirm('Deseja realmente limpar TODO o banco de produção? Esta ação não pode ser desfeita.')) return;
+
+  // envia evento para o server
+  socket.emit('limparBancoProducao');
+}
