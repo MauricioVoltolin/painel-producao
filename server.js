@@ -13,7 +13,8 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 // =======================
 // MONGODB ATLAS
 // =======================
-const MONGO_URI = "mongodb+srv://mauricio:SUA_NOVA_SENHA@bfprod.kbisoex.mongodb.net/producaoDB?retryWrites=true&w=majority";
+const MONGO_URI = "mongodb+srv://mauricio:1234master@bfprod.kbisoex.mongodb.net/producaoDB?retryWrites=true&w=majority";
+
 const client = new MongoClient(MONGO_URI);
 let db, producaoCol, cargasCol, acabamentoCol;
 
