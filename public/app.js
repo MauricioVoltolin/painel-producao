@@ -437,15 +437,12 @@ function renderCargas() {
   const div = document.getElementById('cargas');
   div.innerHTML = '';
 
-  const editMode = div.getAttribute('data-edit-mode') === 'true';
-
-  if (!Array.isArray(cargas)) cargas = []; // 🔥 garante que cargas seja array
+  const editModeIdx = parseInt(div.getAttribute('data-edit-mode') || '-1');
 
   cargas.forEach((c, idx) => {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // topo do card
     const cardTop = document.createElement('div');
     cardTop.className = 'card-top';
     cardTop.innerHTML = `
@@ -458,7 +455,7 @@ function renderCargas() {
         </div>
       </div>
       <div class="top-right">
-        <select class="select-carga ${c.status.toLowerCase()}" onchange="atualizaStatusCarga(${idx}, 0, this)">
+        <select class="select-carga ${c.status.toLowerCase()}" onchange="atualizaStatusCarga(${idx}, this)">
           <option value="Pendente" ${c.status==='Pendente'?'selected':''}>Pendente</option>
           <option value="Carregando" ${c.status==='Carregando'?'selected':''}>Carregando</option>
           <option value="Pronto" ${c.status==='Pronto'?'selected':''}>Pronto</option>
@@ -471,42 +468,67 @@ function renderCargas() {
     const itensContainer = document.createElement('div');
     itensContainer.className = 'card-itens';
 
-    if (!Array.isArray(c.itens)) c.itens = [];
-    if (!Array.isArray(c.itensStatus)) c.itensStatus = [];
-
     c.itens.forEach((item, iidx) => {
-      if (!c.itensStatus[iidx]) c.itensStatus[iidx] = 'Pendente';
-      const status = c.itensStatus[iidx];
+      // garante status
+      if (!cargas[idx].itensStatus) cargas[idx].itensStatus = [];
+      if (!cargas[idx].itensStatus[iidx]) cargas[idx].itensStatus[iidx] = 'Pendente';
+
+      const status = cargas[idx].itensStatus[iidx];
       const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
 
       const divItem = document.createElement('div');
       divItem.className = 'card-item';
       divItem.innerHTML = `
         <span class="item-nome">${item}</span>
-        ${editMode ? `<span class="item-actions">
-          <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
-          <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
-        </span>` : ''}
-        <select class="item-status" style="float:right; background-color:${colors[status]};"
-          onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
+        ${editModeIdx === idx ? `
+          <span class="item-actions">
+            <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
+            <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
+            <button class="editar-valor" onclick="editarValorFaturado(${idx}, ${iidx})">💰</button>
+          </span>
+        ` : ''}
+        <select class="item-status" style="float:right; background-color:${colors[status]};" onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
           <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
           <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
         </select>
       `;
       itensContainer.appendChild(divItem);
     });
-
     card.appendChild(itensContainer);
 
-    // botão + para novo item
-    const addBtnWrapper = document.createElement('div');
-    addBtnWrapper.className = 'add-item-wrapper';
-    addBtnWrapper.innerHTML = `<button onclick="adicionarItemCarga(${idx})">+</button>`;
-    card.appendChild(addBtnWrapper);
+    // botão OK para sair do modo edição
+    if (editModeIdx === idx) {
+      const okBtn = document.createElement('button');
+      okBtn.className = 'btn-ok-edicao';
+      okBtn.innerText = 'OK';
+      okBtn.onclick = () => {
+        div.setAttribute('data-edit-mode', '-1');
+        renderCargas();
+      };
+      card.appendChild(okBtn);
+    }
 
     div.appendChild(card);
   });
 }
+
+function editarCarga(idx) {
+  const div = document.getElementById('cargas');
+  div.setAttribute('data-edit-mode', idx); // só esse card em modo edição
+  renderCargas();
+}
+
+function editarValorFaturado(cIdx, iIdx){
+  const valor = prompt('Informe o valor faturado:', cargas[cIdx].valoresFaturados?.[iIdx] || '');
+  if (!valor) return;
+  const valorNum = parseFloat(valor.replace('R$', '').replace(/\./g, '').replace(',', '.'));
+  if (isNaN(valorNum)) return alert('Valor inválido');
+  if (!cargas[cIdx].valoresFaturados) cargas[cIdx].valoresFaturados = [];
+  cargas[cIdx].valoresFaturados[iIdx] = valorNum;
+  socket.emit('atualizaCargas', cargas);
+  renderCargas();
+}
+
 // Funções de interação com dropdown
 function toggleDropdownCarga(idx) {
   document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
@@ -529,11 +551,7 @@ function adicionarItemCarga(cIdx) {
   socket.emit('editarCarga', cargas);
   renderCargas();
 }
-function editarCarga(idx) {
-  const div = document.getElementById('cargas');
-  div.setAttribute('data-edit-mode', 'true');
-  renderCargas();
-}
+
 function modoEdicaoCarga(idx){
   cargas[idx].editando = true;
   renderCargas();
@@ -552,36 +570,12 @@ function excluirItemCarga(cIdx, iIdx) {
   renderCargas();
 }
 function atualizaStatusCarga(cIdx, iIdx, select) {
-  const item = cargas[cIdx].itens[iIdx];
-  const statusAnterior = item.status;
-  const novoStatus = select.value.trim().toLowerCase();
-
-  // detecta transição para faturado
-  if (novoStatus === 'faturado' && statusAnterior !== 'faturado') {
-
-    const valor = prompt('Informe o valor faturado:');
-
-    if (!valor) {
-      select.value = statusAnterior;
-      return;
-    }
-
-    const valorNum = parseFloat(
-      valor.replace('R$', '').replace(/\./g, '').replace(',', '.')
-    );
-
-    if (isNaN(valorNum)) {
-      alert('Valor inválido');
-      select.value = statusAnterior;
-      return;
-    }
-
-    item.valorFaturado = valorNum;
-  }
-
-  item.status = novoStatus;
+  const novoStatus = select.value;
+  cargas[cIdx].status = novoStatus; // ✅ atualiza o status do card
   socket.emit('atualizaCargas', cargas);
+  renderCargas(); // atualiza a tela mantendo a seleção
 }
+
 function atualizaStatusItem(cIdx, iIdx, select){
   if (!cargas[cIdx].itensStatus) cargas[cIdx].itensStatus = [];
 
@@ -748,7 +742,6 @@ document.addEventListener('click', e => {
 function renderTV() {
   const dashboard = document.getElementById('tv-dashboard');
   const abaTV = document.getElementById('tab-tv');
-
   if (!dashboard || !abaTV || !abaTV.classList.contains('active')) return;
 
   /* =========================
@@ -760,21 +753,15 @@ function renderTV() {
     content.innerHTML = '';
 
     // ignora acabamento e expedição aqui
-    if (nomeTV === 'ACABAMENTO' || nomeTV === 'EXPEDIÇÃO' || nomeTV === 'FATURAMENTO') {
-      return;
-    }
+    if (['ACABAMENTO', 'EXPEDIÇÃO', 'FATURAMENTO'].includes(nomeTV)) return;
 
     const maquinasRelacionadas = mapaTV[nomeTV] || [];
-
     maquinasRelacionadas.forEach(maquina => {
       if (!producaoData[maquina]) return;
-
       producaoData[maquina].forEach(item => {
         if (!item.item) return;
-
         const linha = document.createElement('div');
         linha.className = `tv-linha status-${item.status || ''}`;
-
         linha.innerHTML = `
           <div class="tv-item">${item.item}</div>
           <div class="tv-qtd">
@@ -782,24 +769,20 @@ function renderTV() {
             <span>P:${item.produzir || 0}</span>
           </div>
         `;
-
         content.appendChild(linha);
       });
     });
   });
-    /* =========================
+
+  /* =========================
      EXPEDIÇÃO
   ========================= */
-  const cardExpedicao = document.querySelector(
-    '.tv-card[data-tv="EXPEDIÇÃO"] .tv-content'
-  );
-
+  const cardExpedicao = document.querySelector('.tv-card[data-tv="EXPEDIÇÃO"] .tv-content');
   let totalFaturamentoGeral = 0;
-
   if (cardExpedicao) {
     cardExpedicao.innerHTML = '';
 
-    cargas.forEach((carga, cIdx) => {
+    cargas.forEach(carga => {
       const total = carga.itens?.length || 0;
       if (!total) return;
 
@@ -817,27 +800,22 @@ function renderTV() {
       });
 
       totalFaturamentoGeral += valorCarga;
-
       const percentual = Math.round((faturados / total) * 100);
 
       const linha = document.createElement('div');
       linha.className = 'tv-carga';
-
       linha.innerHTML = `
         <div class="tv-carga-topo">
           <span class="tv-carga-titulo">${carga.titulo}</span>
           <span class="tv-carga-status">${carga.status}</span>
         </div>
-
         <div class="tv-barra">
           <div class="tv-barra-preenchimento" style="width:${percentual}%"></div>
         </div>
-
         <div class="tv-carga-info">
           ${faturados} de ${total} faturados — R$ ${valorCarga.toLocaleString('pt-BR',{minimumFractionDigits:2})}
         </div>
       `;
-
       cardExpedicao.appendChild(linha);
     });
   }
@@ -845,16 +823,11 @@ function renderTV() {
   /* =========================
      FATURAMENTO TOTAL
   ========================= */
-  const cardFaturamento = document.querySelector(
-    '.tv-card[data-tv="FATURAMENTO"] .tv-content'
-  );
-
+  const cardFaturamento = document.querySelector('.tv-card[data-tv="FATURAMENTO"] .tv-content');
   if (cardFaturamento) {
     cardFaturamento.innerHTML = `
       <div class="tv-faturamento-total">
-        R$ ${totalFaturamentoGeral.toLocaleString('pt-BR', {
-          minimumFractionDigits: 2
-        })}
+        R$ ${totalFaturamentoGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
       </div>
     `;
   }
@@ -862,95 +835,50 @@ function renderTV() {
   /* =========================
      ACABAMENTO
   ========================= */
+  const cardAcabamento = document.querySelector('.tv-card[data-tv="ACABAMENTO"] .tv-content');
+  if (cardAcabamento) {
+    cardAcabamento.innerHTML = '';
 
-const cardAcabamento = document.querySelector(
-  '.tv-card[data-tv="ACABAMENTO"] .tv-content'
-);
-
-if (cardAcabamento) {
-  cardAcabamento.innerHTML = '';
-
-  // 1️⃣ Itens da produção: só status 'producao_ok' ou 'acabamento'
-  Object.keys(producaoData).forEach(maquina => {
-    producaoData[maquina].forEach(item => {
-      if (!item.item) return;
-      if (item.status === 'producao_ok' || item.status === 'acabamento') {
-        const linha = document.createElement('div');
-        linha.className = `tv-linha status-${item.status}`;
-        linha.innerHTML = `
-          <div class="tv-item">${item.item}</div>
-          <div class="tv-qtd">
-            <span>V:${item.venda || 0}</span>
-            <span>P:${item.produzir || 0}</span>
-          </div>
-        `;
-        cardAcabamento.appendChild(linha);
-      }
+    // 1️⃣ Itens da produção com status "producao_ok" ou "acabamento"
+    Object.keys(producaoData).forEach(maquina => {
+      producaoData[maquina].forEach(item => {
+        if (!item.item) return;
+        if (['producao_ok','acabamento'].includes(item.status)) {
+          const linha = document.createElement('div');
+          linha.className = `tv-linha status-${item.status}`;
+          linha.innerHTML = `
+            <div class="tv-item">${item.item}</div>
+            <div class="tv-qtd">
+              <span>V:${item.venda || 0}</span>
+              <span>P:${item.produzir || 0}</span>
+            </div>
+          `;
+          cardAcabamento.appendChild(linha);
+        }
+      });
     });
-  });
 
-  // 2️⃣ Itens do acabamento antigo (upload XLS ou anterior), apenas se status != 'acabamento_ok'
-  if (Array.isArray(producaoAnteriorData)) {
-    producaoAnteriorData.forEach(item => {
-      if (!item.item) return;
-      if (item.status !== 'acabamento_ok') {
-        const linha = document.createElement('div');
-        linha.className = `tv-linha status-${item.status || ''}`;
-        linha.innerHTML = `
-          <div class="tv-item">${item.item}</div>
-          <div class="tv-qtd">
-            <span>V:${item.venda || 0}</span>
-            <span>P:${item.produzir || 0}</span>
-          </div>
-        `;
-        cardAcabamento.appendChild(linha);
-      }
-    });
+    // 2️⃣ Itens do acabamento antigo (upload XLS ou anterior), apenas se status != 'acabamento_ok'
+    if (Array.isArray(producaoAnteriorData)) {
+      producaoAnteriorData.forEach(item => {
+        if (!item.item) return;
+        if (item.status !== 'acabamento_ok') {
+          const linha = document.createElement('div');
+          linha.className = `tv-linha status-${item.status || ''}`;
+          linha.innerHTML = `
+            <div class="tv-item">${item.item}</div>
+            <div class="tv-qtd">
+              <span>V:${item.venda || 0}</span>
+              <span>P:${item.produzir || 0}</span>
+            </div>
+          `;
+          cardAcabamento.appendChild(linha);
+        }
+      });
+    }
   }
 }
 
-
-if (cardAcabamento) {
-  cardAcabamento.innerHTML = '';
-
-  // 1️⃣ Itens da produção com status prodesco_ok, acabamento, acabamento_ok
-  Object.keys(producaoData).forEach(maquina => {
-    producaoData[maquina].forEach(item => {
-      if (!item.item) return;
-      if (['producao_ok','acabamento','acabamento_ok'].includes(item.status)) {
-        const linha = document.createElement('div');
-        linha.className = `tv-linha status-${item.status}`;
-        linha.innerHTML = `
-          <div class="tv-item">${item.item}</div>
-          <div class="tv-qtd">
-            <span>V:${item.venda || 0}</span>
-            <span>P:${item.produzir || 0}</span>
-          </div>
-        `;
-        cardAcabamento.appendChild(linha);
-      }
-    });
-  });
-
-  // 2️⃣ Itens do acabamento antigo (upload XLS ou anterior)
-  if (Array.isArray(producaoAnteriorData)) {
-    producaoAnteriorData.forEach(item => {
-      if (!item.item) return;
-      const linha = document.createElement('div');
-      linha.className = `tv-linha status-${item.status || ''}`;
-      linha.innerHTML = `
-        <div class="tv-item">${item.item}</div>
-        <div class="tv-qtd">
-          <span>V:${item.venda || 0}</span>
-          <span>P:${item.produzir || 0}</span>
-        </div>
-      `;
-      cardAcabamento.appendChild(linha);
-    });
-  }
-}
-
-}
 const mapaTV = {
   "IMPRESSORA 01": ["MAQUINA 01"],
   "IMPRESSORA 02": ["MAQUINA 02"],
