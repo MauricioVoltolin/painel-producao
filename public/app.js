@@ -330,10 +330,10 @@ function aplicarFiltroProducao(){ filtroAtual = document.getElementById('filtroM
 /* ===== ATUALIZA STATUS ===== */
 function atualizaStatusProducao(m, idx, sel){
   producaoData[m][idx].status = sel.value;
-  sel.className='status-producao '+sel.value;
+  sel.className = 'status-producao ' + sel.value;
   socket.emit('atualizaProducao', producaoData);
 
-  // 🔥 Se entrou em acabamento_ok, remove da aba de acabamento
+  // 🔥 Se entrou em acabamento_ok, remove do card de Acabamento
   if(sel.value === 'acabamento_ok'){
     renderProducaoAnterior();
   }
@@ -341,13 +341,12 @@ function atualizaStatusProducao(m, idx, sel){
   // 🔥 Atualiza TV
   renderTV();
 }
-
 function atualizaStatusProducaoAnterior(idx, sel){
   producaoAnteriorData[idx].status = sel.value;
-  sel.className='status-producao '+sel.value;
+  sel.className = 'status-producao ' + sel.value;
   socket.emit('atualizaAcabamento', producaoAnteriorData);
 
-  // 🔥 Se entrou em acabamento_ok, remove da aba de acabamento
+  // 🔥 Se entrou em acabamento_ok, remove do card de Acabamento
   if(sel.value === 'acabamento_ok'){
     renderProducaoAnterior();
   }
@@ -355,7 +354,6 @@ function atualizaStatusProducaoAnterior(idx, sel){
   // 🔥 Atualiza TV
   renderTV();
 }
-
 /* ===== ADICIONAR / EXCLUIR ITENS ===== */
 function adicionarItemGlobal(){
   const entrada = prompt(
@@ -439,35 +437,28 @@ function renderCargas() {
   const div = document.getElementById('cargas');
   div.innerHTML = '';
 
-  // garante que cargas seja sempre um array
-  cargas = cargas || [];
-
-  // detectar se está em modo edição
   const editMode = div.getAttribute('data-edit-mode') === 'true';
 
-  cargas.forEach((c, idx) => {
-    // garante que c.itens sempre exista
-    c.itens = c.itens || [];
-    c.itensStatus = c.itensStatus || [];
-    c.valoresFaturados = c.valoresFaturados || [];
+  if (!Array.isArray(cargas)) cargas = []; // 🔥 garante que cargas seja array
 
+  cargas.forEach((c, idx) => {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // topo do card: menu ⋮ + título + status
+    // topo do card
     const cardTop = document.createElement('div');
     cardTop.className = 'card-top';
     cardTop.innerHTML = `
       <div class="top-left menu-wrapper">
         <span class="menu-carga" onclick="toggleDropdownCarga(${idx})">⋮</span>
-        <strong class="titulo-carga">${c.titulo || `Carga ${idx+1}`}</strong>
+        <strong class="titulo-carga">${c.titulo}</strong>
         <div class="dropdown" id="dropdown-carga-${idx}">
           <button onclick="editarCarga(${idx})">Editar</button>
           <button onclick="excluirCarga(${idx})" style="color:red">Excluir</button>
         </div>
       </div>
       <div class="top-right">
-        <select class="select-carga ${c.status ? c.status.toLowerCase() : ''}" onchange="atualizaStatusCarga(${idx}, 0, this)">
+        <select class="select-carga ${c.status.toLowerCase()}" onchange="atualizaStatusCarga(${idx}, 0, this)">
           <option value="Pendente" ${c.status==='Pendente'?'selected':''}>Pendente</option>
           <option value="Carregando" ${c.status==='Carregando'?'selected':''}>Carregando</option>
           <option value="Pronto" ${c.status==='Pronto'?'selected':''}>Pronto</option>
@@ -480,21 +471,24 @@ function renderCargas() {
     const itensContainer = document.createElement('div');
     itensContainer.className = 'card-itens';
 
+    if (!Array.isArray(c.itens)) c.itens = [];
+    if (!Array.isArray(c.itensStatus)) c.itensStatus = [];
+
     c.itens.forEach((item, iidx) => {
-      const status = c.itensStatus[iidx] || 'Pendente';
+      if (!c.itensStatus[iidx]) c.itensStatus[iidx] = 'Pendente';
+      const status = c.itensStatus[iidx];
       const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
 
       const divItem = document.createElement('div');
       divItem.className = 'card-item';
       divItem.innerHTML = `
-        <span class="item-nome">${item || ''}</span>
-        ${editMode ? `
-          <span class="item-actions">
-            <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
-            <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
-          </span>
-        ` : ''}
-        <select class="item-status" style="float:right; background-color:${colors[status]};" onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
+        <span class="item-nome">${item}</span>
+        ${editMode ? `<span class="item-actions">
+          <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
+          <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
+        </span>` : ''}
+        <select class="item-status" style="float:right; background-color:${colors[status]};"
+          onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
           <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
           <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
         </select>
@@ -504,28 +498,15 @@ function renderCargas() {
 
     card.appendChild(itensContainer);
 
-    // botão + no final do card
+    // botão + para novo item
     const addBtnWrapper = document.createElement('div');
     addBtnWrapper.className = 'add-item-wrapper';
     addBtnWrapper.innerHTML = `<button onclick="adicionarItemCarga(${idx})">+</button>`;
     card.appendChild(addBtnWrapper);
 
-    // botão OK para sair do modo edição
-    if (editMode) {
-      const okBtn = document.createElement('button');
-      okBtn.className = 'btn-ok-edicao';
-      okBtn.innerText = 'OK';
-      okBtn.onclick = () => {
-        div.setAttribute('data-edit-mode', 'false');
-        renderCargas();
-      };
-      card.appendChild(okBtn);
-    }
-
     div.appendChild(card);
   });
 }
-
 // Funções de interação com dropdown
 function toggleDropdownCarga(idx) {
   document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
