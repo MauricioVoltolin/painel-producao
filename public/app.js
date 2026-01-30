@@ -445,7 +445,6 @@ function renderCargas() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // topo do card
     const cardTop = document.createElement('div');
     cardTop.className = 'card-top';
     cardTop.innerHTML = `
@@ -482,13 +481,11 @@ function renderCargas() {
       divItem.className = 'card-item';
       divItem.innerHTML = `
         <span class="item-nome">${item}</span>
-        ${editModeIdx === idx ? `
-          <span class="item-actions">
-            <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
-            <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
-            <button class="editar-valor" onclick="editarValorFaturado(${idx}, ${iidx})">💰</button>
-          </span>
-        ` : ''}
+        <span class="item-actions">
+          <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
+          <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
+          <button class="editar-valor" onclick="editarValorFaturado(${idx}, ${iidx})">💰</button>
+        </span>
         <select class="item-status" style="float:right; background-color:${colors[status]};" onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
           <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
           <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
@@ -496,31 +493,19 @@ function renderCargas() {
       `;
       itensContainer.appendChild(divItem);
     });
-
     card.appendChild(itensContainer);
 
-    // botão adicionar item
-    if (editModeIdx === idx) {
-      const addBtn = document.createElement('button');
-      addBtn.className = 'btn-add-item';
-      addBtn.innerText = '+ Adicionar item';
-      addBtn.onclick = () => adicionarItemCarga(idx);
-      card.appendChild(addBtn);
-
-      // botão OK para sair do modo edição
-      const okBtn = document.createElement('button');
-      okBtn.className = 'btn-ok-edicao';
-      okBtn.innerText = 'OK';
-      okBtn.onclick = () => {
-        div.setAttribute('data-edit-mode', '-1');
-        renderCargas();
-      };
-      card.appendChild(okBtn);
-    }
+    // ✅ botão de adicionar item sempre visível
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn-add-item';
+    addBtn.innerText = '+ Adicionar item';
+    addBtn.onclick = () => adicionarItemCarga(idx);
+    card.appendChild(addBtn);
 
     div.appendChild(card);
   });
 }
+
 function editarCarga(idx) {
   const div = document.getElementById('cargas');
   div.setAttribute('data-edit-mode', idx);
