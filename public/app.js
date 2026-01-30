@@ -328,8 +328,34 @@ function renderProducaoAnterior(){
 /* ===== FILTRO ===== */
 function aplicarFiltroProducao(){ filtroAtual = document.getElementById('filtroMaquina').value; renderProducao(); }
 /* ===== ATUALIZA STATUS ===== */
-function atualizaStatusProducao(m, idx, sel){ producaoData[m][idx].status = sel.value; sel.className='status-producao '+sel.value; socket.emit('atualizaProducao', producaoData);}
-function atualizaStatusProducaoAnterior(idx, sel){ producaoAnteriorData[idx].status = sel.value; sel.className='status-producao '+sel.value; socket.emit('atualizaAcabamento', producaoAnteriorData); }
+function atualizaStatusProducao(m, idx, sel){
+  producaoData[m][idx].status = sel.value;
+  sel.className='status-producao '+sel.value;
+  socket.emit('atualizaProducao', producaoData);
+
+  // 🔥 Se entrou em acabamento_ok, remove da aba de acabamento
+  if(sel.value === 'acabamento_ok'){
+    renderProducaoAnterior();
+  }
+
+  // 🔥 Atualiza TV
+  renderTV();
+}
+
+function atualizaStatusProducaoAnterior(idx, sel){
+  producaoAnteriorData[idx].status = sel.value;
+  sel.className='status-producao '+sel.value;
+  socket.emit('atualizaAcabamento', producaoAnteriorData);
+
+  // 🔥 Se entrou em acabamento_ok, remove da aba de acabamento
+  if(sel.value === 'acabamento_ok'){
+    renderProducaoAnterior();
+  }
+
+  // 🔥 Atualiza TV
+  renderTV();
+}
+
 /* ===== ADICIONAR / EXCLUIR ITENS ===== */
 function adicionarItemGlobal(){
   const entrada = prompt(
@@ -611,7 +637,11 @@ function atualizaStatusItem(cIdx, iIdx, select){
   select.style.backgroundColor = colors[novoStatus];
 
   socket.emit('atualizaCargas', cargas);
+
+  // 🔥 Atualiza TV imediatamente
+  renderTV();
 }
+
 function atualizarData() {
   const el = document.getElementById('dataAtual');
   if (!el) return;
