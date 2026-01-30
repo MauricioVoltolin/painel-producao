@@ -13,12 +13,13 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 // =======================
 // MONGODB ATLAS
 // =======================
-const MONGO_URI = "mongodb+srv://mauricio:1234master@bfprod.kbisoex.mongodb.net/producaoDB?retryWrites=true&w=majority";
+// Melhor usar variáveis de ambiente para segurança
+const MONGO_URI = process.env.MONGO_URI || 
+  "mongodb+srv://mauricio:1234master@bfprod.kbisoex.mongodb.net/producaoDB?retryWrites=true&w=majority&tls=true";
+
 const client = new MongoClient(MONGO_URI, {
-  serverSelectionTimeoutMS: 5000, // opcional, só para detectar problemas de conexão mais rápido
+  serverSelectionTimeoutMS: 5000, // detecta problemas rápido
 });
-
-
 
 let db, producaoCol, cargasCol, acabamentoCol;
 
@@ -31,7 +32,7 @@ async function initMongo() {
   cargasCol = db.collection("cargas");
   acabamentoCol = db.collection("acabamento");
 
-  // garante que existam docs únicos para cargas e acabamento
+  // garante docs únicos para cargas e acabamento
   await cargasCol.updateOne({ _id: "cargas" }, { $setOnInsert: { itens: [] } }, { upsert: true });
   await acabamentoCol.updateOne({ _id: "acabamento" }, { $setOnInsert: { itens: [] } }, { upsert: true });
 }
@@ -68,7 +69,11 @@ io.on('connection', async socket => {
     // =======================
     const salvaProducao = async data => {
       for (const m of Object.keys(data)) {
-        await producaoCol.updateOne({ maquina: m }, { $set: { itens: data[m] } }, { upsert: true });
+        await producaoCol.updateOne(
+          { maquina: m },
+          { $set: { itens: data[m] } },
+          { upsert: true }
+        );
       }
     };
 
@@ -92,7 +97,11 @@ io.on('connection', async socket => {
     // =======================
     const salvaCargas = async data => {
       data.forEach((c, i) => { if (!c.titulo) c.titulo = `Carga ${i+1}` });
-      await cargasCol.updateOne({ _id: "cargas" }, { $set: { itens: data } }, { upsert: true });
+      await cargasCol.updateOne(
+        { _id: "cargas" },
+        { $set: { itens: data } },
+        { upsert: true }
+      );
     };
 
     socket.on('editarCarga', async data => {
@@ -109,7 +118,11 @@ io.on('connection', async socket => {
     // ACABAMENTO
     // =======================
     socket.on('atualizaAcabamento', async data => {
-      await acabamentoCol.updateOne({ _id: "acabamento" }, { $set: { itens: data } }, { upsert: true });
+      await acabamentoCol.updateOne(
+        { _id: "acabamento" },
+        { $set: { itens: data } },
+        { upsert: true }
+      );
       io.emit('atualizaAcabamento', data);
     });
 
