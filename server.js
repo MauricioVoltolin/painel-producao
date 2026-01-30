@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
+const { MongoClient } = require('mongodb');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
@@ -9,15 +9,27 @@ const io = require('socket.io')(http);
 // CONFIG
 // =======================
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const DATA_DIR = path.join(__dirname, 'uploads');
 
-const PRODUCAO_FILE = path.join(DATA_DIR, 'producao.json');
-const CARGAS_FILE = path.join(DATA_DIR, 'cargas.json');
-const ACABAMENTO_FILE = path.join(DATA_DIR, 'acabamento.json');
+// =======================
+// MONGODB ATLAS
+// =======================
+const MONGO_URI = "mongodb+srv://mauricio:SUA_NOVA_SENHA@bfprod.kbisoex.mongodb.net/producaoDB?retryWrites=true&w=majority";
+const client = new MongoClient(MONGO_URI);
+let db, producaoCol, cargasCol, acabamentoCol;
 
-// cria pasta uploads se não existir
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR);
+async function initMongo() {
+  await client.connect();
+  console.log("✅ Conectado ao MongoDB Atlas!");
+  db = client.db("producaoDB");
+
+  producaoCol = db.collection("producao");
+  cargasCol = db.collection("cargas");
+  acabamentoCol = db.collection("acabamento");
+
+  // Carrega dados iniciais para memória
+  producaoData = await producaoCol.findOne({ _id: "producao" }) || {};
+  cargas = (await cargasCol.findOne({ _id: "cargas" }))?.itens || [];
+  acabamentoGlobal = (await acabamentoCol.findOne({ _id: "acabamento" }))?.itens || [];
 }
 
 // =======================
@@ -38,33 +50,6 @@ let cargas = [];
 let acabamentoGlobal = [];
 
 // =======================
-// FUNÇÕES DE PERSISTÊNCIA
-// =======================
-function loadJSON(file, fallback) {
-  try {
-    if (fs.existsSync(file)) {
-      return JSON.parse(fs.readFileSync(file, 'utf8'));
-    }
-  } catch (err) {
-    console.error(`Erro ao ler ${file}`, err);
-  }
-  return fallback;
-}
-
-function saveJSON(file, data) {
-  fs.writeFile(file, JSON.stringify(data, null, 2), err => {
-    if (err) console.error(`Erro ao salvar ${file}`, err);
-  });
-}
-
-// =======================
-// LOAD INICIAL (BOOT)
-// =======================
-producaoData = loadJSON(PRODUCAO_FILE, {});
-cargas = loadJSON(CARGAS_FILE, []);
-acabamentoGlobal = loadJSON(ACABAMENTO_FILE, []);
-
-// =======================
 // SOCKET.IO
 // =======================
 io.on('connection', socket => {
@@ -78,48 +63,70 @@ io.on('connection', socket => {
   // =======================
   // PRODUÇÃO
   // =======================
-  socket.on('uploadProducao', data => {
+  socket.on('uploadProducao', async data => {
     producaoData = data;
-    saveJSON(PRODUCAO_FILE, producaoData);
+    await producaoCol.updateOne(
+      { _id: "producao" },
+      { $set: producaoData },
+      { upsert: true }
+    );
     io.emit('atualizaProducao', producaoData);
   });
 
-  socket.on('atualizaProducao', data => {
+  socket.on('atualizaProducao', async data => {
     producaoData = data;
-    saveJSON(PRODUCAO_FILE, producaoData);
+    await producaoCol.updateOne(
+      { _id: "producao" },
+      { $set: producaoData },
+      { upsert: true }
+    );
     io.emit('atualizaProducao', producaoData);
   });
 
-  socket.on('limparProducao', () => {
+  socket.on('limparProducao', async () => {
     producaoData = {};
-    saveJSON(PRODUCAO_FILE, producaoData);
+    await producaoCol.updateOne(
+      { _id: "producao" },
+      { $set: producaoData },
+      { upsert: true }
+    );
     io.emit('atualizaProducao', producaoData);
   });
 
   // =======================
   // CARGAS
   // =======================
-  socket.on('editarCarga', data => {
-    data.forEach((c, i) => {
-      if (!c.titulo) c.titulo = `Carga ${i + 1}`;
-    });
+  socket.on('editarCarga', async data => {
+    data.forEach((c, i) => { if (!c.titulo) c.titulo = `Carga ${i+1}` });
     cargas = data;
-    saveJSON(CARGAS_FILE, cargas);
+    await cargasCol.updateOne(
+      { _id: "cargas" },
+      { $set: { itens: cargas } },
+      { upsert: true }
+    );
     io.emit('atualizaCargas', cargas);
   });
 
-  socket.on('atualizaCargas', data => {
+  socket.on('atualizaCargas', async data => {
     cargas = data;
-    saveJSON(CARGAS_FILE, cargas);
+    await cargasCol.updateOne(
+      { _id: "cargas" },
+      { $set: { itens: cargas } },
+      { upsert: true }
+    );
     io.emit('atualizaCargas', cargas);
   });
 
   // =======================
   // ACABAMENTO
   // =======================
-  socket.on('atualizaAcabamento', data => {
+  socket.on('atualizaAcabamento', async data => {
     acabamentoGlobal = data;
-    saveJSON(ACABAMENTO_FILE, acabamentoGlobal);
+    await acabamentoCol.updateOne(
+      { _id: "acabamento" },
+      { $set: { itens: acabamentoGlobal } },
+      { upsert: true }
+    );
     io.emit('atualizaAcabamento', acabamentoGlobal);
   });
 
@@ -132,6 +139,11 @@ io.on('connection', socket => {
 // START SERVER
 // =======================
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+
+initMongo().then(() => {
+  http.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  });
+}).catch(err => {
+  console.error("❌ Erro ao conectar MongoDB:", err);
 });
