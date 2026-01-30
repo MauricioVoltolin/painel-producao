@@ -1620,24 +1620,24 @@ select.status-producao {
 
 .tv-linha.status-producao {
   background: #e8f1ff;
-  border-left: 4px solid #4a90e2;
+  border-left: 4px solid #fff3cd;
   color: #000;
 
 }
 
 .tv-linha.status-producao_ok {
   background: #e7f7ee;
-  border-left: 4px solid #2ecc71;
+  border-left: 4px solid #d4edda;
 }
 
 .tv-linha.status-acabamento {
   background: #fff4e5;
-  border-left: 4px solid #f5a623;
+  border-left: 4px solid #cce5ff;
 }
 
 .tv-linha.status-acabamento_ok {
   background: #eefaf3;
-  border-left: 4px solid #27ae60;
+  border-left: 4px solid  #b8f2d0;
 }
 
 /* prioridade */

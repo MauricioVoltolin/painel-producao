@@ -622,7 +622,6 @@ function atualizaStatusItem(cIdx, iIdx, select){
   // 🔥 Atualiza TV imediatamente
   renderTV();
 }
-
 function atualizarData() {
   const el = document.getElementById('dataAtual');
   if (!el) return;
@@ -871,6 +870,49 @@ const cardAcabamento = document.querySelector(
 if (cardAcabamento) {
   cardAcabamento.innerHTML = '';
 
+  // 1️⃣ Itens da produção: só status 'producao_ok' ou 'acabamento'
+  Object.keys(producaoData).forEach(maquina => {
+    producaoData[maquina].forEach(item => {
+      if (!item.item) return;
+      if (item.status === 'producao_ok' || item.status === 'acabamento') {
+        const linha = document.createElement('div');
+        linha.className = `tv-linha status-${item.status}`;
+        linha.innerHTML = `
+          <div class="tv-item">${item.item}</div>
+          <div class="tv-qtd">
+            <span>V:${item.venda || 0}</span>
+            <span>P:${item.produzir || 0}</span>
+          </div>
+        `;
+        cardAcabamento.appendChild(linha);
+      }
+    });
+  });
+
+  // 2️⃣ Itens do acabamento antigo (upload XLS ou anterior), apenas se status != 'acabamento_ok'
+  if (Array.isArray(producaoAnteriorData)) {
+    producaoAnteriorData.forEach(item => {
+      if (!item.item) return;
+      if (item.status !== 'acabamento_ok') {
+        const linha = document.createElement('div');
+        linha.className = `tv-linha status-${item.status || ''}`;
+        linha.innerHTML = `
+          <div class="tv-item">${item.item}</div>
+          <div class="tv-qtd">
+            <span>V:${item.venda || 0}</span>
+            <span>P:${item.produzir || 0}</span>
+          </div>
+        `;
+        cardAcabamento.appendChild(linha);
+      }
+    });
+  }
+}
+
+
+if (cardAcabamento) {
+  cardAcabamento.innerHTML = '';
+
   // 1️⃣ Itens da produção com status prodesco_ok, acabamento, acabamento_ok
   Object.keys(producaoData).forEach(maquina => {
     producaoData[maquina].forEach(item => {
@@ -909,7 +951,6 @@ if (cardAcabamento) {
 }
 
 }
-
 const mapaTV = {
   "IMPRESSORA 01": ["MAQUINA 01"],
   "IMPRESSORA 02": ["MAQUINA 02"],
