@@ -422,6 +422,19 @@ function normalizarMaquina(valor){
 }
 /* ===== CARGAS ===== */
 let cargas = [];
+function salvarCargasSeguro() {
+  // garante que cargas existe e é um array
+  if (!Array.isArray(cargas)) return;
+
+  // evita apagar o banco sem querer
+  if (cargas.length === 0) {
+    console.warn('⚠️ Tentativa de salvar cargas vazias bloqueada');
+    return;
+  }
+
+  socket.emit('atualizaCargas', cargas);
+}
+
 socket.on('initCargas', d => { cargas = d; renderCargas(); });
 socket.on('atualizaCargas', d => { cargas = d; renderCargas(); });
 function novaCarga() {
@@ -432,7 +445,7 @@ function novaCarga() {
     itensStatus: [],
     valoresFaturados: []
   });
-  socket.emit('atualizaCargas', cargas);
+  salvarCargasSeguro();
   renderCargas();
 }
 function renderCargas() {
@@ -533,7 +546,7 @@ function editarValorFaturado(cIdx, iIdx){
   if (isNaN(valorNum)) return alert('Valor inválido');
   if (!cargas[cIdx].valoresFaturados) cargas[cIdx].valoresFaturados = [];
   cargas[cIdx].valoresFaturados[iIdx] = valorNum;
-  socket.emit('atualizaCargas', cargas);
+  salvarCargasSeguro();
   renderCargas();
 }
 // Funções de interação com dropdown
@@ -548,14 +561,14 @@ function adicionarItemCarga(cIdx) {
   cargas[cIdx].itens.push(item);
   cargas[cIdx].itensStatus.push('Pendente');
   cargas[cIdx].valoresFaturados.push(0);
-  socket.emit('atualizaCargas', cargas);
+  salvarCargasSeguro();
   renderCargas();
 }
 function editarItemCarga(cIdx, iIdx) {
   const novo = prompt('Novo nome do item:', cargas[cIdx].itens[iIdx]);
   if (novo !== null && novo.trim() !== '') {
     cargas[cIdx].itens[iIdx] = novo.trim();
-    socket.emit('atualizaCargas', cargas);
+    salvarCargasSeguro();
     renderCargas();
   }
 }
@@ -568,7 +581,7 @@ function excluirCarga(idx) {
   if (!confirm('Excluir esta carga inteira?')) return;
   cargas.splice(idx, 1);
   cargas.forEach((c, i) => c.titulo = `Carga ${i + 1}`);
-  socket.emit('atualizaCargas', cargas);
+  salvarCargasSeguro();
   renderCargas();
   renderTV(); // Atualiza TV
 }
@@ -577,7 +590,7 @@ function excluirItemCarga(cIdx, iIdx) {
   cargas[cIdx].itens.splice(iIdx, 1);
   cargas[cIdx].itensStatus.splice(iIdx, 1);
   cargas[cIdx].valoresFaturados.splice(iIdx, 1);
-  socket.emit('atualizaCargas', cargas);
+  salvarCargasSeguro();
   renderCargas();
   renderTV(); // Atualiza TV imediatamente
 }
@@ -585,7 +598,7 @@ function excluirItemCarga(cIdx, iIdx) {
 function atualizaStatusCarga(cIdx, select){
   const novoStatus = select.value;
   cargas[cIdx].status = novoStatus;
-  socket.emit('atualizaCargas', cargas);
+  salvarCargasSeguro();
   renderCargas();
   renderTV();
 }
@@ -621,7 +634,7 @@ function atualizaStatusItem(cIdx, iIdx, select){
   const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
   select.style.backgroundColor = colors[novoStatus];
 
-  socket.emit('atualizaCargas', cargas);
+  salvarCargasSeguro();
   renderTV();
 }
 function atualizarData() {
