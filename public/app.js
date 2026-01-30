@@ -445,6 +445,7 @@ function renderCargas() {
     const card = document.createElement('div');
     card.className = 'card';
 
+    // topo do card com título e menu de editar/excluir card
     const cardTop = document.createElement('div');
     cardTop.className = 'card-top';
     cardTop.innerHTML = `
@@ -457,7 +458,7 @@ function renderCargas() {
         </div>
       </div>
       <div class="top-right">
-        <select class="select-carga ${c.status.toLowerCase()}" onchange="atualizaStatusCarga(${idx}, this)">
+        <select class="select-carga ${c.status.toLowerCase()}" onchange="atualizaStatusCarga(${idx}, null, this)">
           <option value="Pendente" ${c.status==='Pendente'?'selected':''}>Pendente</option>
           <option value="Carregando" ${c.status==='Carregando'?'selected':''}>Carregando</option>
           <option value="Pronto" ${c.status==='Pronto'?'selected':''}>Pronto</option>
@@ -466,45 +467,74 @@ function renderCargas() {
     `;
     card.appendChild(cardTop);
 
-    // itens do card
+    // container de itens
     const itensContainer = document.createElement('div');
     itensContainer.className = 'card-itens';
 
     c.itens.forEach((item, iidx) => {
       if (!cargas[idx].itensStatus) cargas[idx].itensStatus = [];
       if (!cargas[idx].itensStatus[iidx]) cargas[idx].itensStatus[iidx] = 'Pendente';
-
       const status = cargas[idx].itensStatus[iidx];
       const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
 
       const divItem = document.createElement('div');
       divItem.className = 'card-item';
-      divItem.innerHTML = `
-        <span class="item-nome">${item}</span>
-        <span class="item-actions">
+
+      // nome do item
+      divItem.innerHTML = `<span class="item-nome">${item}</span>`;
+
+      // atalhos só no modo edição
+      if (editModeIdx === idx) {
+        const actions = document.createElement('span');
+        actions.className = 'item-actions';
+        actions.innerHTML = `
           <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
           <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
           <button class="editar-valor" onclick="editarValorFaturado(${idx}, ${iidx})">💰</button>
-        </span>
-        <select class="item-status" style="float:right; background-color:${colors[status]};" onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
-          <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
-          <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
-        </select>
+        `;
+        divItem.appendChild(actions);
+      }
+
+      // select de status sempre visível
+      const select = document.createElement('select');
+      select.className = 'item-status';
+      select.style.float = 'right';
+      select.style.backgroundColor = colors[status];
+      select.innerHTML = `
+        <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
+        <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
       `;
+      select.onchange = () => atualizaStatusItem(idx, iidx, select);
+      divItem.appendChild(select);
+
       itensContainer.appendChild(divItem);
     });
+
     card.appendChild(itensContainer);
 
-    // ✅ botão de adicionar item sempre visível
+    // Botão "+" sempre visível, centralizado
     const addBtn = document.createElement('button');
     addBtn.className = 'btn-add-item';
-    addBtn.innerText = '+ Adicionar item';
+    addBtn.innerText = '+';
     addBtn.onclick = () => adicionarItemCarga(idx);
     card.appendChild(addBtn);
+
+    // Botão "OK" aparece só no modo edição
+    if (editModeIdx === idx) {
+      const okBtn = document.createElement('button');
+      okBtn.className = 'btn-ok-edicao';
+      okBtn.innerText = 'OK';
+      okBtn.onclick = () => {
+        div.setAttribute('data-edit-mode', '-1');
+        renderCargas();
+      };
+      card.appendChild(okBtn);
+    }
 
     div.appendChild(card);
   });
 }
+
 
 function editarCarga(idx) {
   const div = document.getElementById('cargas');
@@ -735,6 +765,7 @@ document.addEventListener('click', e => {
 function renderTV() {
   const dashboard = document.getElementById('tv-dashboard');
   const abaTV = document.getElementById('tab-tv');
+
   if (!dashboard || !abaTV || !abaTV.classList.contains('active')) return;
 
   /* =========================
@@ -745,14 +776,17 @@ function renderTV() {
     const content = card.querySelector('.tv-content');
     content.innerHTML = '';
 
-    // ignora acabamento e expedição aqui
-    if (['ACABAMENTO', 'EXPEDIÇÃO', 'FATURAMENTO'].includes(nomeTV)) return;
+    // ignora cartões especiais
+    if (nomeTV === 'ACABAMENTO' || nomeTV === 'EXPEDIÇÃO' || nomeTV === 'FATURAMENTO') return;
 
     const maquinasRelacionadas = mapaTV[nomeTV] || [];
+
     maquinasRelacionadas.forEach(maquina => {
       if (!producaoData[maquina]) return;
+
       producaoData[maquina].forEach(item => {
         if (!item.item) return;
+
         const linha = document.createElement('div');
         linha.className = `tv-linha status-${item.status || ''}`;
         linha.innerHTML = `
@@ -772,10 +806,11 @@ function renderTV() {
   ========================= */
   const cardExpedicao = document.querySelector('.tv-card[data-tv="EXPEDIÇÃO"] .tv-content');
   let totalFaturamentoGeral = 0;
+
   if (cardExpedicao) {
     cardExpedicao.innerHTML = '';
 
-    cargas.forEach(carga => {
+    cargas.forEach((carga) => {
       const total = carga.itens?.length || 0;
       if (!total) return;
 
@@ -793,6 +828,7 @@ function renderTV() {
       });
 
       totalFaturamentoGeral += valorCarga;
+
       const percentual = Math.round((faturados / total) * 100);
 
       const linha = document.createElement('div');
@@ -832,7 +868,7 @@ function renderTV() {
   if (cardAcabamento) {
     cardAcabamento.innerHTML = '';
 
-    // 1️⃣ Itens da produção com status "producao_ok" ou "acabamento"
+    // Itens da produção
     Object.keys(producaoData).forEach(maquina => {
       producaoData[maquina].forEach(item => {
         if (!item.item) return;
@@ -851,26 +887,35 @@ function renderTV() {
       });
     });
 
-    // 2️⃣ Itens do acabamento antigo (upload XLS ou anterior), apenas se status != 'acabamento_ok'
+    // Itens do acabamento antigo (XLS ou produção anterior)
     if (Array.isArray(producaoAnteriorData)) {
       producaoAnteriorData.forEach(item => {
-        if (!item.item) return;
-        if (item.status !== 'acabamento_ok') {
-          const linha = document.createElement('div');
-          linha.className = `tv-linha status-${item.status || ''}`;
-          linha.innerHTML = `
-            <div class="tv-item">${item.item}</div>
-            <div class="tv-qtd">
-              <span>V:${item.venda || 0}</span>
-              <span>P:${item.produzir || 0}</span>
-            </div>
-          `;
-          cardAcabamento.appendChild(linha);
-        }
+        if (!item.item || item.status === 'acabamento_ok') return;
+
+        const linha = document.createElement('div');
+        linha.className = `tv-linha status-${item.status || ''}`;
+        linha.innerHTML = `
+          <div class="tv-item">${item.item}</div>
+          <div class="tv-qtd">
+            <span>V:${item.venda || 0}</span>
+            <span>P:${item.produzir || 0}</span>
+          </div>
+        `;
+        cardAcabamento.appendChild(linha);
       });
     }
   }
 }
+
+// ==============================
+// AUTO-REFRESH TV
+// ==============================
+setInterval(() => {
+  const abaTV = document.getElementById('tab-tv');
+  if (abaTV && abaTV.classList.contains('active')) {
+    renderTV();
+  }
+}, 5000);
 
 const mapaTV = {
   "IMPRESSORA 01": ["MAQUINA 01"],
