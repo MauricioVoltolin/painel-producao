@@ -15,9 +15,9 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 // =======================
 const MONGO_URI = "mongodb+srv://mauricio:1234master@bfprod.kbisoex.mongodb.net/producaoDB?retryWrites=true&w=majority";
 const client = new MongoClient(MONGO_URI, {
-  useUnifiedTopology: true,    // garante compatibilidade moderna
-  serverSelectionTimeoutMS: 5000, // timeout menor para detectar problemas rápido
+  serverSelectionTimeoutMS: 5000, // opcional, só para detectar problemas de conexão mais rápido
 });
+
 
 
 let db, producaoCol, cargasCol, acabamentoCol;
