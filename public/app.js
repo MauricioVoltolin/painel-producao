@@ -428,10 +428,12 @@ function novaCarga() {
   cargas.push({
     titulo: `Carga ${cargas.length + 1}`,
     status: 'Pendente',
-    itens: []
+    itens: [],
+    itensStatus: [],
+    valoresFaturados: []
   });
-
-  socket.emit('editarCarga', cargas);
+  socket.emit('atualizaCargas', cargas);
+  renderCargas();
 }
 function renderCargas() {
   const div = document.getElementById('cargas');
@@ -443,6 +445,7 @@ function renderCargas() {
     const card = document.createElement('div');
     card.className = 'card';
 
+    // topo do card
     const cardTop = document.createElement('div');
     cardTop.className = 'card-top';
     cardTop.innerHTML = `
@@ -469,7 +472,6 @@ function renderCargas() {
     itensContainer.className = 'card-itens';
 
     c.itens.forEach((item, iidx) => {
-      // garante status
       if (!cargas[idx].itensStatus) cargas[idx].itensStatus = [];
       if (!cargas[idx].itensStatus[iidx]) cargas[idx].itensStatus[iidx] = 'Pendente';
 
@@ -494,10 +496,18 @@ function renderCargas() {
       `;
       itensContainer.appendChild(divItem);
     });
+
     card.appendChild(itensContainer);
 
-    // botão OK para sair do modo edição
+    // botão adicionar item
     if (editModeIdx === idx) {
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn-add-item';
+      addBtn.innerText = '+ Adicionar item';
+      addBtn.onclick = () => adicionarItemCarga(idx);
+      card.appendChild(addBtn);
+
+      // botão OK para sair do modo edição
       const okBtn = document.createElement('button');
       okBtn.className = 'btn-ok-edicao';
       okBtn.innerText = 'OK';
@@ -511,13 +521,11 @@ function renderCargas() {
     div.appendChild(card);
   });
 }
-
 function editarCarga(idx) {
   const div = document.getElementById('cargas');
-  div.setAttribute('data-edit-mode', idx); // só esse card em modo edição
+  div.setAttribute('data-edit-mode', idx);
   renderCargas();
 }
-
 function editarValorFaturado(cIdx, iIdx){
   const valor = prompt('Informe o valor faturado:', cargas[cIdx].valoresFaturados?.[iIdx] || '');
   if (!valor) return;
@@ -528,28 +536,28 @@ function editarValorFaturado(cIdx, iIdx){
   socket.emit('atualizaCargas', cargas);
   renderCargas();
 }
-
 // Funções de interação com dropdown
 function toggleDropdownCarga(idx) {
   document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
   const el = document.getElementById(`dropdown-carga-${idx}`);
   if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
 }
+function adicionarItemCarga(cIdx) {
+  const item = prompt('Nome do novo item:');
+  if (!item) return;
+  cargas[cIdx].itens.push(item);
+  cargas[cIdx].itensStatus.push('Pendente');
+  cargas[cIdx].valoresFaturados.push(0);
+  socket.emit('atualizaCargas', cargas);
+  renderCargas();
+}
 function editarItemCarga(cIdx, iIdx) {
   const novo = prompt('Novo nome do item:', cargas[cIdx].itens[iIdx]);
   if (novo !== null && novo.trim() !== '') {
     cargas[cIdx].itens[iIdx] = novo.trim();
-    socket.emit('editarCarga', cargas);
+    socket.emit('atualizaCargas', cargas);
     renderCargas();
   }
-}
-function adicionarItemCarga(cIdx) {
-  const item = prompt('Nome do novo item:');
-  if (!item) return;
-
-  cargas[cIdx].itens.push(item);
-  socket.emit('editarCarga', cargas);
-  renderCargas();
 }
 
 function modoEdicaoCarga(idx){
@@ -560,32 +568,36 @@ function excluirCarga(idx) {
   if (!confirm('Excluir esta carga inteira?')) return;
   cargas.splice(idx, 1);
   cargas.forEach((c, i) => c.titulo = `Carga ${i + 1}`);
-  socket.emit('editarCarga', cargas);
+  socket.emit('atualizaCargas', cargas);
   renderCargas();
+  renderTV(); // Atualiza TV
 }
 function excluirItemCarga(cIdx, iIdx) {
   if (!confirm('Excluir este item?')) return;
   cargas[cIdx].itens.splice(iIdx, 1);
-  socket.emit('editarCarga', cargas);
-  renderCargas();
-}
-function atualizaStatusCarga(cIdx, iIdx, select) {
-  const novoStatus = select.value;
-  cargas[cIdx].status = novoStatus; // ✅ atualiza o status do card
+  cargas[cIdx].itensStatus.splice(iIdx, 1);
+  cargas[cIdx].valoresFaturados.splice(iIdx, 1);
   socket.emit('atualizaCargas', cargas);
-  renderCargas(); // atualiza a tela mantendo a seleção
+  renderCargas();
+  renderTV(); // Atualiza TV imediatamente
 }
 
+function atualizaStatusCarga(cIdx, select){
+  const novoStatus = select.value;
+  cargas[cIdx].status = novoStatus;
+  socket.emit('atualizaCargas', cargas);
+  renderCargas();
+  renderTV();
+}
 function atualizaStatusItem(cIdx, iIdx, select){
   if (!cargas[cIdx].itensStatus) cargas[cIdx].itensStatus = [];
 
   const statusAnterior = cargas[cIdx].itensStatus[iIdx] || 'Pendente';
   const novoStatus = select.value;
 
-  // 🔥 TRANSIÇÃO PARA FATURADO
+  // Se mudou para Faturado
   if (novoStatus === 'Faturado' && statusAnterior !== 'Faturado') {
     const valor = prompt('Informe o valor faturado:');
-
     if (!valor) {
       select.value = statusAnterior;
       return;
@@ -594,14 +606,12 @@ function atualizaStatusItem(cIdx, iIdx, select){
     const valorNum = parseFloat(
       valor.replace('R$', '').replace(/\./g, '').replace(',', '.')
     );
-
     if (isNaN(valorNum)) {
       alert('Valor inválido');
       select.value = statusAnterior;
       return;
     }
 
-    // salva o valor faturado no item
     if (!cargas[cIdx].valoresFaturados) cargas[cIdx].valoresFaturados = [];
     cargas[cIdx].valoresFaturados[iIdx] = valorNum;
   }
@@ -612,8 +622,6 @@ function atualizaStatusItem(cIdx, iIdx, select){
   select.style.backgroundColor = colors[novoStatus];
 
   socket.emit('atualizaCargas', cargas);
-
-  // 🔥 Atualiza TV imediatamente
   renderTV();
 }
 function atualizarData() {
