@@ -1908,3 +1908,73 @@ select.status-producao {
   background: #fff3cd !important;
   border-left-color: #ffc107 !important;
 }
+
+/* ===== AJUSTES FINAIS CHATGPT ===== */
+/* Produção: acabamento amarelo, estoque verde */
+select.status-producao.acabamento,
+select.status-producao.acabamento_ok,
+.status-producao.acabamento,
+.status-producao.acabamento_ok {
+  background: #ffe08a !important;
+  color: #000 !important;
+}
+
+select.status-producao.estoque,
+.status-producao.estoque {
+  background: #8fd19e !important;
+  color: #000 !important;
+}
+
+/* TV: manter os cards no mesmo tamanho de antes e só rolar o conteúdo */
+#tab-tv.active {
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+#tv-dashboard {
+  height: calc(100vh - 80px) !important;
+  max-height: calc(100vh - 80px) !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  align-items: stretch !important;
+}
+
+.tv-card {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.tv-content {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.tv-linha.status-acabamento,
+.tv-linha.status-acabamento_ok {
+  background: #fff3cd !important;
+  border-left: 4px solid #ffc107 !important;
+  color: #000 !important;
+}
+
+.tv-linha.status-estoque {
+  background: #d4edda !important;
+  border-left: 4px solid #28a745 !important;
+  color: #000 !important;
+}
+
+.nova-carga-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.menu-cargas-topo {
+  position: relative;
+}
+
+.menu-cargas-topo .dropdown-global {
+  right: auto;
+  left: 0;
+}

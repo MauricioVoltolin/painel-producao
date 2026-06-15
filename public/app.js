@@ -21,10 +21,21 @@ function openTab(index) {
   // ativar botão
   document.querySelectorAll('.tabs button')[index].classList.add('active');
 
+  // mostra/esconde botões do topo por aba
+  atualizarAcoesDoTopo(index);
+
   // render correto por aba
   if (index === 0) renderProducao();
   if (index === 1) renderCargas();
   if (index === 2) renderTV(); // 🔥 TV / Expedição / Faturamento
+}
+
+function atualizarAcoesDoTopo(index) {
+  const acoesProducao = document.getElementById('header-actions-producao');
+  if (!acoesProducao) return;
+
+  // botão adicionar e menu ⋮ aparecem somente na aba Produção
+  acoesProducao.style.display = index === 0 ? 'flex' : 'none';
 }
 
 /* ================= PRODUÇÃO ================= */

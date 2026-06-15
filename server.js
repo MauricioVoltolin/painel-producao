@@ -125,6 +125,15 @@ io.on('connection', async socket => {
       io.emit('atualizaCargas', data);
     });
 
+    socket.on('limparCargas', async () => {
+      await cargasCol.updateOne(
+        { _id: "cargas" },
+        { $set: { itens: [] } },
+        { upsert: true }
+      );
+      io.emit('atualizaCargas', []);
+    });
+
     // =======================
     // ACABAMENTO
     // =======================
