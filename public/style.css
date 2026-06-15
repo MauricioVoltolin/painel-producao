@@ -2227,3 +2227,101 @@ select.status-producao.estoque,
 .item-menu button {
   pointer-events: auto !important;
 }
+
+
+/* ===== AJUSTES FINAIS BF ===== */
+.logo img {
+  max-height: 56px !important;
+  width: auto !important;
+  object-fit: contain !important;
+}
+.logo.logo-fallback::after {
+  content: attr(data-logo);
+  font-weight: 800;
+  font-size: 22px;
+  color: #fff;
+}
+
+/* Cores na aba Produção */
+select.status-producao.producao,
+.status-producao.producao {
+  background: #cfe8ff !important;
+  color: #0b335c !important;
+}
+select.status-producao.producao_ok,
+.status-producao.producao_ok {
+  background: #4da3ff !important;
+  color: #fff !important;
+}
+select.status-producao.acabamento,
+.status-producao.acabamento {
+  background: #fff4bf !important;
+  color: #5c4a00 !important;
+}
+select.status-producao.acabamento_ok,
+.status-producao.acabamento_ok {
+  background: #ffd966 !important;
+  color: #4a3a00 !important;
+}
+select.status-producao.estoque,
+.status-producao.estoque {
+  background: #98d7a5 !important;
+  color: #0d3b18 !important;
+}
+
+/* TV: card fixo e item com altura fixa, sem sobrepor */
+#tab-tv .tv-card {
+  overflow: hidden !important;
+}
+#tab-tv .tv-content {
+  overflow: hidden !important;
+  height: calc(100% - 48px) !important;
+  max-height: calc(100% - 48px) !important;
+}
+#tab-tv .tv-linha {
+  display: block !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  line-height: 30px !important;
+  margin: 0 0 4px 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-radius: 7px !important;
+}
+#tab-tv .tv-linha .tv-item {
+  display: block !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  padding: 0 8px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: 13px !important;
+}
+#tab-tv .tv-linha.status-producao .tv-item,
+#tab-tv .tv-item.status-producao { background: #4da3ff !important; color:#fff !important; }
+#tab-tv .tv-linha.status-producao_ok .tv-item,
+#tab-tv .tv-item.status-producao_ok { background: #7acb8a !important; color:#073b13 !important; }
+#tab-tv .tv-linha.status-acabamento .tv-item,
+#tab-tv .tv-item.status-acabamento { background: #fff4bf !important; color:#5c4a00 !important; }
+#tab-tv .tv-linha.status-acabamento_ok .tv-item,
+#tab-tv .tv-item.status-acabamento_ok { background: #7acb8a !important; color:#073b13 !important; }
+#tab-tv .tv-linha.status-estoque .tv-item,
+#tab-tv .tv-item.status-estoque { background: #7acb8a !important; color:#073b13 !important; }
+#tab-tv .tv-linha.prioridade .tv-item {
+  font-weight: 900 !important;
+  text-decoration-line: underline !important;
+  text-decoration-color: #ffd400 !important;
+  text-decoration-thickness: 4px !important;
+  text-underline-offset: 4px !important;
+}
+#tab-tv .tv-qtd { display: none !important; }
+
+/* Cargas: evita invadir barra fixa */
+#tab-cargas.active {
+  padding-top: 88px !important;
+}
+#tab-cargas .card-container-carga {
+  margin-top: 18px !important;
+}

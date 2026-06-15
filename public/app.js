@@ -348,29 +348,32 @@ function renderProducaoAnterior(){
 function aplicarFiltroProducao(){ filtroAtual = document.getElementById('filtroMaquina').value; renderProducao(); }
 /* ===== ATUALIZA STATUS ===== */
 function atualizaStatusProducao(m, idx, sel){
-  producaoData[m][idx].status = sel.value;
-  sel.className = 'status-producao ' + sel.value;
+  if (!producaoData[m] || !producaoData[m][idx]) return;
+
+  const novoStatus = sel.value || '-';
+  producaoData[m][idx].status = novoStatus;
+
+  sel.className = 'status-producao';
+  if (novoStatus !== '-') sel.classList.add(novoStatus);
+
   socket.emit('atualizaProducao', producaoData);
 
-  // 🔥 Se entrou em acabamento_ok, remove do card de Acabamento
-  if(sel.value === 'acabamento_ok'){
-    renderProducaoAnterior();
-  }
-
-  // 🔥 Atualiza TV
+  renderProducao();
+  renderProducaoAnterior();
   renderTV();
 }
 function atualizaStatusProducaoAnterior(idx, sel){
-  producaoAnteriorData[idx].status = sel.value;
-  sel.className = 'status-producao ' + sel.value;
+  if (!producaoAnteriorData[idx]) return;
+
+  const novoStatus = sel.value || '-';
+  producaoAnteriorData[idx].status = novoStatus;
+
+  sel.className = 'status-producao';
+  if (novoStatus !== '-') sel.classList.add(novoStatus);
+
   socket.emit('atualizaAcabamento', producaoAnteriorData);
 
-  // 🔥 Se entrou em acabamento_ok, remove do card de Acabamento
-  if(sel.value === 'acabamento_ok'){
-    renderProducaoAnterior();
-  }
-
-  // 🔥 Atualiza TV
+  renderProducaoAnterior();
   renderTV();
 }
 /* ===== ADICIONAR / EXCLUIR ITENS ===== */
@@ -681,63 +684,76 @@ function toggleMenuProducao(el){
   document.querySelectorAll('.item-menu').forEach(m => m.style.display='none');
   if(menu) menu.style.display = estavaAberto ? 'none' : 'block';
 }
+function fecharMenusItens(){
+  document.querySelectorAll('.item-menu').forEach(menu => menu.style.display = 'none');
+}
+
 function togglePrioridade(m, idx){
   if (!producaoData[m] || !producaoData[m][idx]) return;
-  const item = producaoData[m][idx];
-  item.prioridade = item.prioridade === 'alta' ? '' : 'alta';
+
+  producaoData[m][idx].prioridade = producaoData[m][idx].prioridade === 'alta' ? '' : 'alta';
+
+  fecharMenusItens();
   socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
 
 function excluirItemProducao(m, idx){
+  if (!producaoData[m] || !producaoData[m][idx]) return;
   if(!confirm('Excluir item?')) return;
-  producaoData[m].splice(idx,1);
+
+  producaoData[m].splice(idx, 1);
+
+  fecharMenusItens();
   socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
+
 function editarItemProducao(m, idx){
+  if (!producaoData[m] || !producaoData[m][idx]) return;
+
   const i = producaoData[m][idx];
-  const item = prompt('Item:', i.item);
+
+  const item = prompt('Item:', i.item || '');
   if(item !== null) i.item = item;
 
-  const venda = prompt('Vendido:', i.venda);
+  const venda = prompt('Vendido:', i.venda || '');
   if(venda !== null) i.venda = venda;
 
-  const estoque = prompt('Estoque:', i.estoque);
+  const estoque = prompt('Estoque:', i.estoque || '');
   if(estoque !== null) i.estoque = estoque;
 
-  const produzir = prompt('Produzir:', i.produzir);
+  const produzir = prompt('Produzir:', i.produzir || '');
   if(produzir !== null) i.produzir = produzir;
 
+  fecharMenusItens();
   socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
-function trocarMaquina(m, idx){
-  const entrada = prompt(
-    'Nova maquina:\nUse: CV, CVR, D, 1–6, P, R'
-  );
 
+function trocarMaquina(m, idx){
+  if (!producaoData[m] || !producaoData[m][idx]) return;
+
+  const entrada = prompt('Nova maquina:\nUse: CV, CVR, D, 1–6, P, R');
   const nova = normalizarMaquina(entrada);
+
   if(!nova){
     alert('Maquina inválida');
     return;
   }
 
-  // cria o card se não existir
-  if (!producaoData[nova]) {
-    producaoData[nova] = [];
-  }
+  if (!producaoData[nova]) producaoData[nova] = [];
 
-  // remove da máquina antiga
-  const item = producaoData[m].splice(idx,1)[0];
-
-  // adiciona na nova máquina
+  const item = producaoData[m].splice(idx, 1)[0];
   producaoData[nova].push(item);
 
+  fecharMenusItens();
   socket.emit('atualizaProducao', producaoData);
+  renderProducao();
+  renderTV();
 }
 function togglePrioridadeAcabamento(idx){
   const item = producaoAnteriorData[idx];
