@@ -7,139 +7,134 @@
 
   <script src="lib/xlsx.full.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
-
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topo">
-  <div class="logo">
-  <img src="lib/BF.PNG" alt="BF Box" onerror="this.style.display='none'; this.parentElement.classList.add('logo-fallback'); this.parentElement.setAttribute('data-logo','BF BOX');">
-</div>
+  <header class="topo">
+    <div class="logo">
+      <img src="lib/BF.PNG" alt="BF Box" onerror="this.onerror=null;this.src='lib/BF.png';">
+    </div>
 
+    <nav class="tabs">
+      <button class="active" type="button" onclick="openTab(0)">Produção</button>
+      <button type="button" onclick="openTab(1)">Cargas</button>
+      <button class="only-desktop" type="button" onclick="openTab(2)">TV</button>
+    </nav>
 
-  <div class="tabs">
-    <button class="active" onclick="openTab(0)">Produção</button>
-    <button onclick="openTab(1)">Cargas</button>
-    <button class="only-desktop" onclick="openTab(2)">TV</button>
-  </div>
+    <div class="data-atual" id="dataAtual"></div>
 
-  <div class="data-atual" id="dataAtual"></div>
+    <div class="header-actions only-desktop ativo" id="header-actions-producao">
+      <button id="add-item-global-btn" type="button" title="Adicionar item" onclick="adicionarItemGlobal()">+</button>
 
-  <div class="header-actions only-desktop" id="header-actions-producao">
-    <button id="add-item-global-btn" onclick="adicionarItemGlobal()">+</button>
-
-    <div class="menu-wrapper menu-global-topo">
-      <span class="menu-btn" onclick="toggleDropdown('global-menu')">⋮</span>
-      <div class="dropdown dropdown-global" id="dropdown-global-menu">
-        <label class="dropdown-label">Escolher Produção<input type="file" id="xls" hidden></label>
-        <button onclick="gerarRelatorioAcabamento()">Exportar Acabamento</button>
-        <label class="dropdown-label">Enviar Acabamento<input type="file" id="xlsAcabamento" accept=".xls,.xlsx" hidden></label>
-        <button onclick="limparAcabamento()">Limpar XLS Acabamento</button>
-        <button onclick="limparProducao()" style="color:red">Limpar XLS Produção</button>
-        <button onclick="limparBanco()" style="color:red">Limpar Banco</button>
+      <div class="menu-wrapper">
+        <span class="menu-btn" onclick="toggleDropdown('menu-producao', event)">⋮</span>
+        <div class="dropdown dropdown-topo" id="dropdown-menu-producao">
+          <label class="dropdown-label" for="xls">Escolher Produção</label>
+          <button type="button" onclick="gerarRelatorioAcabamento();">Exportar Acabamento</button>
+          <label class="dropdown-label" for="xlsAcabamento">Enviar Acabamento</label>
+          <button type="button" onclick="limparAcabamento()">Limpar XLS Acabamento</button>
+          <button type="button" class="perigo" onclick="limparProducao()">Limpar XLS Produção</button>
+          <button type="button" class="perigo" onclick="limparBanco()">Limpar Banco</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="header-actions only-desktop" id="header-actions-cargas" style="display:none;">
-    <button id="nova-carga-topo-btn" onclick="novaCarga()">+</button>
-    <div class="menu-wrapper menu-global-topo">
-      <span class="menu-btn" onclick="toggleDropdown('cargas-menu')">⋮</span>
-      <div class="dropdown dropdown-global" id="dropdown-cargas-menu">
-        <button onclick="limparCargas()" style="color:red">Limpar Cargas</button>
+    <div class="header-actions only-desktop" id="header-actions-cargas">
+      <button id="novaCargaHeaderBtn" type="button" title="Nova carga" onclick="novaCarga()">+</button>
+
+      <div class="menu-wrapper">
+        <span class="menu-btn" onclick="toggleDropdown('menu-cargas', event)">⋮</span>
+        <div class="dropdown dropdown-topo" id="dropdown-menu-cargas">
+          <button type="button" class="perigo" onclick="limparCargas()">Limpar Cargas</button>
+        </div>
       </div>
     </div>
-  </div>
 
-</header>
+    <input type="file" id="xls" accept=".xls,.xlsx" hidden>
+    <input type="file" id="xlsAcabamento" accept=".xls,.xlsx" hidden>
+  </header>
 
-<!-- ABA PRODUÇÃO -->
-<div class="tab active" id="tab-producao">
-  <div class="filtro-container" id="filtro-container-producao">
-    <select id="filtroMaquina" onchange="aplicarFiltroProducao()">
-      <option value="todos">Todas</option>
-    </select>
-  </div>
+  <main>
+    <section class="tab active" id="tab-producao">
+      <div class="filtro-container" id="filtro-container-producao">
+        <select id="filtroMaquina" onchange="aplicarFiltroProducao()">
+          <option value="todos">Todas</option>
+        </select>
+      </div>
 
-  <div id="producao" class="cards-container"></div>
-  <div id="producao-anterior-container" class="cards-container"></div>
-</div>
-<!-- Aba Cargas -->
-<div class="tab" id="tab-cargas">
-  <!-- Container de cards -->
-  <div class="card-container-carga" id="cargas"></div>
-</div>
+      <div id="producao" class="cards-container"></div>
+      <div id="producao-anterior-container" class="cards-container"></div>
+    </section>
 
-<!-- ABA TV -->
- <!-- ABA TV -->
-<div class="tab" id="tab-tv">
-  <div id="tv-dashboard" class="tv-grid">
+    <section class="tab" id="tab-cargas">
+      <div class="card-container-carga" id="cargas"></div>
+    </section>
 
-    <div class="tv-card" data-tv="IMPRESSORA 01">
-      <h2>IMPRESSORA 01</h2>
-      <div class="tv-content"></div>
-    </div>
+    <section class="tab" id="tab-tv">
+      <div id="tv-dashboard" class="tv-grid">
+        <div class="tv-card" data-tv="IMPRESSORA 01">
+          <h2>IMPRESSORA 01</h2>
+          <div class="tv-content"></div>
+        </div>
 
-    <div class="tv-card" data-tv="IMPRESSORA 02">
-      <h2>IMPRESSORA 02</h2>
-      <div class="tv-content"></div>
-    </div>
+        <div class="tv-card" data-tv="IMPRESSORA 02">
+          <h2>IMPRESSORA 02</h2>
+          <div class="tv-content"></div>
+        </div>
 
-    <div class="tv-card" data-tv="IMPRESSORA 03">
-      <h2>IMPRESSORA 03</h2>
-      <div class="tv-content"></div>
-    </div>
+        <div class="tv-card" data-tv="IMPRESSORA 03">
+          <h2>IMPRESSORA 03</h2>
+          <div class="tv-content"></div>
+        </div>
 
-    <div class="tv-card" data-tv="IMPRESSORA 04">
-      <h2>IMPRESSORA 04</h2>
-      <div class="tv-content"></div>
-    </div>
+        <div class="tv-card" data-tv="IMPRESSORA 04">
+          <h2>IMPRESSORA 04</h2>
+          <div class="tv-content"></div>
+        </div>
 
-    <div class="tv-card" data-tv="IMPRESSORA 05">
-      <h2>IMPRESSORA 05</h2>
-      <div class="tv-content"></div>
-    </div>
+        <div class="tv-card" data-tv="IMPRESSORA 05">
+          <h2>IMPRESSORA 05</h2>
+          <div class="tv-content"></div>
+        </div>
 
-    <div class="tv-card" data-tv="IMPRESSORA 06">
-      <h2>IMPRESSORA 06</h2>
-      <div class="tv-content"></div>
-    </div>
+        <div class="tv-card" data-tv="IMPRESSORA 06">
+          <h2>IMPRESSORA 06</h2>
+          <div class="tv-content"></div>
+        </div>
 
-    <div class="tv-card" data-tv="CORTE E VINCO PLANA">
-      <h2>CORTE E VINCO PLANA</h2>
-      <div class="tv-content"></div>
-    </div>
+        <div class="tv-card" data-tv="CORTE E VINCO PLANA">
+          <h2>CORTE E VINCO PLANA</h2>
+          <div class="tv-content"></div>
+        </div>
 
-    <div class="tv-card" data-tv="CORTE E VINCO ROTATIVA">
-      <h2>CORTE E VINCO ROTATIVA</h2>
-      <div class="tv-content"></div>
-    </div>
+        <div class="tv-card" data-tv="CORTE E VINCO ROTATIVA">
+          <h2>CORTE E VINCO ROTATIVA</h2>
+          <div class="tv-content"></div>
+        </div>
 
-    <div class="tv-card" data-tv="RISCADOR">
-      <h2>RISCADOR</h2>
-      <div class="tv-content"></div>
-    </div>
+        <div class="tv-card" data-tv="RISCADOR">
+          <h2>RISCADOR</h2>
+          <div class="tv-content"></div>
+        </div>
 
-    <div class="tv-card" data-tv="ACABAMENTO">
-      <h2>ACABAMENTO</h2>
-      <div class="tv-content"></div>
-    </div>
+        <div class="tv-card" data-tv="ACABAMENTO">
+          <h2>ACABAMENTO</h2>
+          <div class="tv-content"></div>
+        </div>
 
-    <div class="tv-card" data-tv="EXPEDIÇÃO">
-      <h2>EXPEDIÇÃO</h2>
-      <div class="tv-content"></div>
-    </div>
+        <div class="tv-card" data-tv="EXPEDIÇÃO">
+          <h2>EXPEDIÇÃO</h2>
+          <div class="tv-content"></div>
+        </div>
 
-    <div class="tv-card" data-tv="FATURAMENTO">
-      <h2>FATURAMENTO</h2>
-      <div class="tv-content"></div>
-    </div>
+        <div class="tv-card" data-tv="FATURAMENTO">
+          <h2>FATURAMENTO</h2>
+          <div class="tv-content"></div>
+        </div>
+      </div>
+    </section>
+  </main>
 
-  </div>
-</div>
-
-</div>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
