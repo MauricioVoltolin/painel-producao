@@ -26,8 +26,26 @@
   <div class="data-atual" id="dataAtual"></div>
 
   <div class="header-actions only-desktop">
-  <button id="add-item-global-btn" onclick="adicionarItemGlobal()">+</button>
-</div>
+    <button id="add-item-global-btn" onclick="adicionarItemGlobal()">+</button>
+
+    <div class="menu-wrapper menu-global-topo">
+      <span class="menu-btn" onclick="toggleDropdown('global-menu')">⋮</span>
+      <div class="dropdown dropdown-global" id="dropdown-global-menu">
+        <label class="dropdown-label">
+          Escolher Produção
+          <input type="file" id="xls" hidden>
+        </label>
+        <button onclick="gerarRelatorioAcabamento()">Exportar Acabamento</button>
+        <label class="dropdown-label">
+          Enviar Acabamento
+          <input type="file" id="xlsAcabamento" accept=".xls,.xlsx" hidden>
+        </label>
+        <button onclick="limparAcabamento()">Limpar XLS Acabamento</button>
+        <button onclick="limparProducao()" style="color:red">Limpar XLS Produção</button>
+        <button onclick="limparBanco()" style="color:red">Limpar Banco</button>
+      </div>
+    </div>
+  </div>
 
 </header>
 
@@ -42,34 +60,6 @@
   <div id="producao" class="cards-container"></div>
   <div id="producao-anterior-container" class="cards-container"></div>
 
-  <div class="botoes-finais only-desktop">
-  <label class="btn-padrao">
-    Escolher Produção
-    <input type="file" id="xls" hidden>
-  </label>
-
-  <button class="btn-padrao" onclick="gerarRelatorioAcabamento()">
-    Exportar Acabamento
-  </button>
-
-  <label class="btn-padrao">
-    Enviar Acabamento
-    <input type="file" id="xlsAcabamento" accept=".xls,.xlsx" hidden>
-  </label>
-
-  <!-- MENU GLOBAL -->
-  <div class="menu-wrapper">
-    <span class="menu-btn" onclick="toggleDropdown('global-menu')">⋮</span>
-
-    <div class="dropdown" id="dropdown-global-menu">
-      <button onclick="limparAcabamento()">Limpar XLS Acabamento</button>
-      <button onclick="limparProducao()" style="color:red">
-        Limpar XLS Produção
-      </button>
-       <button onclick="limparBanco()">Limpar Banco</button>
-    </div>
-  </div>
-</div>
 
 </div>
 <!-- Aba Cargas -->

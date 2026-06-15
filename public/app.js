@@ -44,7 +44,9 @@ document.getElementById('xls').addEventListener('change', e => {
 
     let maquinas = {};
     data.forEach(l => {
-      const item = l[0];
+      // Colunas do XLS:
+      // C = descrição | G = prioridade | H = máquina | K = vendido | M = estoque | Q = qtd em produção
+      const item = l[2];
       const maquina = l[7];
       if(!item || !maquina) return;
 
@@ -54,7 +56,7 @@ document.getElementById('xls').addEventListener('change', e => {
         venda: l[10],
         estoque: l[12],
         produzir: l[16],
-        prioridade: l[6],
+        prioridade: l[6] ? 'alta' : '',
         status: '-'
       });
     });
@@ -234,6 +236,7 @@ function renderProducao() {
                 <option value="producao_ok" ${i.status === 'producao_ok' ? 'selected' : ''}>Produção OK</option>
                 <option value="acabamento" ${i.status === 'acabamento' ? 'selected' : ''}>Acabamento</option>
                 <option value="acabamento_ok" ${i.status === 'acabamento_ok' ? 'selected' : ''}>Acabamento OK</option>
+                <option value="estoque" ${i.status === 'estoque' ? 'selected' : ''}>Estoque</option>
               </select>
             </div>
 
@@ -301,6 +304,7 @@ function renderProducaoAnterior(){
               <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>Produção OK</option>
               <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
               <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>Acabamento OK</option>
+              <option value="estoque" ${i.status==='estoque'?'selected':''}>Estoque</option>
             </select>
           </div>
 
@@ -748,10 +752,11 @@ function limparProducao(){
   if(!confirm('Limpar TODOS os dados de produção?')) return;
 
   producaoData = {};
-  socket.emit('atualizaProducao', {});
+  socket.emit('limparProducao');
 
-  // 🔥 ATUALIZA A TELA NA HORA
+  // Atualiza a tela na hora
   renderProducao();
+  renderTV();
 }
 document.addEventListener('click', e => {
   if (!e.target.closest('.menu-wrapper')) {
@@ -786,7 +791,7 @@ function renderTV() {
         if (!item.item) return;
 
         const linha = document.createElement('div');
-        linha.className = `tv-linha status-${item.status || ''}`;
+        linha.className = `tv-linha status-${item.status || ''} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
         linha.innerHTML = `
           <div class="tv-item">${item.item}</div>
           <div class="tv-qtd">
@@ -872,7 +877,7 @@ function renderTV() {
         if (!item.item) return;
         if (['producao_ok','acabamento'].includes(item.status)) {
           const linha = document.createElement('div');
-          linha.className = `tv-linha status-${item.status}`;
+          linha.className = `tv-linha status-${item.status} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
           linha.innerHTML = `
             <div class="tv-item">${item.item}</div>
             <div class="tv-qtd">
@@ -891,7 +896,7 @@ function renderTV() {
         if (!item.item || item.status === 'acabamento_ok') return;
 
         const linha = document.createElement('div');
-        linha.className = `tv-linha status-${item.status || ''}`;
+        linha.className = `tv-linha status-${item.status || ''} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
         linha.innerHTML = `
           <div class="tv-item">${item.item}</div>
           <div class="tv-qtd">
@@ -931,8 +936,11 @@ const mapaTV = {
   "FATURAMENTO": ["FATURAMENTO"] // idem
 };
 function limparBanco() {
-  if (!confirm('Deseja realmente limpar TODO o banco de produção? Esta ação não pode ser desfeita.')) return;
+  if (!confirm('Deseja realmente limpar TODO o banco de produção e acabamento? Esta ação não pode ser desfeita.')) return;
 
-  // envia evento para o server
+  producaoData = {};
+  producaoAnteriorData = [];
   socket.emit('limparBancoProducao');
+  renderProducao();
+  renderTV();
 }

@@ -1758,3 +1758,153 @@ select.status-producao {
 .btn-add-item:hover {
   background-color: #1565c0;
 }
+
+/* ===== AJUSTES CHATGPT - PRODUCAO / MENU / TV ===== */
+* { box-sizing: border-box; }
+
+#tab-producao {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+#tab-producao .cards-container {
+  width: 100%;
+  max-width: 1450px;
+  margin-left: auto;
+  margin-right: auto;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+#tab-producao .card {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.status-producao.estoque,
+.tv-linha.status-estoque {
+  background: #eeeeee;
+  border-left-color: #777;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+#add-item-global-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: #198754;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.menu-global-topo .menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #f1f1f1;
+  font-size: 28px;
+  padding: 0;
+}
+
+.dropdown-global {
+  top: 48px;
+  right: 0;
+  min-width: 230px;
+  padding: 6px 0;
+  box-shadow: 0 8px 20px rgba(0,0,0,.18);
+  z-index: 1000;
+}
+
+.dropdown-global button,
+.dropdown-global .dropdown-label {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: #fff;
+  color: #222;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.dropdown-global button:hover,
+.dropdown-global .dropdown-label:hover {
+  background: #f2f2f2;
+}
+
+/* TV fixa na tela, com scroll dentro de cada card */
+#tab-tv.active {
+  height: calc(100vh - 95px);
+  overflow: hidden;
+}
+
+#tv-dashboard {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.tv-card {
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  box-shadow: 0 3px 12px rgba(0,0,0,.12);
+}
+
+.tv-card h2 {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+
+.tv-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+}
+
+.tv-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tv-content::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 8px;
+}
+
+.tv-linha {
+  white-space: normal;
+  align-items: flex-start;
+  gap: 8px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.tv-linha .tv-item {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.tv-linha.prioridade {
+  background: #fff3cd !important;
+  border-left-color: #ffc107 !important;
+}

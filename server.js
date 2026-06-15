@@ -92,6 +92,17 @@ io.on('connection', async socket => {
       io.emit('atualizaProducao', {});
     });
 
+    socket.on('limparBancoProducao', async () => {
+      await producaoCol.deleteMany({});
+      await acabamentoCol.updateOne(
+        { _id: "acabamento" },
+        { $set: { itens: [] } },
+        { upsert: true }
+      );
+      io.emit('atualizaProducao', {});
+      io.emit('atualizaAcabamento', []);
+    });
+
     // =======================
     // CARGAS
     // =======================
