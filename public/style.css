@@ -2158,3 +2158,72 @@ select.status-producao.estoque,
   text-decoration-thickness: 4px !important;
   text-underline-offset: 3px !important;
 }
+
+/* ===== CORRECOES FINAIS TV / CARGAS / MENUS ===== */
+/* Aba cargas: afasta os cards da barra fixa do topo */
+#tab-cargas.active {
+  padding-top: 28px !important;
+}
+
+#tab-cargas .card-container-carga {
+  margin-top: 18px !important;
+}
+
+/* TV: dentro dos cards aparece apenas o nome do item, sem quantidades */
+.tv-linha {
+  justify-content: flex-start !important;
+}
+
+.tv-linha .tv-item {
+  width: 100% !important;
+  flex: 1 1 100% !important;
+  display: block !important;
+}
+
+.tv-qtd {
+  display: none !important;
+}
+
+/* TV: mantem rolagem interna, mas esconde a barra visual */
+.tv-content {
+  overflow-y: auto !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  padding-right: 0 !important;
+}
+
+.tv-content::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* TV: prioridade nao muda a cor do status; apenas negrito e sublinhado amarelo */
+.tv-linha.prioridade,
+.tv-linha.prioridade .tv-item {
+  background-clip: padding-box !important;
+}
+
+.tv-linha.prioridade .tv-item {
+  font-weight: 800 !important;
+  text-decoration-line: underline !important;
+  text-decoration-color: #ffc107 !important;
+  text-decoration-thickness: 4px !important;
+  text-underline-offset: 3px !important;
+}
+
+/* Menus dos itens da producao: garante clique e camada acima dos cards */
+.card-producao .menu-wrapper,
+.status-area .menu-wrapper {
+  position: relative !important;
+  z-index: 50 !important;
+}
+
+.item-menu {
+  z-index: 5000 !important;
+  pointer-events: auto !important;
+}
+
+.item-menu button {
+  pointer-events: auto !important;
+}

@@ -258,16 +258,16 @@ function renderProducao() {
             <div class="menu-wrapper only-desktop">
               <span class="menu-btn" onclick="toggleMenuProducao(this)">⋮</span>
               <div class="dropdown item-menu">
-                <button onclick="togglePrioridade(${jsArg(m)}, ${idx})">
+                <button onclick="event.stopPropagation(); togglePrioridade(${jsArg(m)}, ${idx})">
                   Prioridade
                 </button>
-                <button onclick="editarItemProducao(${jsArg(m)}, ${idx})">
+                <button onclick="event.stopPropagation(); editarItemProducao(${jsArg(m)}, ${idx})">
                   Editar item
                 </button>
-                <button onclick="trocarMaquina(${jsArg(m)}, ${idx})">
+                <button onclick="event.stopPropagation(); trocarMaquina(${jsArg(m)}, ${idx})">
                   Trocar de máquina
                 </button>
-                <button onclick="excluirItemProducao(${jsArg(m)}, ${idx})" style="color:red">
+                <button onclick="event.stopPropagation(); excluirItemProducao(${jsArg(m)}, ${idx})" style="color:red">
                   Excluir item
                 </button>
               </div>
@@ -327,10 +327,10 @@ function renderProducaoAnterior(){
           <div class="menu-wrapper only-desktop">
             <span class="menu-btn" onclick="toggleMenuProducao(this)">⋮</span>
             <div class="dropdown item-menu">
-              <button onclick="togglePrioridadeAcabamento(${idx})">
+              <button onclick="event.stopPropagation(); togglePrioridadeAcabamento(${idx})">
                 Prioridade
               </button>
-              <button onclick="excluirItemAcabamento(${idx})" style="color:red">
+              <button onclick="event.stopPropagation(); excluirItemAcabamento(${idx})" style="color:red">
                 Excluir
               </button>
             </div>
@@ -407,6 +407,8 @@ function adicionarItemGlobal(){
   });
 
   socket.emit('atualizaProducao', producaoData);
+  renderProducao();
+  renderTV();
 }
 function normalizarMaquina(valor){
   if (!valor) return null;
@@ -673,9 +675,11 @@ function toggleDropdown(i){
   if (el) el.style.display = 'block';
 }
 function toggleMenuProducao(el){
-  document.querySelectorAll('.item-menu').forEach(m => m.style.display='none');
+  if (event) event.stopPropagation();
   const menu = el.nextElementSibling;
-  if(menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  const estavaAberto = menu && menu.style.display === 'block';
+  document.querySelectorAll('.item-menu').forEach(m => m.style.display='none');
+  if(menu) menu.style.display = estavaAberto ? 'none' : 'block';
 }
 function togglePrioridade(m, idx){
   if (!producaoData[m] || !producaoData[m][idx]) return;
@@ -685,10 +689,13 @@ function togglePrioridade(m, idx){
   renderProducao();
   renderTV();
 }
+
 function excluirItemProducao(m, idx){
   if(!confirm('Excluir item?')) return;
   producaoData[m].splice(idx,1);
   socket.emit('atualizaProducao', producaoData);
+  renderProducao();
+  renderTV();
 }
 function editarItemProducao(m, idx){
   const i = producaoData[m][idx];
@@ -705,6 +712,8 @@ function editarItemProducao(m, idx){
   if(produzir !== null) i.produzir = produzir;
 
   socket.emit('atualizaProducao', producaoData);
+  renderProducao();
+  renderTV();
 }
 function trocarMaquina(m, idx){
   const entrada = prompt(
@@ -742,6 +751,8 @@ function excluirItemAcabamento(idx){
   if(!confirm('Excluir item do acabamento?')) return;
   producaoAnteriorData.splice(idx,1);
   socket.emit('atualizaAcabamento', producaoAnteriorData);
+  renderProducaoAnterior();
+  renderTV();
 }
 function editarItemAcabamento(idx){
   const i = producaoAnteriorData[idx];
@@ -759,6 +770,8 @@ function editarItemAcabamento(idx){
   if(produzir !== null) i.produzir = produzir;
 
   socket.emit('atualizaAcabamento', producaoAnteriorData);
+  renderProducaoAnterior();
+  renderTV();
 }
 function limparAcabamento(){
   if(!confirm('Limpar TODOS os dados de acabamento?')) return;
@@ -824,10 +837,6 @@ function renderTV() {
         linha.className = `tv-linha status-${item.status || ''} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
         linha.innerHTML = `
           <div class="tv-item status-${item.status || ''}">${item.item}</div>
-          <div class="tv-qtd">
-            <span>V:${item.venda || 0}</span>
-            <span>P:${item.produzir || 0}</span>
-          </div>
         `;
         content.appendChild(linha);
       });
@@ -910,10 +919,6 @@ function renderTV() {
           linha.className = `tv-linha status-${item.status} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
           linha.innerHTML = `
             <div class="tv-item status-${item.status || ''}">${item.item}</div>
-            <div class="tv-qtd">
-              <span>V:${item.venda || 0}</span>
-              <span>P:${item.produzir || 0}</span>
-            </div>
           `;
           cardAcabamento.appendChild(linha);
         }
@@ -929,10 +934,6 @@ function renderTV() {
         linha.className = `tv-linha status-${item.status || ''} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
         linha.innerHTML = `
           <div class="tv-item status-${item.status || ''}">${item.item}</div>
-          <div class="tv-qtd">
-            <span>V:${item.venda || 0}</span>
-            <span>P:${item.produzir || 0}</span>
-          </div>
         `;
         cardAcabamento.appendChild(linha);
       });
