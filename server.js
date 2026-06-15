@@ -23,6 +23,36 @@ const client = new MongoClient(MONGO_URI, {
 
 let db, producaoCol, cargasCol, acabamentoCol;
 
+function gerarItemId() {
+  return `item_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function normalizarProducao(data = {}) {
+  const saida = {};
+
+  Object.keys(data || {}).forEach(maquina => {
+    const itens = Array.isArray(data[maquina]) ? data[maquina] : [];
+    saida[maquina] = itens.map(item => ({
+      ...item,
+      id: item && item.id ? item.id : gerarItemId(),
+      status: item && item.status ? item.status : '-',
+      prioridade: item && item.prioridade ? item.prioridade : ''
+    }));
+  });
+
+  return saida;
+}
+
+async function carregarProducao() {
+  const docs = await producaoCol.find().toArray();
+  const data = {};
+  docs.forEach(d => {
+    data[d.maquina] = Array.isArray(d.itens) ? d.itens : [];
+  });
+  return normalizarProducao(data);
+}
+
+
 async function initMongo() {
   await client.connect();
   console.log("✅ Conectado ao MongoDB Atlas!");
@@ -53,12 +83,9 @@ io.on('connection', async socket => {
 
   try {
     // busca dados iniciais
-    const producaoDocs = await producaoCol.find().toArray();
+    const producaoData = await carregarProducao();
     const cargasDoc = await cargasCol.findOne({ _id: "cargas" });
     const acabamentoDoc = await acabamentoCol.findOne({ _id: "acabamento" });
-
-    const producaoData = {};
-    producaoDocs.forEach(d => { producaoData[d.maquina] = d.itens || []; });
 
     socket.emit('initProducao', producaoData);
     socket.emit('initCargas', cargasDoc.itens || []);
@@ -68,23 +95,76 @@ io.on('connection', async socket => {
     // PRODUÇÃO
     // =======================
     const salvaProducao = async data => {
-      for (const m of Object.keys(data)) {
+      const normalizado = normalizarProducao(data);
+
+      for (const m of Object.keys(normalizado)) {
         await producaoCol.updateOne(
           { maquina: m },
-          { $set: { itens: data[m] } },
+          { $set: { maquina: m, itens: normalizado[m] } },
           { upsert: true }
         );
       }
+
+      // remove máquinas que não existem mais no objeto enviado
+      const maquinas = Object.keys(normalizado);
+      if (maquinas.length) {
+        await producaoCol.deleteMany({ maquina: { $nin: maquinas } });
+      } else {
+        await producaoCol.deleteMany({});
+      }
+
+      return normalizado;
     };
 
     socket.on('uploadProducao', async data => {
-      await salvaProducao(data);
-      io.emit('atualizaProducao', data);
+      const salvo = await salvaProducao(data);
+      io.emit('atualizaProducao', salvo);
     });
 
     socket.on('atualizaProducao', async data => {
-      await salvaProducao(data);
-      io.emit('atualizaProducao', data);
+      const salvo = await salvaProducao(data);
+      io.emit('atualizaProducao', salvo);
+    });
+
+
+    socket.on('atualizaStatusProducaoItem', async payload => {
+      try {
+        const maquina = payload && payload.maquina;
+        const itemId = payload && payload.itemId;
+        const idx = Number(payload && payload.idx);
+        const status = payload && payload.status ? payload.status : '-';
+
+        if (!maquina) return;
+
+        const doc = await producaoCol.findOne({ maquina });
+        if (!doc || !Array.isArray(doc.itens)) return;
+
+        let itemIndex = -1;
+        if (itemId) {
+          itemIndex = doc.itens.findIndex(item => item && item.id === itemId);
+        }
+        if (itemIndex < 0 && !Number.isNaN(idx) && idx >= 0) {
+          itemIndex = idx;
+        }
+        if (itemIndex < 0 || !doc.itens[itemIndex]) return;
+
+        doc.itens[itemIndex] = {
+          ...doc.itens[itemIndex],
+          id: doc.itens[itemIndex].id || itemId || gerarItemId(),
+          status
+        };
+
+        await producaoCol.updateOne(
+          { maquina },
+          { $set: { itens: doc.itens } },
+          { upsert: true }
+        );
+
+        const atualizado = await carregarProducao();
+        io.emit('atualizaProducao', atualizado);
+      } catch (err) {
+        console.error('❌ Erro ao salvar status da produção:', err);
+      }
     });
 
     socket.on('limparProducao', async () => {

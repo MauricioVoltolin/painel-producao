@@ -2325,3 +2325,173 @@ select.status-producao.estoque,
 #tab-cargas .card-container-carga {
   margin-top: 18px !important;
 }
+
+
+/* ===== AJUSTE FINAL: TV com layout mantido e rolagem dentro de cada card ===== */
+#tab-tv.active {
+  overflow: hidden !important;
+}
+
+#tv-dashboard {
+  overflow: hidden !important;
+}
+
+.tv-card {
+  overflow: hidden !important;
+}
+
+.tv-content {
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  scrollbar-width: thin !important;
+  min-height: 0 !important;
+}
+
+.tv-content::-webkit-scrollbar {
+  width: 8px !important;
+}
+
+.tv-content::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.08) !important;
+  border-radius: 8px !important;
+}
+
+.tv-content::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.45) !important;
+  border-radius: 8px !important;
+}
+
+.tv-linha {
+  min-height: 32px !important;
+  height: 32px !important;
+  max-height: 32px !important;
+  overflow: hidden !important;
+}
+
+.tv-linha .tv-item {
+  min-height: 26px !important;
+  height: 26px !important;
+  max-height: 26px !important;
+  line-height: 18px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* ===== AJUSTE DEFINITIVO - STATUS MULTI DISPOSITIVO E TV ===== */
+/* Aba Produção: cores do select */
+#tab-producao select.status-producao.producao,
+#tab-producao .status-producao.producao {
+  background: #cfe8ff !important;
+  color: #0b335c !important;
+}
+#tab-producao select.status-producao.producao_ok,
+#tab-producao .status-producao.producao_ok {
+  background: #4da3ff !important;
+  color: #fff !important;
+}
+#tab-producao select.status-producao.acabamento,
+#tab-producao .status-producao.acabamento {
+  background: #fff4bf !important;
+  color: #5c4a00 !important;
+}
+#tab-producao select.status-producao.acabamento_ok,
+#tab-producao .status-producao.acabamento_ok {
+  background: #ffd966 !important;
+  color: #4a3a00 !important;
+}
+#tab-producao select.status-producao.estoque,
+#tab-producao .status-producao.estoque {
+  background: #98d7a5 !important;
+  color: #0d3b18 !important;
+}
+
+/* TV: mantém layout dos cards e coloca rolagem dentro de cada card */
+#tab-tv.active,
+#tv-dashboard {
+  overflow: hidden !important;
+}
+
+#tab-tv .tv-card {
+  overflow: hidden !important;
+  min-height: 0 !important;
+}
+
+#tab-tv .tv-content {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-right: 5px !important;
+  scrollbar-width: thin !important;
+}
+
+#tab-tv .tv-content::-webkit-scrollbar {
+  width: 8px !important;
+}
+
+#tab-tv .tv-content::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.08) !important;
+  border-radius: 8px !important;
+}
+
+#tab-tv .tv-content::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.45) !important;
+  border-radius: 8px !important;
+}
+
+#tab-tv .tv-linha {
+  display: block !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  line-height: 30px !important;
+  margin: 0 0 4px 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-radius: 7px !important;
+}
+
+#tab-tv .tv-linha .tv-item {
+  display: block !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  line-height: 30px !important;
+  padding: 0 8px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: 13px !important;
+}
+
+/* TV: cores do nome conforme status */
+#tab-tv .tv-linha.status-producao .tv-item,
+#tab-tv .tv-item.status-producao {
+  background: #4da3ff !important;
+  color: #fff !important;
+}
+#tab-tv .tv-linha.status-producao_ok .tv-item,
+#tab-tv .tv-item.status-producao_ok,
+#tab-tv .tv-linha.status-acabamento_ok .tv-item,
+#tab-tv .tv-item.status-acabamento_ok,
+#tab-tv .tv-linha.status-estoque .tv-item,
+#tab-tv .tv-item.status-estoque {
+  background: #7acb8a !important;
+  color: #073b13 !important;
+}
+#tab-tv .tv-linha.status-acabamento .tv-item,
+#tab-tv .tv-item.status-acabamento {
+  background: #fff4bf !important;
+  color: #5c4a00 !important;
+}
+
+#tab-tv .tv-linha.prioridade .tv-item {
+  font-weight: 900 !important;
+  text-decoration-line: underline !important;
+  text-decoration-color: #ffd400 !important;
+  text-decoration-thickness: 4px !important;
+  text-underline-offset: 4px !important;
+}
