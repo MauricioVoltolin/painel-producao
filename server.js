@@ -53,6 +53,49 @@ async function carregarProducao() {
 }
 
 
+function localizarIndiceItem(itens, payload = {}) {
+  if (!Array.isArray(itens)) return -1;
+
+  const itemId = payload.itemId ? String(payload.itemId) : '';
+  if (itemId) {
+    const porId = itens.findIndex(item => item && String(item.id || '') === itemId);
+    if (porId >= 0) return porId;
+  }
+
+  const alvoItem = String(payload.item || '');
+  const alvoVenda = String(payload.venda || '');
+  const alvoEstoque = String(payload.estoque || '');
+  const alvoProduzir = String(payload.produzir || '');
+
+  return itens.findIndex(item => {
+    if (!item) return false;
+    return String(item.item || '') === alvoItem &&
+      String(item.venda || '') === alvoVenda &&
+      String(item.estoque || '') === alvoEstoque &&
+      String(item.produzir || '') === alvoProduzir;
+  });
+}
+
+async function carregarDocMaquina(maquina) {
+  const nomeMaquina = String(maquina || '');
+  if (!nomeMaquina) return null;
+  const doc = await producaoCol.findOne({ maquina: nomeMaquina });
+  if (doc && Array.isArray(doc.itens)) return doc;
+
+  await producaoCol.updateOne(
+    { maquina: nomeMaquina },
+    { $setOnInsert: { maquina: nomeMaquina, itens: [] } },
+    { upsert: true }
+  );
+  return await producaoCol.findOne({ maquina: nomeMaquina });
+}
+
+async function emitirProducaoAtualizada() {
+  const atualizado = await carregarProducao();
+  io.emit('atualizaProducao', atualizado);
+}
+
+
 async function initMongo() {
   await client.connect();
   console.log("✅ Conectado ao MongoDB Atlas!");
@@ -127,43 +170,114 @@ io.on('connection', async socket => {
     });
 
 
-    socket.on('atualizaStatusProducaoItem', async payload => {
+    socket.on('alterarStatusProducao', async payload => {
       try {
-        const maquina = payload && payload.maquina;
-        const itemId = payload && payload.itemId;
-        const idx = Number(payload && payload.idx);
+        const maquina = String(payload && payload.maquina || '');
         const status = payload && payload.status ? payload.status : '-';
-
-        if (!maquina) return;
-
-        const doc = await producaoCol.findOne({ maquina });
+        const doc = await carregarDocMaquina(maquina);
         if (!doc || !Array.isArray(doc.itens)) return;
 
-        let itemIndex = -1;
-        if (itemId) {
-          itemIndex = doc.itens.findIndex(item => item && item.id === itemId);
-        }
-        if (itemIndex < 0 && !Number.isNaN(idx) && idx >= 0) {
-          itemIndex = idx;
-        }
+        const itemIndex = localizarIndiceItem(doc.itens, payload);
         if (itemIndex < 0 || !doc.itens[itemIndex]) return;
 
         doc.itens[itemIndex] = {
           ...doc.itens[itemIndex],
-          id: doc.itens[itemIndex].id || itemId || gerarItemId(),
+          id: doc.itens[itemIndex].id || payload.itemId || gerarItemId(),
           status
         };
 
-        await producaoCol.updateOne(
-          { maquina },
-          { $set: { itens: doc.itens } },
-          { upsert: true }
-        );
-
-        const atualizado = await carregarProducao();
-        io.emit('atualizaProducao', atualizado);
+        await producaoCol.updateOne({ maquina }, { $set: { maquina, itens: doc.itens } }, { upsert: true });
+        await emitirProducaoAtualizada();
       } catch (err) {
         console.error('❌ Erro ao salvar status da produção:', err);
+      }
+    });
+
+    // Compatibilidade com versões antigas do app.js
+    socket.on('atualizaStatusProducaoItem', async payload => {
+      socket.emit('erroServidor', 'Atualize a página para usar a nova versão do painel.');
+    });
+
+    socket.on('alterarPrioridadeProducao', async payload => {
+      try {
+        const maquina = String(payload && payload.maquina || '');
+        const doc = await carregarDocMaquina(maquina);
+        if (!doc || !Array.isArray(doc.itens)) return;
+
+        const itemIndex = localizarIndiceItem(doc.itens, payload);
+        if (itemIndex < 0 || !doc.itens[itemIndex]) return;
+
+        doc.itens[itemIndex].prioridade = doc.itens[itemIndex].prioridade === 'alta' ? '' : 'alta';
+        doc.itens[itemIndex].id = doc.itens[itemIndex].id || payload.itemId || gerarItemId();
+
+        await producaoCol.updateOne({ maquina }, { $set: { maquina, itens: doc.itens } }, { upsert: true });
+        await emitirProducaoAtualizada();
+      } catch (err) {
+        console.error('❌ Erro ao alterar prioridade:', err);
+      }
+    });
+
+    socket.on('editarItemProducao', async payload => {
+      try {
+        const maquina = String(payload && payload.maquina || '');
+        const doc = await carregarDocMaquina(maquina);
+        if (!doc || !Array.isArray(doc.itens)) return;
+
+        const itemIndex = localizarIndiceItem(doc.itens, payload);
+        if (itemIndex < 0 || !doc.itens[itemIndex]) return;
+
+        doc.itens[itemIndex] = {
+          ...doc.itens[itemIndex],
+          ...(payload.novoItem || {}),
+          id: doc.itens[itemIndex].id || payload.itemId || gerarItemId(),
+          status: (payload.novoItem && payload.novoItem.status) || doc.itens[itemIndex].status || '-',
+          prioridade: (payload.novoItem && payload.novoItem.prioridade) || doc.itens[itemIndex].prioridade || ''
+        };
+
+        await producaoCol.updateOne({ maquina }, { $set: { maquina, itens: doc.itens } }, { upsert: true });
+        await emitirProducaoAtualizada();
+      } catch (err) {
+        console.error('❌ Erro ao editar item:', err);
+      }
+    });
+
+    socket.on('excluirItemProducao', async payload => {
+      try {
+        const maquina = String(payload && payload.maquina || '');
+        const doc = await carregarDocMaquina(maquina);
+        if (!doc || !Array.isArray(doc.itens)) return;
+
+        const itemIndex = localizarIndiceItem(doc.itens, payload);
+        if (itemIndex < 0) return;
+
+        doc.itens.splice(itemIndex, 1);
+        await producaoCol.updateOne({ maquina }, { $set: { maquina, itens: doc.itens } }, { upsert: true });
+        await emitirProducaoAtualizada();
+      } catch (err) {
+        console.error('❌ Erro ao excluir item:', err);
+      }
+    });
+
+    socket.on('trocarMaquinaProducao', async payload => {
+      try {
+        const maquina = String(payload && payload.maquina || '');
+        const novaMaquina = String(payload && payload.novaMaquina || '');
+        if (!maquina || !novaMaquina) return;
+
+        const docOrigem = await carregarDocMaquina(maquina);
+        const itemIndex = localizarIndiceItem(docOrigem.itens, payload);
+        if (itemIndex < 0) return;
+
+        const [item] = docOrigem.itens.splice(itemIndex, 1);
+        await producaoCol.updateOne({ maquina }, { $set: { maquina, itens: docOrigem.itens } }, { upsert: true });
+
+        const docDestino = await carregarDocMaquina(novaMaquina);
+        docDestino.itens.push({ ...item, id: item.id || payload.itemId || gerarItemId() });
+        await producaoCol.updateOne({ maquina: novaMaquina }, { $set: { maquina: novaMaquina, itens: docDestino.itens } }, { upsert: true });
+
+        await emitirProducaoAtualizada();
+      } catch (err) {
+        console.error('❌ Erro ao trocar máquina:', err);
       }
     });
 

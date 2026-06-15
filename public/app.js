@@ -165,6 +165,17 @@ function jsArg(valor) {
   return JSON.stringify(String(valor));
 }
 
+function chaveItemPayload(m, item) {
+  return {
+    maquina: String(m),
+    itemId: item && item.id ? String(item.id) : '',
+    item: item && item.item ? String(item.item) : '',
+    venda: item && item.venda ? String(item.venda) : '',
+    estoque: item && item.estoque ? String(item.estoque) : '',
+    produzir: item && item.produzir ? String(item.produzir) : ''
+  };
+}
+
 function gerarIdItemProducao() {
   return `item_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -385,17 +396,13 @@ function atualizaStatusProducao(m, chaveItem, sel){
   const novoStatus = sel.value || '-';
   const item = producaoData[m][idx];
 
-  // Atualiza localmente para quem acabou de clicar ver na hora.
   item.status = novoStatus;
 
   sel.className = 'status-producao';
   if (novoStatus !== '-') sel.classList.add(novoStatus);
 
-  // Salva no Mongo e o servidor devolve para todos os dispositivos em tempo real.
-  socket.emit('atualizaStatusProducaoItem', {
-    maquina: m,
-    itemId: item.id,
-    idx,
+  socket.emit('alterarStatusProducao', {
+    ...chaveItemPayload(m, item),
     status: novoStatus
   });
 
@@ -409,35 +416,23 @@ function atualizaStatusProducaoAnterior(idx, sel){
 
   sel.className = 'status-producao';
   if (novoStatus !== '-') sel.classList.add(novoStatus);
-
   socket.emit('atualizaAcabamento', producaoAnteriorData);
-
-  renderProducaoAnterior();
-  renderTV();
 }
-/* ===== ADICIONAR / EXCLUIR ITENS ===== */
-function adicionarItemGlobal(){
-  const entrada = prompt(
-    'Em qual máquina?\nUse: CV, CVR, D, 1–6, P, R'
-  );
+/* ===== ADICIONAR ITEM PRODUÇÃO ===== */
+function adicionarItem(){
+  const maquina = normalizarMaquina(prompt('Máquina:\nUse: CV, CVR, D, 1–6, P, R'));
+  if(!maquina){ alert('Máquina inválida'); return; }
 
-  const maquina = normalizarMaquina(entrada);
-  if(!maquina){
-    alert('Máquina inválida');
-    return;
-  }
+  const item = prompt('Nome do item:');
+  if(!item) return;
 
-  // 🔥 se não existir no XLS, cria o card
+  const venda = prompt('Vendido:', '000') || '000';
+  const estoque = prompt('Estoque:', '000') || '000';
+  const produzir = prompt('Produzir:', '000') || '000';
+
   if (!producaoData[maquina]) {
     producaoData[maquina] = [];
   }
-
-  const item = prompt('Produto:');
-  if(!item) return;
-
-  const venda = prompt('Vendido:', '0');
-  const estoque = prompt('Estoque:', '0');
-  const produzir = prompt('Produzir:', '0');
 
   producaoData[maquina].push({
     id: gerarIdItemProducao(),
@@ -450,272 +445,6 @@ function adicionarItemGlobal(){
   });
 
   socket.emit('atualizaProducao', producaoData);
-  renderProducao();
-  renderTV();
-}
-function normalizarMaquina(valor){
-  if (!valor) return null;
-
-  const v = valor.toString().trim().toUpperCase();
-
-  const mapa = {
-    'CV': 'C.V. PLANA',
-    'C.V': 'C.V. PLANA',
-    'C.V.': 'C.V. PLANA',
-    'C.V. PLANA': 'C.V. PLANA',
-
-    'CVR': 'C.V. ROTATIVA',
-    'C.V.R': 'C.V. ROTATIVA',
-    'C.V.R.': 'C.V. ROTATIVA',
-    'C.V. ROTATIVA': 'C.V. ROTATIVA',
-
-    'D': 'DIGITAL',
-
-    '1': 'MAQUINA 01',
-    '2': 'MAQUINA 02',
-    '3': 'MAQUINA 03',
-    '4': 'MAQUINA 04',
-    '5': 'MAQUINA 05',
-    '6': 'MAQUINA 06',
-
-    'P': 'PLOTER',
-    'R': 'RISCADOR'
-  };
-
-  return mapa[v] || null;
-}
-/* ===== CARGAS ===== */
-let cargas = [];
-function salvarCargasSeguro() {
-  // garante que cargas existe e é um array
-  if (!Array.isArray(cargas)) return;
-
-  // evita apagar o banco sem querer
-  if (cargas.length === 0) {
-    console.warn('⚠️ Tentativa de salvar cargas vazias bloqueada');
-    return;
-  }
-
-  socket.emit('atualizaCargas', cargas);
-}
-
-socket.on('initCargas', d => { cargas = d; renderCargas(); });
-socket.on('atualizaCargas', d => { cargas = d; renderCargas(); });
-function novaCarga() {
-  cargas.push({
-    titulo: `Carga ${cargas.length + 1}`,
-    status: 'Pendente',
-    itens: [],
-    itensStatus: [],
-    valoresFaturados: []
-  });
-  salvarCargasSeguro();
-  renderCargas();
-}
-function renderCargas() {
-  const div = document.getElementById('cargas');
-  div.innerHTML = '';
-
-  const editModeIdx = parseInt(div.getAttribute('data-edit-mode') || '-1');
-
-  cargas.forEach((c, idx) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-
-    // Topo do card
-    const cardTop = document.createElement('div');
-    cardTop.className = 'card-top';
-    cardTop.innerHTML = `
-      <div class="top-left menu-wrapper">
-        <span class="menu-carga" onclick="toggleDropdownCarga(${idx})">⋮</span>
-        <strong class="titulo-carga">${c.titulo}</strong>
-        <div class="dropdown" id="dropdown-carga-${idx}">
-          <button onclick="editarCarga(${idx})">Editar</button>
-          <button onclick="excluirCarga(${idx})" style="color:red">Excluir</button>
-        </div>
-      </div>
-      <div class="top-right">
-        <select class="select-carga ${c.status.toLowerCase()}" onchange="atualizaStatusCarga(${idx}, this)">
-          <option value="Pendente" ${c.status==='Pendente'?'selected':''}>Pendente</option>
-          <option value="Carregando" ${c.status==='Carregando'?'selected':''}>Carregando</option>
-          <option value="Pronto" ${c.status==='Pronto'?'selected':''}>Pronto</option>
-        </select>
-      </div>
-    `;
-    card.appendChild(cardTop);
-
-    // Itens do card
-    const itensContainer = document.createElement('div');
-    itensContainer.className = 'card-itens';
-
-    c.itens.forEach((item, iidx) => {
-      if (!cargas[idx].itensStatus) cargas[idx].itensStatus = [];
-      if (!cargas[idx].itensStatus[iidx]) cargas[idx].itensStatus[iidx] = 'Pendente';
-
-      const status = cargas[idx].itensStatus[iidx];
-      const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
-
-      const divItem = document.createElement('div');
-      divItem.className = 'card-item';
-      divItem.innerHTML = `
-        <span class="item-nome">${item}</span>
-        ${editModeIdx === idx ? `
-          <span class="item-actions">
-            <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
-            <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
-            <button class="editar-valor" onclick="editarValorFaturado(${idx}, ${iidx})">💰</button>
-          </span>
-        ` : ''}
-        <select class="item-status" style="float:right; background-color:${colors[status]};" onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
-          <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
-          <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
-        </select>
-      `;
-      itensContainer.appendChild(divItem);
-    });
-
-    card.appendChild(itensContainer);
-
-    // Botão + sempre visível no final do card
-    const addBtn = document.createElement('button');
-    addBtn.className = 'btn-add-item';
-    addBtn.innerText = '+';
-    addBtn.onclick = () => adicionarItemCarga(idx);
-    card.appendChild(addBtn);
-
-    // Botão OK apenas no modo edição
-    if (editModeIdx === idx) {
-      const okBtn = document.createElement('button');
-      okBtn.className = 'btn-ok-edicao';
-      okBtn.innerText = 'OK';
-      okBtn.onclick = () => {
-        div.setAttribute('data-edit-mode', '-1');
-        renderCargas();
-      };
-      card.appendChild(okBtn);
-    }
-
-    div.appendChild(card);
-  });
-}
-function editarCarga(idx) {
-  const div = document.getElementById('cargas');
-  div.setAttribute('data-edit-mode', idx);
-  renderCargas();
-}
-function editarValorFaturado(cIdx, iIdx){
-  const valor = prompt('Informe o valor faturado:', cargas[cIdx].valoresFaturados?.[iIdx] || '');
-  if (!valor) return;
-  const valorNum = parseFloat(valor.replace('R$', '').replace(/\./g, '').replace(',', '.'));
-  if (isNaN(valorNum)) return alert('Valor inválido');
-  if (!cargas[cIdx].valoresFaturados) cargas[cIdx].valoresFaturados = [];
-  cargas[cIdx].valoresFaturados[iIdx] = valorNum;
-  salvarCargasSeguro();
-  renderCargas();
-}
-// Funções de interação com dropdown
-function toggleDropdownCarga(idx) {
-  document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
-  const el = document.getElementById(`dropdown-carga-${idx}`);
-  if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
-}
-function adicionarItemCarga(cIdx) {
-  const item = prompt('Nome do novo item:');
-  if (!item) return;
-  cargas[cIdx].itens.push(item);
-  cargas[cIdx].itensStatus.push('Pendente');
-  cargas[cIdx].valoresFaturados.push(0);
-  salvarCargasSeguro();
-  renderCargas();
-}
-function editarItemCarga(cIdx, iIdx) {
-  const novo = prompt('Novo nome do item:', cargas[cIdx].itens[iIdx]);
-  if (novo !== null && novo.trim() !== '') {
-    cargas[cIdx].itens[iIdx] = novo.trim();
-    salvarCargasSeguro();
-    renderCargas();
-  }
-}
-
-function modoEdicaoCarga(idx){
-  cargas[idx].editando = true;
-  renderCargas();
-}
-function excluirCarga(idx) {
-  if (!confirm('Excluir esta carga inteira?')) return;
-  cargas.splice(idx, 1);
-  cargas.forEach((c, i) => c.titulo = `Carga ${i + 1}`);
-  salvarCargasSeguro();
-  renderCargas();
-  renderTV(); // Atualiza TV
-}
-function excluirItemCarga(cIdx, iIdx) {
-  if (!confirm('Excluir este item?')) return;
-  cargas[cIdx].itens.splice(iIdx, 1);
-  cargas[cIdx].itensStatus.splice(iIdx, 1);
-  cargas[cIdx].valoresFaturados.splice(iIdx, 1);
-  salvarCargasSeguro();
-  renderCargas();
-  renderTV(); // Atualiza TV imediatamente
-}
-
-function atualizaStatusCarga(cIdx, select){
-  const novoStatus = select.value;
-  cargas[cIdx].status = novoStatus;
-  salvarCargasSeguro();
-  renderCargas();
-  renderTV();
-}
-function atualizaStatusItem(cIdx, iIdx, select){
-  if (!cargas[cIdx].itensStatus) cargas[cIdx].itensStatus = [];
-
-  const statusAnterior = cargas[cIdx].itensStatus[iIdx] || 'Pendente';
-  const novoStatus = select.value;
-
-  // Se mudou para Faturado
-  if (novoStatus === 'Faturado' && statusAnterior !== 'Faturado') {
-    const valor = prompt('Informe o valor faturado:');
-    if (!valor) {
-      select.value = statusAnterior;
-      return;
-    }
-
-    const valorNum = parseFloat(
-      valor.replace('R$', '').replace(/\./g, '').replace(',', '.')
-    );
-    if (isNaN(valorNum)) {
-      alert('Valor inválido');
-      select.value = statusAnterior;
-      return;
-    }
-
-    if (!cargas[cIdx].valoresFaturados) cargas[cIdx].valoresFaturados = [];
-    cargas[cIdx].valoresFaturados[iIdx] = valorNum;
-  }
-
-  cargas[cIdx].itensStatus[iIdx] = novoStatus;
-
-  const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
-  select.style.backgroundColor = colors[novoStatus];
-
-  salvarCargasSeguro();
-  renderTV();
-}
-function atualizarData() {
-  const el = document.getElementById('dataAtual');
-  if (!el) return;
-
-  const hoje = new Date();
-  el.innerText = hoje.toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long'
-  });
-}
-function toggleDropdown(i){
-  document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
-  const el = document.getElementById(`dropdown-${i}`);
-  if (el) el.style.display = 'block';
 }
 function toggleMenuProducao(el){
   if (event) event.stopPropagation();
@@ -732,10 +461,11 @@ function togglePrioridade(m, chaveItem){
   const idx = encontrarIndiceItemProducao(m, chaveItem);
   if (idx < 0) return;
 
-  producaoData[m][idx].prioridade = producaoData[m][idx].prioridade === 'alta' ? '' : 'alta';
+  const item = producaoData[m][idx];
+  item.prioridade = item.prioridade === 'alta' ? '' : 'alta';
 
   fecharMenusItens();
-  socket.emit('atualizaProducao', producaoData);
+  socket.emit('alterarPrioridadeProducao', chaveItemPayload(m, item));
   renderProducao();
   renderTV();
 }
@@ -745,10 +475,12 @@ function excluirItemProducao(m, chaveItem){
   if (idx < 0) return;
   if(!confirm('Excluir item?')) return;
 
+  const item = producaoData[m][idx];
+  const payload = chaveItemPayload(m, item);
   producaoData[m].splice(idx, 1);
 
   fecharMenusItens();
-  socket.emit('atualizaProducao', producaoData);
+  socket.emit('excluirItemProducao', payload);
   renderProducao();
   renderTV();
 }
@@ -758,6 +490,7 @@ function editarItemProducao(m, chaveItem){
   if (idx < 0) return;
 
   const i = producaoData[m][idx];
+  const payloadBusca = chaveItemPayload(m, i);
 
   const item = prompt('Item:', i.item || '');
   if(item !== null) i.item = item;
@@ -772,7 +505,18 @@ function editarItemProducao(m, chaveItem){
   if(produzir !== null) i.produzir = produzir;
 
   fecharMenusItens();
-  socket.emit('atualizaProducao', producaoData);
+  socket.emit('editarItemProducao', {
+    ...payloadBusca,
+    novoItem: {
+      id: i.id,
+      item: i.item,
+      venda: i.venda,
+      estoque: i.estoque,
+      produzir: i.produzir,
+      prioridade: i.prioridade || '',
+      status: i.status || '-'
+    }
+  });
   renderProducao();
   renderTV();
 }
@@ -795,7 +539,10 @@ function trocarMaquina(m, chaveItem){
   producaoData[nova].push(item);
 
   fecharMenusItens();
-  socket.emit('atualizaProducao', producaoData);
+  socket.emit('trocarMaquinaProducao', {
+    ...chaveItemPayload(m, item),
+    novaMaquina: String(nova)
+  });
   renderProducao();
   renderTV();
 }
