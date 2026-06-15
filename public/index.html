@@ -47,6 +47,17 @@
     </div>
   </div>
 
+  <div class="header-actions only-desktop" id="header-actions-cargas" style="display:none;">
+    <button id="nova-carga-topo-btn" onclick="novaCarga()">+</button>
+
+    <div class="menu-wrapper menu-global-topo">
+      <span class="menu-btn" onclick="toggleDropdown('cargas-menu')">⋮</span>
+      <div class="dropdown dropdown-global" id="dropdown-cargas-menu">
+        <button onclick="limparCargas()" style="color:red">Limpar Cargas</button>
+      </div>
+    </div>
+  </div>
+
 </header>
 
 <!-- ABA PRODUÇÃO -->
@@ -65,17 +76,6 @@
 <!-- Aba Cargas -->
 <div class="tab" id="tab-cargas">
 
-  <!-- Botão Nova Carga + menu de limpeza -->
-  <div class="nova-carga-wrapper">
-    <button id="novaCarga" onclick="novaCarga()">Nova Carga</button>
-
-    <div class="menu-wrapper menu-cargas-topo">
-      <span class="menu-btn" onclick="toggleDropdown('cargas-menu')">⋮</span>
-      <div class="dropdown dropdown-global" id="dropdown-cargas-menu">
-        <button onclick="limparCargas()" style="color:red">Limpar Cargas</button>
-      </div>
-    </div>
-  </div>
   <!-- Container de cards -->
   <div class="card-container-carga" id="cargas"></div>
 </div>

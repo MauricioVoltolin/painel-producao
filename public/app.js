@@ -32,10 +32,10 @@ function openTab(index) {
 
 function atualizarAcoesDoTopo(index) {
   const acoesProducao = document.getElementById('header-actions-producao');
-  if (!acoesProducao) return;
+  const acoesCargas = document.getElementById('header-actions-cargas');
 
-  // botão adicionar e menu ⋮ aparecem somente na aba Produção
-  acoesProducao.style.display = index === 0 ? 'flex' : 'none';
+  if (acoesProducao) acoesProducao.style.display = index === 0 ? 'flex' : 'none';
+  if (acoesCargas) acoesCargas.style.display = index === 1 ? 'flex' : 'none';
 }
 
 /* ================= PRODUÇÃO ================= */
@@ -160,6 +160,10 @@ socket.on('atualizaProducao', data => { producaoData = data; renderProducao(); r
 socket.on('initAcabamento', data => { producaoAnteriorData = data; renderProducaoAnterior(); });
 socket.on('atualizaAcabamento', data => { producaoAnteriorData = data; renderProducaoAnterior(); });
 /* ===== RENDER PRODUÇÃO ===== */
+function jsArg(valor) {
+  return JSON.stringify(String(valor));
+}
+
 function renderProducao() {
   const abaAtiva = document.getElementById('tab-producao');
   if (!abaAtiva.classList.contains('active')) return;
@@ -241,7 +245,7 @@ function renderProducao() {
 
             <div class="status-wrapper">
               <select class="status-producao ${i.status}"
-                onchange="atualizaStatusProducao('${m}', ${idx}, this)">
+                onchange="atualizaStatusProducao(${jsArg(m)}, ${idx}, this)">
                 <option value="-" ${i.status === '-' ? 'selected' : ''}>-</option>
                 <option value="producao" ${i.status === 'producao' ? 'selected' : ''}>Produção</option>
                 <option value="producao_ok" ${i.status === 'producao_ok' ? 'selected' : ''}>Produção OK</option>
@@ -254,16 +258,16 @@ function renderProducao() {
             <div class="menu-wrapper only-desktop">
               <span class="menu-btn" onclick="toggleMenuProducao(this)">⋮</span>
               <div class="dropdown item-menu">
-                <button onclick="togglePrioridade('${m}', ${idx})">
+                <button onclick="togglePrioridade(${jsArg(m)}, ${idx})">
                   Prioridade
                 </button>
-                <button onclick="editarItemProducao('${m}', ${idx})">
+                <button onclick="editarItemProducao(${jsArg(m)}, ${idx})">
                   Editar item
                 </button>
-                <button onclick="trocarMaquina('${m}', ${idx})">
+                <button onclick="trocarMaquina(${jsArg(m)}, ${idx})">
                   Trocar de máquina
                 </button>
-                <button onclick="excluirItemProducao('${m}', ${idx})" style="color:red">
+                <button onclick="excluirItemProducao(${jsArg(m)}, ${idx})" style="color:red">
                   Excluir item
                 </button>
               </div>
@@ -673,10 +677,13 @@ function toggleMenuProducao(el){
   const menu = el.nextElementSibling;
   if(menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
-function togglePrioridade(m, idx, btn){
+function togglePrioridade(m, idx){
+  if (!producaoData[m] || !producaoData[m][idx]) return;
   const item = producaoData[m][idx];
   item.prioridade = item.prioridade === 'alta' ? '' : 'alta';
   socket.emit('atualizaProducao', producaoData);
+  renderProducao();
+  renderTV();
 }
 function excluirItemProducao(m, idx){
   if(!confirm('Excluir item?')) return;
@@ -725,8 +732,11 @@ function trocarMaquina(m, idx){
 }
 function togglePrioridadeAcabamento(idx){
   const item = producaoAnteriorData[idx];
+  if (!item) return;
   item.prioridade = item.prioridade === 'alta' ? '' : 'alta';
   socket.emit('atualizaAcabamento', producaoAnteriorData);
+  renderProducaoAnterior();
+  renderTV();
 }
 function excluirItemAcabamento(idx){
   if(!confirm('Excluir item do acabamento?')) return;
@@ -769,6 +779,15 @@ function limparProducao(){
   renderProducao();
   renderTV();
 }
+
+function limparCargas(){
+  if(!confirm('Limpar TODAS as cargas?')) return;
+
+  cargas = [];
+  socket.emit('limparCargas');
+  renderCargas();
+  renderTV();
+}
 document.addEventListener('click', e => {
   if (!e.target.closest('.menu-wrapper')) {
     document.querySelectorAll('.dropdown').forEach(d => {
@@ -804,7 +823,7 @@ function renderTV() {
         const linha = document.createElement('div');
         linha.className = `tv-linha status-${item.status || ''} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
         linha.innerHTML = `
-          <div class="tv-item">${item.item}</div>
+          <div class="tv-item status-${item.status || ''}">${item.item}</div>
           <div class="tv-qtd">
             <span>V:${item.venda || 0}</span>
             <span>P:${item.produzir || 0}</span>
@@ -890,7 +909,7 @@ function renderTV() {
           const linha = document.createElement('div');
           linha.className = `tv-linha status-${item.status} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
           linha.innerHTML = `
-            <div class="tv-item">${item.item}</div>
+            <div class="tv-item status-${item.status || ''}">${item.item}</div>
             <div class="tv-qtd">
               <span>V:${item.venda || 0}</span>
               <span>P:${item.produzir || 0}</span>
@@ -909,7 +928,7 @@ function renderTV() {
         const linha = document.createElement('div');
         linha.className = `tv-linha status-${item.status || ''} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
         linha.innerHTML = `
-          <div class="tv-item">${item.item}</div>
+          <div class="tv-item status-${item.status || ''}">${item.item}</div>
           <div class="tv-qtd">
             <span>V:${item.venda || 0}</span>
             <span>P:${item.produzir || 0}</span>

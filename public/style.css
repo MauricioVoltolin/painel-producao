@@ -1978,3 +1978,183 @@ select.status-producao.estoque,
   right: auto;
   left: 0;
 }
+
+/* ===== AJUSTES FINAIS SOLICITADOS ===== */
+/* Mantem a aba Producao e o filtro centralizados mesmo depois de trocar de aba */
+#tab-producao.active {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+#tab-producao .filtro-container {
+  width: 100% !important;
+  max-width: 1450px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
+#filtroMaquina {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Cores dos status na aba Producao */
+select.status-producao.producao,
+.status-producao.producao {
+  background: #cfe8ff !important;
+  color: #000 !important;
+}
+
+select.status-producao.producao_ok,
+.status-producao.producao_ok {
+  background: #4da3ff !important;
+  color: #000 !important;
+}
+
+select.status-producao.acabamento,
+.status-producao.acabamento {
+  background: #fff4bf !important;
+  color: #000 !important;
+}
+
+select.status-producao.acabamento_ok,
+.status-producao.acabamento_ok {
+  background: #ffd966 !important;
+  color: #000 !important;
+}
+
+select.status-producao.estoque,
+.status-producao.estoque {
+  background: #98d7a5 !important;
+  color: #000 !important;
+}
+
+/* Botoes do topo por aba */
+#header-actions-producao,
+#header-actions-cargas {
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+#nova-carga-topo-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: #007bff;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#nova-carga-topo-btn:hover {
+  background: #0069d9;
+}
+
+/* TV: layout fixo, sem remontar os cards, com scroll apenas no conteudo */
+#tab-tv.active {
+  display: block !important;
+  height: calc(100vh - 105px) !important;
+  overflow: hidden !important;
+}
+
+#tv-dashboard {
+  height: 100% !important;
+  max-height: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  overflow: hidden !important;
+}
+
+.tv-card {
+  min-height: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.tv-card h2 {
+  flex: 0 0 auto !important;
+  margin: 0 0 8px 0 !important;
+}
+
+.tv-content {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-right: 4px !important;
+}
+
+.tv-linha {
+  background: transparent !important;
+  border-left: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 3px 4px !important;
+  margin-bottom: 3px !important;
+}
+
+.tv-linha .tv-item {
+  flex: 1 1 auto !important;
+  padding: 4px 8px !important;
+  border-radius: 5px !important;
+  line-height: 1.15 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.tv-linha .tv-qtd {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  gap: 8px !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+  background: transparent !important;
+}
+
+/* TV: o grifado fica somente no nome do item */
+.tv-item.status-producao {
+  background: #4da3ff !important;
+  color: #000 !important;
+}
+
+.tv-item.status-producao_ok,
+.tv-item.status-estoque,
+.tv-item.status-acabamento_ok {
+  background: #98d7a5 !important;
+  color: #000 !important;
+}
+
+.tv-item.status-acabamento {
+  background: #fff4bf !important;
+  color: #000 !important;
+}
+
+/* TV: prioridade fica em negrito e sublinhada em amarelo, sem trocar a cor do status */
+.tv-linha.prioridade {
+  background: transparent !important;
+  border-left: none !important;
+}
+
+.tv-linha.prioridade .tv-item {
+  font-weight: 800 !important;
+  text-decoration-line: underline !important;
+  text-decoration-color: #ffc107 !important;
+  text-decoration-thickness: 4px !important;
+  text-underline-offset: 3px !important;
+}
