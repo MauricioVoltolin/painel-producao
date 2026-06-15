@@ -298,7 +298,7 @@ function renderProducao() {
             </div>
 
             <div class="menu-wrapper only-desktop">
-              <span class="menu-btn" onclick="toggleMenuProducao(this)">⋮</span>
+              <span class="menu-btn" onclick="toggleMenuProducao(event, this)">⋮</span>
               <div class="dropdown item-menu">
                 <button onclick="event.stopPropagation(); togglePrioridade(${jsArg(m)}, ${jsArg(itemId)})">
                   Prioridade
@@ -367,7 +367,7 @@ function renderProducaoAnterior(){
 
           <!-- MENU 3 PONTOS (APENAS PRIORIDADE E EXCLUIR) -->
           <div class="menu-wrapper only-desktop">
-            <span class="menu-btn" onclick="toggleMenuProducao(this)">⋮</span>
+            <span class="menu-btn" onclick="toggleMenuProducao(event, this)">⋮</span>
             <div class="dropdown item-menu">
               <button onclick="event.stopPropagation(); togglePrioridadeAcabamento(${idx})">
                 Prioridade
@@ -401,10 +401,9 @@ function atualizaStatusProducao(m, chaveItem, sel){
   sel.className = 'status-producao';
   if (novoStatus !== '-') sel.classList.add(novoStatus);
 
-  socket.emit('alterarStatusProducao', {
-    ...chaveItemPayload(m, item),
-    status: novoStatus
-  });
+  // Salva a produção inteira, igual ao fluxo do Acabamento.
+  // Isso garante persistência no Mongo e atualização em todos os dispositivos.
+  socket.emit('atualizaProducao', producaoData);
 
   renderTV();
 }
@@ -446,8 +445,8 @@ function adicionarItem(){
 
   socket.emit('atualizaProducao', producaoData);
 }
-function toggleMenuProducao(el){
-  if (event) event.stopPropagation();
+function toggleMenuProducao(evt, el){
+  if (evt) evt.stopPropagation();
   const menu = el.nextElementSibling;
   const estavaAberto = menu && menu.style.display === 'block';
   document.querySelectorAll('.item-menu').forEach(m => m.style.display='none');
@@ -465,7 +464,7 @@ function togglePrioridade(m, chaveItem){
   item.prioridade = item.prioridade === 'alta' ? '' : 'alta';
 
   fecharMenusItens();
-  socket.emit('alterarPrioridadeProducao', chaveItemPayload(m, item));
+  socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
@@ -480,7 +479,7 @@ function excluirItemProducao(m, chaveItem){
   producaoData[m].splice(idx, 1);
 
   fecharMenusItens();
-  socket.emit('excluirItemProducao', payload);
+  socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
@@ -505,18 +504,7 @@ function editarItemProducao(m, chaveItem){
   if(produzir !== null) i.produzir = produzir;
 
   fecharMenusItens();
-  socket.emit('editarItemProducao', {
-    ...payloadBusca,
-    novoItem: {
-      id: i.id,
-      item: i.item,
-      venda: i.venda,
-      estoque: i.estoque,
-      produzir: i.produzir,
-      prioridade: i.prioridade || '',
-      status: i.status || '-'
-    }
-  });
+  socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
@@ -539,10 +527,7 @@ function trocarMaquina(m, chaveItem){
   producaoData[nova].push(item);
 
   fecharMenusItens();
-  socket.emit('trocarMaquinaProducao', {
-    ...chaveItemPayload(m, item),
-    novaMaquina: String(nova)
-  });
+  socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
