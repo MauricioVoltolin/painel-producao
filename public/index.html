@@ -13,7 +13,7 @@
 <body>
 <header class="topo">
   <div class="logo">
-  <img src="lib/BF.png" alt="BF Box" onerror="this.style.display='none'; this.parentElement.classList.add('logo-fallback'); this.parentElement.setAttribute('data-logo','BF BOX');">
+  <img src="lib/BF.PNG" alt="BF Box" onerror="this.style.display='none'; this.parentElement.classList.add('logo-fallback'); this.parentElement.setAttribute('data-logo','BF BOX');">
 </div>
 
 
@@ -31,15 +31,9 @@
     <div class="menu-wrapper menu-global-topo">
       <span class="menu-btn" onclick="toggleDropdown('global-menu')">⋮</span>
       <div class="dropdown dropdown-global" id="dropdown-global-menu">
-        <label class="dropdown-label">
-          Escolher Produção
-          <input type="file" id="xls" hidden>
-        </label>
+        <label class="dropdown-label">Escolher Produção<input type="file" id="xls" hidden></label>
         <button onclick="gerarRelatorioAcabamento()">Exportar Acabamento</button>
-        <label class="dropdown-label">
-          Enviar Acabamento
-          <input type="file" id="xlsAcabamento" accept=".xls,.xlsx" hidden>
-        </label>
+        <label class="dropdown-label">Enviar Acabamento<input type="file" id="xlsAcabamento" accept=".xls,.xlsx" hidden></label>
         <button onclick="limparAcabamento()">Limpar XLS Acabamento</button>
         <button onclick="limparProducao()" style="color:red">Limpar XLS Produção</button>
         <button onclick="limparBanco()" style="color:red">Limpar Banco</button>
@@ -49,7 +43,6 @@
 
   <div class="header-actions only-desktop" id="header-actions-cargas" style="display:none;">
     <button id="nova-carga-topo-btn" onclick="novaCarga()">+</button>
-
     <div class="menu-wrapper menu-global-topo">
       <span class="menu-btn" onclick="toggleDropdown('cargas-menu')">⋮</span>
       <div class="dropdown dropdown-global" id="dropdown-cargas-menu">
@@ -70,12 +63,9 @@
 
   <div id="producao" class="cards-container"></div>
   <div id="producao-anterior-container" class="cards-container"></div>
-
-
 </div>
 <!-- Aba Cargas -->
 <div class="tab" id="tab-cargas">
-
   <!-- Container de cards -->
   <div class="card-container-carga" id="cargas"></div>
 </div>

@@ -1759,739 +1759,93 @@ select.status-producao {
   background-color: #1565c0;
 }
 
-/* ===== AJUSTES CHATGPT - PRODUCAO / MENU / TV ===== */
-* { box-sizing: border-box; }
-
-#tab-producao {
-  width: 100%;
-  max-width: 1500px;
-  margin: 0 auto;
-}
-
-#tab-producao .cards-container {
-  width: 100%;
-  max-width: 1450px;
-  margin-left: auto;
-  margin-right: auto;
-  align-items: stretch;
-  justify-content: flex-start;
-}
-
-#tab-producao .card {
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.status-producao.estoque,
-.tv-linha.status-estoque {
-  background: #eeeeee;
-  border-left-color: #777;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  position: relative;
-}
-
-#add-item-global-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: none;
-  background: #198754;
-  color: #fff;
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.menu-global-topo .menu-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: #f1f1f1;
-  font-size: 28px;
-  padding: 0;
-}
-
-.dropdown-global {
-  top: 48px;
-  right: 0;
-  min-width: 230px;
-  padding: 6px 0;
-  box-shadow: 0 8px 20px rgba(0,0,0,.18);
-  z-index: 1000;
-}
-
-.dropdown-global button,
-.dropdown-global .dropdown-label {
-  display: block;
-  width: 100%;
-  padding: 10px 14px;
-  border: none;
-  background: #fff;
-  color: #222;
-  text-align: left;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.dropdown-global button:hover,
-.dropdown-global .dropdown-label:hover {
-  background: #f2f2f2;
-}
-
-/* TV fixa na tela, com scroll dentro de cada card */
-#tab-tv.active {
-  height: calc(100vh - 95px);
-  overflow: hidden;
-}
-
-#tv-dashboard {
-  height: 100%;
-  max-height: 100%;
-  overflow: hidden;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  align-items: stretch;
-}
-
-.tv-card {
-  min-height: 0;
-  overflow: hidden;
-  border: 1px solid #ddd;
-  box-shadow: 0 3px 12px rgba(0,0,0,.12);
-}
-
-.tv-card h2 {
-  flex: 0 0 auto;
-  margin-top: 0;
-}
-
-.tv-content {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 4px;
-}
-
-.tv-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.tv-content::-webkit-scrollbar-thumb {
-  background: #bbb;
-  border-radius: 8px;
-}
-
-.tv-linha {
-  white-space: normal;
-  align-items: flex-start;
-  gap: 8px;
-  border-radius: 6px;
-  margin-bottom: 4px;
-}
-
-.tv-linha .tv-item {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: unset;
-}
-
-.tv-linha.prioridade {
-  background: #fff3cd !important;
-  border-left-color: #ffc107 !important;
-}
-
 /* ===== AJUSTES FINAIS CHATGPT ===== */
-/* Produção: acabamento amarelo, estoque verde */
-select.status-producao.acabamento,
-select.status-producao.acabamento_ok,
-.status-producao.acabamento,
-.status-producao.acabamento_ok {
-  background: #ffe08a !important;
-  color: #000 !important;
-}
-
-select.status-producao.estoque,
-.status-producao.estoque {
-  background: #8fd19e !important;
-  color: #000 !important;
-}
-
-/* TV: manter os cards no mesmo tamanho de antes e só rolar o conteúdo */
-#tab-tv.active {
-  height: auto !important;
-  overflow: hidden !important;
-}
-
-#tv-dashboard {
-  height: calc(100vh - 80px) !important;
-  max-height: calc(100vh - 80px) !important;
-  grid-template-columns: repeat(4, 1fr) !important;
-  align-items: stretch !important;
-}
-
-.tv-card {
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
-
-.tv-content {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-}
-
-.tv-linha.status-acabamento,
-.tv-linha.status-acabamento_ok {
-  background: #fff3cd !important;
-  border-left: 4px solid #ffc107 !important;
-  color: #000 !important;
-}
-
-.tv-linha.status-estoque {
-  background: #d4edda !important;
-  border-left: 4px solid #28a745 !important;
-  color: #000 !important;
-}
-
-.nova-carga-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.menu-cargas-topo {
-  position: relative;
-}
-
-.menu-cargas-topo .dropdown-global {
-  right: auto;
-  left: 0;
-}
-
-/* ===== AJUSTES FINAIS SOLICITADOS ===== */
-/* Mantem a aba Producao e o filtro centralizados mesmo depois de trocar de aba */
-#tab-producao.active {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  width: 100% !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-}
-
-#tab-producao .filtro-container {
-  width: 100% !important;
-  max-width: 1450px !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  display: flex !important;
-  justify-content: center !important;
-}
-
-#filtroMaquina {
-  margin-left: auto !important;
-  margin-right: auto !important;
-}
-
-/* Cores dos status na aba Producao */
-select.status-producao.producao,
-.status-producao.producao {
-  background: #cfe8ff !important;
-  color: #000 !important;
-}
-
-select.status-producao.producao_ok,
-.status-producao.producao_ok {
-  background: #4da3ff !important;
-  color: #000 !important;
-}
-
-select.status-producao.acabamento,
-.status-producao.acabamento {
-  background: #fff4bf !important;
-  color: #000 !important;
-}
-
-select.status-producao.acabamento_ok,
-.status-producao.acabamento_ok {
-  background: #ffd966 !important;
-  color: #000 !important;
-}
-
-select.status-producao.estoque,
-.status-producao.estoque {
-  background: #98d7a5 !important;
-  color: #000 !important;
-}
-
-/* Botoes do topo por aba */
-#header-actions-producao,
-#header-actions-cargas {
-  align-items: center !important;
-  gap: 10px !important;
-}
-
-#nova-carga-topo-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: none;
-  background: #007bff;
-  color: #fff;
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-}
-
-#nova-carga-topo-btn:hover {
-  background: #0069d9;
-}
-
-/* TV: layout fixo, sem remontar os cards, com scroll apenas no conteudo */
-#tab-tv.active {
-  display: block !important;
-  height: calc(100vh - 105px) !important;
-  overflow: hidden !important;
-}
-
-#tv-dashboard {
-  height: 100% !important;
-  max-height: 100% !important;
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  gap: 16px !important;
-  overflow: hidden !important;
-}
-
-.tv-card {
-  min-height: 0 !important;
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-}
-
-.tv-card h2 {
-  flex: 0 0 auto !important;
-  margin: 0 0 8px 0 !important;
-}
-
-.tv-content {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  padding-right: 4px !important;
-}
-
-.tv-linha {
-  background: transparent !important;
-  border-left: none !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 8px !important;
-  padding: 3px 4px !important;
-  margin-bottom: 3px !important;
-}
-
-.tv-linha .tv-item {
-  flex: 1 1 auto !important;
-  padding: 4px 8px !important;
-  border-radius: 5px !important;
-  line-height: 1.15 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.tv-linha .tv-qtd {
-  flex: 0 0 auto !important;
-  display: flex !important;
-  gap: 8px !important;
-  font-weight: 700 !important;
-  font-size: 12px !important;
-  white-space: nowrap !important;
-  background: transparent !important;
-}
-
-/* TV: o grifado fica somente no nome do item */
-.tv-item.status-producao {
-  background: #4da3ff !important;
-  color: #000 !important;
-}
-
-.tv-item.status-producao_ok,
-.tv-item.status-estoque,
-.tv-item.status-acabamento_ok {
-  background: #98d7a5 !important;
-  color: #000 !important;
-}
-
-.tv-item.status-acabamento {
-  background: #fff4bf !important;
-  color: #000 !important;
-}
-
-/* TV: prioridade fica em negrito e sublinhada em amarelo, sem trocar a cor do status */
-.tv-linha.prioridade {
-  background: transparent !important;
-  border-left: none !important;
-}
-
-.tv-linha.prioridade .tv-item {
-  font-weight: 800 !important;
-  text-decoration-line: underline !important;
-  text-decoration-color: #ffc107 !important;
-  text-decoration-thickness: 4px !important;
-  text-underline-offset: 3px !important;
-}
-
-/* ===== CORRECOES FINAIS TV / CARGAS / MENUS ===== */
-/* Aba cargas: afasta os cards da barra fixa do topo */
-#tab-cargas.active {
-  padding-top: 28px !important;
-}
-
-#tab-cargas .card-container-carga {
-  margin-top: 18px !important;
-}
-
-/* TV: dentro dos cards aparece apenas o nome do item, sem quantidades */
-.tv-linha {
-  justify-content: flex-start !important;
-}
-
-.tv-linha .tv-item {
-  width: 100% !important;
-  flex: 1 1 100% !important;
-  display: block !important;
-}
-
-.tv-qtd {
-  display: none !important;
-}
-
-/* TV: mantem rolagem interna, mas esconde a barra visual */
-.tv-content {
-  overflow-y: auto !important;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-  padding-right: 0 !important;
-}
-
-.tv-content::-webkit-scrollbar {
-  width: 0 !important;
-  height: 0 !important;
-  display: none !important;
-}
-
-/* TV: prioridade nao muda a cor do status; apenas negrito e sublinhado amarelo */
-.tv-linha.prioridade,
-.tv-linha.prioridade .tv-item {
-  background-clip: padding-box !important;
-}
-
-.tv-linha.prioridade .tv-item {
-  font-weight: 800 !important;
-  text-decoration-line: underline !important;
-  text-decoration-color: #ffc107 !important;
-  text-decoration-thickness: 4px !important;
-  text-underline-offset: 3px !important;
-}
-
-/* Menus dos itens da producao: garante clique e camada acima dos cards */
-.card-producao .menu-wrapper,
-.status-area .menu-wrapper {
-  position: relative !important;
-  z-index: 50 !important;
-}
-
-.item-menu {
-  z-index: 5000 !important;
-  pointer-events: auto !important;
-}
-
-.item-menu button {
-  pointer-events: auto !important;
-}
-
-
-/* ===== AJUSTES FINAIS BF ===== */
 .logo img {
-  max-height: 56px !important;
-  width: auto !important;
-  object-fit: contain !important;
+  max-height: 54px;
+  max-width: 180px;
+  object-fit: contain;
 }
 .logo.logo-fallback::after {
   content: attr(data-logo);
   font-weight: 800;
   font-size: 22px;
+  letter-spacing: 1px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#add-item-global-btn,
+#nova-carga-topo-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: #1976d2;
   color: #fff;
+  font-size: 28px;
+  line-height: 42px;
+  cursor: pointer;
 }
-
-/* Cores na aba Produção */
-select.status-producao.producao,
-.status-producao.producao {
-  background: #cfe8ff !important;
-  color: #0b335c !important;
+.dropdown-label {
+  display: block;
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
 }
-select.status-producao.producao_ok,
-.status-producao.producao_ok {
-  background: #4da3ff !important;
-  color: #fff !important;
-}
-select.status-producao.acabamento,
-.status-producao.acabamento {
-  background: #fff4bf !important;
-  color: #5c4a00 !important;
-}
-select.status-producao.acabamento_ok,
-.status-producao.acabamento_ok {
-  background: #ffd966 !important;
-  color: #4a3a00 !important;
-}
-select.status-producao.estoque,
-.status-producao.estoque {
-  background: #98d7a5 !important;
-  color: #0d3b18 !important;
-}
-
-/* TV: card fixo e item com altura fixa, sem sobrepor */
-#tab-tv .tv-card {
-  overflow: hidden !important;
-}
-#tab-tv .tv-content {
-  overflow: hidden !important;
-  height: calc(100% - 48px) !important;
-  max-height: calc(100% - 48px) !important;
-}
-#tab-tv .tv-linha {
-  display: block !important;
-  height: 30px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
-  line-height: 30px !important;
-  margin: 0 0 4px 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  border-radius: 7px !important;
-}
-#tab-tv .tv-linha .tv-item {
-  display: block !important;
-  height: 30px !important;
-  line-height: 30px !important;
-  padding: 0 8px !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  font-size: 13px !important;
-}
-#tab-tv .tv-linha.status-producao .tv-item,
-#tab-tv .tv-item.status-producao { background: #4da3ff !important; color:#fff !important; }
-#tab-tv .tv-linha.status-producao_ok .tv-item,
-#tab-tv .tv-item.status-producao_ok { background: #7acb8a !important; color:#073b13 !important; }
-#tab-tv .tv-linha.status-acabamento .tv-item,
-#tab-tv .tv-item.status-acabamento { background: #fff4bf !important; color:#5c4a00 !important; }
-#tab-tv .tv-linha.status-acabamento_ok .tv-item,
-#tab-tv .tv-item.status-acabamento_ok { background: #7acb8a !important; color:#073b13 !important; }
-#tab-tv .tv-linha.status-estoque .tv-item,
-#tab-tv .tv-item.status-estoque { background: #7acb8a !important; color:#073b13 !important; }
-#tab-tv .tv-linha.prioridade .tv-item {
-  font-weight: 900 !important;
-  text-decoration-line: underline !important;
-  text-decoration-color: #ffd400 !important;
-  text-decoration-thickness: 4px !important;
-  text-underline-offset: 4px !important;
-}
-#tab-tv .tv-qtd { display: none !important; }
-
-/* Cargas: evita invadir barra fixa */
-#tab-cargas.active {
-  padding-top: 88px !important;
+.dropdown-global {
+  right: 0;
+  left: auto;
+  min-width: 190px;
 }
 #tab-cargas .card-container-carga {
-  margin-top: 18px !important;
+  margin-top: 92px !important;
 }
-
-
-/* ===== AJUSTE FINAL: TV com layout mantido e rolagem dentro de cada card ===== */
-#tab-tv.active {
-  overflow: hidden !important;
+#tab-producao .cards-container,
+#tab-producao .filtro-container {
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
-
-#tv-dashboard {
-  overflow: hidden !important;
-}
-
+select.status-producao.producao { background: #cfe8ff !important; }
+select.status-producao.producao_ok { background: #4da3ff !important; color: #fff; }
+select.status-producao.acabamento { background: #fff4bf !important; }
+select.status-producao.acabamento_ok { background: #ffd966 !important; }
+select.status-producao.estoque { background: #98d7a5 !important; }
 .tv-card {
   overflow: hidden !important;
 }
-
 .tv-content {
-  overflow-y: scroll !important;
-  overflow-x: hidden !important;
-  scrollbar-width: thin !important;
-  min-height: 0 !important;
-}
-
-.tv-content::-webkit-scrollbar {
-  width: 8px !important;
-}
-
-.tv-content::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.08) !important;
-  border-radius: 8px !important;
-}
-
-.tv-content::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.45) !important;
-  border-radius: 8px !important;
-}
-
-.tv-linha {
-  min-height: 32px !important;
-  height: 32px !important;
-  max-height: 32px !important;
-  overflow: hidden !important;
-}
-
-.tv-linha .tv-item {
-  min-height: 26px !important;
-  height: 26px !important;
-  max-height: 26px !important;
-  line-height: 18px !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-/* ===== AJUSTE DEFINITIVO - STATUS MULTI DISPOSITIVO E TV ===== */
-/* Aba Produção: cores do select */
-#tab-producao select.status-producao.producao,
-#tab-producao .status-producao.producao {
-  background: #cfe8ff !important;
-  color: #0b335c !important;
-}
-#tab-producao select.status-producao.producao_ok,
-#tab-producao .status-producao.producao_ok {
-  background: #4da3ff !important;
-  color: #fff !important;
-}
-#tab-producao select.status-producao.acabamento,
-#tab-producao .status-producao.acabamento {
-  background: #fff4bf !important;
-  color: #5c4a00 !important;
-}
-#tab-producao select.status-producao.acabamento_ok,
-#tab-producao .status-producao.acabamento_ok {
-  background: #ffd966 !important;
-  color: #4a3a00 !important;
-}
-#tab-producao select.status-producao.estoque,
-#tab-producao .status-producao.estoque {
-  background: #98d7a5 !important;
-  color: #0d3b18 !important;
-}
-
-/* TV: mantém layout dos cards e coloca rolagem dentro de cada card */
-#tab-tv.active,
-#tv-dashboard {
-  overflow: hidden !important;
-}
-
-#tab-tv .tv-card {
-  overflow: hidden !important;
-  min-height: 0 !important;
-}
-
-#tab-tv .tv-content {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  height: auto !important;
-  max-height: none !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding-right: 5px !important;
-  scrollbar-width: thin !important;
+  max-height: calc(100% - 58px) !important;
+  padding-right: 4px;
 }
-
-#tab-tv .tv-content::-webkit-scrollbar {
-  width: 8px !important;
-}
-
-#tab-tv .tv-content::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.08) !important;
-  border-radius: 8px !important;
-}
-
-#tab-tv .tv-content::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.45) !important;
-  border-radius: 8px !important;
-}
-
-#tab-tv .tv-linha {
-  display: block !important;
-  height: 30px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
-  line-height: 30px !important;
-  margin: 0 0 4px 0 !important;
-  padding: 0 !important;
+.tv-linha {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
   overflow: hidden !important;
-  border-radius: 7px !important;
+  margin-bottom: 4px !important;
 }
-
-#tab-tv .tv-linha .tv-item {
-  display: block !important;
-  height: 30px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
-  line-height: 30px !important;
-  padding: 0 8px !important;
+.tv-linha .tv-item {
+  height: 28px !important;
+  line-height: 28px !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  font-size: 13px !important;
+  padding: 0 8px !important;
+  border-radius: 6px !important;
 }
-
-/* TV: cores do nome conforme status */
-#tab-tv .tv-linha.status-producao .tv-item,
-#tab-tv .tv-item.status-producao {
-  background: #4da3ff !important;
-  color: #fff !important;
-}
-#tab-tv .tv-linha.status-producao_ok .tv-item,
-#tab-tv .tv-item.status-producao_ok,
-#tab-tv .tv-linha.status-acabamento_ok .tv-item,
-#tab-tv .tv-item.status-acabamento_ok,
-#tab-tv .tv-linha.status-estoque .tv-item,
-#tab-tv .tv-item.status-estoque {
-  background: #7acb8a !important;
-  color: #073b13 !important;
-}
-#tab-tv .tv-linha.status-acabamento .tv-item,
-#tab-tv .tv-item.status-acabamento {
-  background: #fff4bf !important;
-  color: #5c4a00 !important;
-}
-
-#tab-tv .tv-linha.prioridade .tv-item {
-  font-weight: 900 !important;
+.tv-linha.status-producao .tv-item { background: #4da3ff !important; }
+.tv-linha.status-producao_ok .tv-item { background: #98d7a5 !important; }
+.tv-linha.status-acabamento .tv-item { background: #fff4bf !important; }
+.tv-linha.status-acabamento_ok .tv-item { background: #98d7a5 !important; }
+.tv-linha.status-estoque .tv-item { background: #98d7a5 !important; }
+.tv-linha.prioridade .tv-item {
+  font-weight: 800 !important;
   text-decoration-line: underline !important;
   text-decoration-color: #ffd400 !important;
   text-decoration-thickness: 4px !important;
-  text-underline-offset: 4px !important;
+  text-underline-offset: 3px !important;
 }

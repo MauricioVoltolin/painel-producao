@@ -21,7 +21,7 @@ function openTab(index) {
   // ativar botão
   document.querySelectorAll('.tabs button')[index].classList.add('active');
 
-  // mostra/esconde botões do topo por aba
+  // mostra/esconde botões do topo
   atualizarAcoesDoTopo(index);
 
   // render correto por aba
@@ -31,11 +31,10 @@ function openTab(index) {
 }
 
 function atualizarAcoesDoTopo(index) {
-  const acoesProducao = document.getElementById('header-actions-producao');
-  const acoesCargas = document.getElementById('header-actions-cargas');
-
-  if (acoesProducao) acoesProducao.style.display = index === 0 ? 'flex' : 'none';
-  if (acoesCargas) acoesCargas.style.display = index === 1 ? 'flex' : 'none';
+  const prod = document.getElementById('header-actions-producao');
+  const cargasTopo = document.getElementById('header-actions-cargas');
+  if (prod) prod.style.display = index === 0 ? 'flex' : 'none';
+  if (cargasTopo) cargasTopo.style.display = index === 1 ? 'flex' : 'none';
 }
 
 /* ================= PRODUÇÃO ================= */
@@ -55,8 +54,6 @@ document.getElementById('xls').addEventListener('change', e => {
 
     let maquinas = {};
     data.forEach(l => {
-      // Colunas do XLS:
-      // C = descrição | G = prioridade | H = máquina | K = vendido | M = estoque | Q = qtd em produção
       const item = l[2];
       const maquina = l[7];
       if(!item || !maquina) return;
@@ -161,19 +158,9 @@ socket.on('atualizaProducao', data => { producaoData = data || {}; garantirIdsPr
 socket.on('initAcabamento', data => { producaoAnteriorData = data; renderProducaoAnterior(); });
 socket.on('atualizaAcabamento', data => { producaoAnteriorData = data; renderProducaoAnterior(); });
 /* ===== RENDER PRODUÇÃO ===== */
+
 function jsArg(valor) {
   return JSON.stringify(String(valor));
-}
-
-function chaveItemPayload(m, item) {
-  return {
-    maquina: String(m),
-    itemId: item && item.id ? String(item.id) : '',
-    item: item && item.item ? String(item.item) : '',
-    venda: item && item.venda ? String(item.venda) : '',
-    estoque: item && item.estoque ? String(item.estoque) : '',
-    produzir: item && item.produzir ? String(item.produzir) : ''
-  };
 }
 
 function gerarIdItemProducao() {
@@ -186,21 +173,10 @@ function garantirIdsProducao() {
     producaoData[maquina].forEach(item => {
       if (!item.id) item.id = gerarIdItemProducao();
       if (!item.status) item.status = '-';
+      if (item.prioridade && item.prioridade !== 'alta') item.prioridade = 'alta';
       if (!item.prioridade) item.prioridade = '';
     });
   });
-}
-
-function encontrarIndiceItemProducao(maquina, chave) {
-  if (!producaoData[maquina]) return -1;
-
-  const porId = producaoData[maquina].findIndex(item => item && item.id === chave);
-  if (porId >= 0) return porId;
-
-  const porIndice = Number(chave);
-  if (!Number.isNaN(porIndice) && producaoData[maquina][porIndice]) return porIndice;
-
-  return -1;
 }
 
 function renderProducao() {
@@ -229,7 +205,7 @@ function renderProducao() {
 
       // ordena os itens da máquina
       producaoData[m].sort((a, b) =>
-        a.item.localeCompare(b.item, 'pt-BR')
+        String(a.item || '').localeCompare(String(b.item || ''), 'pt-BR')
       );
 
       filtro.innerHTML += `
@@ -270,7 +246,6 @@ function renderProducao() {
 
     producaoData[m].forEach((i, idx) => {
       if (!i.id) i.id = gerarIdItemProducao();
-      const itemId = i.id;
       const row = document.createElement('div');
       row.className = 'desktop-row';
 
@@ -287,7 +262,7 @@ function renderProducao() {
 
             <div class="status-wrapper">
               <select class="status-producao ${i.status}"
-                onchange="atualizaStatusProducao(${jsArg(m)}, ${jsArg(itemId)}, this)">
+                onchange="atualizaStatusProducao(${jsArg(m)}, ${idx}, this)">
                 <option value="-" ${i.status === '-' ? 'selected' : ''}>-</option>
                 <option value="producao" ${i.status === 'producao' ? 'selected' : ''}>Produção</option>
                 <option value="producao_ok" ${i.status === 'producao_ok' ? 'selected' : ''}>Produção OK</option>
@@ -300,16 +275,16 @@ function renderProducao() {
             <div class="menu-wrapper only-desktop">
               <span class="menu-btn" onclick="toggleMenuProducao(this)">⋮</span>
               <div class="dropdown item-menu">
-                <button onclick="event.stopPropagation(); togglePrioridade(${jsArg(m)}, ${jsArg(itemId)})">
+                <button onclick="event.stopPropagation(); togglePrioridade(${jsArg(m)}, ${idx})">
                   Prioridade
                 </button>
-                <button onclick="event.stopPropagation(); editarItemProducao(${jsArg(m)}, ${jsArg(itemId)})">
+                <button onclick="event.stopPropagation(); editarItemProducao(${jsArg(m)}, ${idx})">
                   Editar item
                 </button>
-                <button onclick="event.stopPropagation(); trocarMaquina(${jsArg(m)}, ${jsArg(itemId)})">
+                <button onclick="event.stopPropagation(); trocarMaquina(${jsArg(m)}, ${idx})">
                   Trocar de máquina
                 </button>
-                <button onclick="event.stopPropagation(); excluirItemProducao(${jsArg(m)}, ${jsArg(itemId)})" style="color:red">
+                <button onclick="event.stopPropagation(); excluirItemProducao(${jsArg(m)}, ${idx})" style="color:red">
                   Excluir item
                 </button>
               </div>
@@ -369,10 +344,10 @@ function renderProducaoAnterior(){
           <div class="menu-wrapper only-desktop">
             <span class="menu-btn" onclick="toggleMenuProducao(this)">⋮</span>
             <div class="dropdown item-menu">
-              <button onclick="event.stopPropagation(); togglePrioridadeAcabamento(${idx})">
+              <button onclick="togglePrioridadeAcabamento(${idx})">
                 Prioridade
               </button>
-              <button onclick="event.stopPropagation(); excluirItemAcabamento(${idx})" style="color:red">
+              <button onclick="excluirItemAcabamento(${idx})" style="color:red">
                 Excluir
               </button>
             </div>
@@ -389,47 +364,51 @@ function renderProducaoAnterior(){
 /* ===== FILTRO ===== */
 function aplicarFiltroProducao(){ filtroAtual = document.getElementById('filtroMaquina').value; renderProducao(); }
 /* ===== ATUALIZA STATUS ===== */
-function atualizaStatusProducao(m, chaveItem, sel){
-  const idx = encontrarIndiceItemProducao(m, chaveItem);
-  if (idx < 0) return;
-
+function atualizaStatusProducao(m, idx, sel){
+  if (!producaoData[m] || !producaoData[m][idx]) return;
   const novoStatus = sel.value || '-';
-  const item = producaoData[m][idx];
-
-  item.status = novoStatus;
-
-  sel.className = 'status-producao';
-  if (novoStatus !== '-') sel.classList.add(novoStatus);
-
+  producaoData[m][idx].status = novoStatus;
+  sel.className = 'status-producao ' + novoStatus;
   socket.emit('atualizaProducao', producaoData);
-
+  renderProducao();
   renderTV();
 }
 function atualizaStatusProducaoAnterior(idx, sel){
-  if (!producaoAnteriorData[idx]) return;
-
-  const novoStatus = sel.value || '-';
-  producaoAnteriorData[idx].status = novoStatus;
-
-  sel.className = 'status-producao';
-  if (novoStatus !== '-') sel.classList.add(novoStatus);
+  producaoAnteriorData[idx].status = sel.value;
+  sel.className = 'status-producao ' + sel.value;
   socket.emit('atualizaAcabamento', producaoAnteriorData);
+
+  // 🔥 Se entrou em acabamento_ok, remove do card de Acabamento
+  if(sel.value === 'acabamento_ok'){
+    renderProducaoAnterior();
+  }
+
+  // 🔥 Atualiza TV
+  renderTV();
 }
-/* ===== ADICIONAR ITEM PRODUÇÃO ===== */
-function adicionarItem(){
-  const maquina = normalizarMaquina(prompt('Máquina:\nUse: CV, CVR, D, 1–6, P, R'));
-  if(!maquina){ alert('Máquina inválida'); return; }
+/* ===== ADICIONAR / EXCLUIR ITENS ===== */
+function adicionarItemGlobal(){
+  const entrada = prompt(
+    'Em qual máquina?\nUse: CV, CVR, D, 1–6, P, R'
+  );
 
-  const item = prompt('Nome do item:');
-  if(!item) return;
+  const maquina = normalizarMaquina(entrada);
+  if(!maquina){
+    alert('Máquina inválida');
+    return;
+  }
 
-  const venda = prompt('Vendido:', '000') || '000';
-  const estoque = prompt('Estoque:', '000') || '000';
-  const produzir = prompt('Produzir:', '000') || '000';
-
+  // 🔥 se não existir no XLS, cria o card
   if (!producaoData[maquina]) {
     producaoData[maquina] = [];
   }
+
+  const item = prompt('Produto:');
+  if(!item) return;
+
+  const venda = prompt('Vendido:', '0');
+  const estoque = prompt('Estoque:', '0');
+  const produzir = prompt('Produzir:', '0');
 
   producaoData[maquina].push({
     id: gerarIdItemProducao(),
@@ -443,166 +422,341 @@ function adicionarItem(){
 
   socket.emit('atualizaProducao', producaoData);
 }
-
-function adicionarItemGlobal(){
-  adicionarItem();
-}
-
 function normalizarMaquina(valor){
   if (!valor) return null;
+
   const v = valor.toString().trim().toUpperCase();
+
   const mapa = {
     'CV': 'C.V. PLANA',
     'C.V': 'C.V. PLANA',
     'C.V.': 'C.V. PLANA',
     'C.V. PLANA': 'C.V. PLANA',
+
     'CVR': 'C.V. ROTATIVA',
     'C.V.R': 'C.V. ROTATIVA',
     'C.V.R.': 'C.V. ROTATIVA',
     'C.V. ROTATIVA': 'C.V. ROTATIVA',
+
     'D': 'DIGITAL',
-    'DIGITAL': 'DIGITAL',
+
     '1': 'MAQUINA 01',
-    '01': 'MAQUINA 01',
-    'MAQUINA 01': 'MAQUINA 01',
-    'MÁQUINA 01': 'MAQUINA 01',
     '2': 'MAQUINA 02',
-    '02': 'MAQUINA 02',
-    'MAQUINA 02': 'MAQUINA 02',
-    'MÁQUINA 02': 'MAQUINA 02',
     '3': 'MAQUINA 03',
-    '03': 'MAQUINA 03',
-    'MAQUINA 03': 'MAQUINA 03',
-    'MÁQUINA 03': 'MAQUINA 03',
     '4': 'MAQUINA 04',
-    '04': 'MAQUINA 04',
-    'MAQUINA 04': 'MAQUINA 04',
-    'MÁQUINA 04': 'MAQUINA 04',
     '5': 'MAQUINA 05',
-    '05': 'MAQUINA 05',
-    'MAQUINA 05': 'MAQUINA 05',
-    'MÁQUINA 05': 'MAQUINA 05',
     '6': 'MAQUINA 06',
-    '06': 'MAQUINA 06',
-    'MAQUINA 06': 'MAQUINA 06',
-    'MÁQUINA 06': 'MAQUINA 06',
+
     'P': 'PLOTER',
-    'PLOTER': 'PLOTER',
-    'R': 'RISCADOR',
-    'RISCADOR': 'RISCADOR'
+    'R': 'RISCADOR'
   };
-  return mapa[v] || v;
+
+  return mapa[v] || null;
+}
+/* ===== CARGAS ===== */
+let cargas = [];
+function salvarCargasSeguro() {
+  // garante que cargas existe e é um array
+  if (!Array.isArray(cargas)) return;
+
+  socket.emit('atualizaCargas', cargas);
 }
 
-function toggleDropdown(nome){
-  const id = `dropdown-${nome}`;
-  const el = document.getElementById(id);
-  if (!el) return;
-  const aberto = el.style.display === 'block';
+socket.on('initCargas', d => { cargas = d; renderCargas(); });
+socket.on('atualizaCargas', d => { cargas = d; renderCargas(); });
+function novaCarga() {
+  cargas.push({
+    titulo: `Carga ${cargas.length + 1}`,
+    status: 'Pendente',
+    itens: [],
+    itensStatus: [],
+    valoresFaturados: []
+  });
+  salvarCargasSeguro();
+  renderCargas();
+}
+function renderCargas() {
+  const div = document.getElementById('cargas');
+  div.innerHTML = '';
+
+  const editModeIdx = parseInt(div.getAttribute('data-edit-mode') || '-1');
+
+  cargas.forEach((c, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    // Topo do card
+    const cardTop = document.createElement('div');
+    cardTop.className = 'card-top';
+    cardTop.innerHTML = `
+      <div class="top-left menu-wrapper">
+        <span class="menu-carga" onclick="toggleDropdownCarga(${idx})">⋮</span>
+        <strong class="titulo-carga">${c.titulo}</strong>
+        <div class="dropdown" id="dropdown-carga-${idx}">
+          <button onclick="editarCarga(${idx})">Editar</button>
+          <button onclick="excluirCarga(${idx})" style="color:red">Excluir</button>
+        </div>
+      </div>
+      <div class="top-right">
+        <select class="select-carga ${c.status.toLowerCase()}" onchange="atualizaStatusCarga(${idx}, this)">
+          <option value="Pendente" ${c.status==='Pendente'?'selected':''}>Pendente</option>
+          <option value="Carregando" ${c.status==='Carregando'?'selected':''}>Carregando</option>
+          <option value="Pronto" ${c.status==='Pronto'?'selected':''}>Pronto</option>
+        </select>
+      </div>
+    `;
+    card.appendChild(cardTop);
+
+    // Itens do card
+    const itensContainer = document.createElement('div');
+    itensContainer.className = 'card-itens';
+
+    c.itens.forEach((item, iidx) => {
+      if (!cargas[idx].itensStatus) cargas[idx].itensStatus = [];
+      if (!cargas[idx].itensStatus[iidx]) cargas[idx].itensStatus[iidx] = 'Pendente';
+
+      const status = cargas[idx].itensStatus[iidx];
+      const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
+
+      const divItem = document.createElement('div');
+      divItem.className = 'card-item';
+      divItem.innerHTML = `
+        <span class="item-nome">${item}</span>
+        ${editModeIdx === idx ? `
+          <span class="item-actions">
+            <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
+            <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
+            <button class="editar-valor" onclick="editarValorFaturado(${idx}, ${iidx})">💰</button>
+          </span>
+        ` : ''}
+        <select class="item-status" style="float:right; background-color:${colors[status]};" onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
+          <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
+          <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
+        </select>
+      `;
+      itensContainer.appendChild(divItem);
+    });
+
+    card.appendChild(itensContainer);
+
+    // Botão + sempre visível no final do card
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn-add-item';
+    addBtn.innerText = '+';
+    addBtn.onclick = () => adicionarItemCarga(idx);
+    card.appendChild(addBtn);
+
+    // Botão OK apenas no modo edição
+    if (editModeIdx === idx) {
+      const okBtn = document.createElement('button');
+      okBtn.className = 'btn-ok-edicao';
+      okBtn.innerText = 'OK';
+      okBtn.onclick = () => {
+        div.setAttribute('data-edit-mode', '-1');
+        renderCargas();
+      };
+      card.appendChild(okBtn);
+    }
+
+    div.appendChild(card);
+  });
+}
+function editarCarga(idx) {
+  const div = document.getElementById('cargas');
+  div.setAttribute('data-edit-mode', idx);
+  renderCargas();
+}
+function editarValorFaturado(cIdx, iIdx){
+  const valor = prompt('Informe o valor faturado:', cargas[cIdx].valoresFaturados?.[iIdx] || '');
+  if (!valor) return;
+  const valorNum = parseFloat(valor.replace('R$', '').replace(/\./g, '').replace(',', '.'));
+  if (isNaN(valorNum)) return alert('Valor inválido');
+  if (!cargas[cIdx].valoresFaturados) cargas[cIdx].valoresFaturados = [];
+  cargas[cIdx].valoresFaturados[iIdx] = valorNum;
+  salvarCargasSeguro();
+  renderCargas();
+}
+// Funções de interação com dropdown
+function toggleDropdownCarga(idx) {
   document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
-  el.style.display = aberto ? 'none' : 'block';
+  const el = document.getElementById(`dropdown-carga-${idx}`);
+  if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+function adicionarItemCarga(cIdx) {
+  const item = prompt('Nome do novo item:');
+  if (!item) return;
+  cargas[cIdx].itens.push(item);
+  cargas[cIdx].itensStatus.push('Pendente');
+  cargas[cIdx].valoresFaturados.push(0);
+  salvarCargasSeguro();
+  renderCargas();
+}
+function editarItemCarga(cIdx, iIdx) {
+  const novo = prompt('Novo nome do item:', cargas[cIdx].itens[iIdx]);
+  if (novo !== null && novo.trim() !== '') {
+    cargas[cIdx].itens[iIdx] = novo.trim();
+    salvarCargasSeguro();
+    renderCargas();
+  }
 }
 
+function modoEdicaoCarga(idx){
+  cargas[idx].editando = true;
+  renderCargas();
+}
+function excluirCarga(idx) {
+  if (!confirm('Excluir esta carga inteira?')) return;
+  cargas.splice(idx, 1);
+  cargas.forEach((c, i) => c.titulo = `Carga ${i + 1}`);
+  salvarCargasSeguro();
+  renderCargas();
+  renderTV(); // Atualiza TV
+}
+function excluirItemCarga(cIdx, iIdx) {
+  if (!confirm('Excluir este item?')) return;
+  cargas[cIdx].itens.splice(iIdx, 1);
+  cargas[cIdx].itensStatus.splice(iIdx, 1);
+  cargas[cIdx].valoresFaturados.splice(iIdx, 1);
+  salvarCargasSeguro();
+  renderCargas();
+  renderTV(); // Atualiza TV imediatamente
+}
+
+function atualizaStatusCarga(cIdx, select){
+  const novoStatus = select.value;
+  cargas[cIdx].status = novoStatus;
+  salvarCargasSeguro();
+  renderCargas();
+  renderTV();
+}
+function atualizaStatusItem(cIdx, iIdx, select){
+  if (!cargas[cIdx].itensStatus) cargas[cIdx].itensStatus = [];
+
+  const statusAnterior = cargas[cIdx].itensStatus[iIdx] || 'Pendente';
+  const novoStatus = select.value;
+
+  // Se mudou para Faturado
+  if (novoStatus === 'Faturado' && statusAnterior !== 'Faturado') {
+    const valor = prompt('Informe o valor faturado:');
+    if (!valor) {
+      select.value = statusAnterior;
+      return;
+    }
+
+    const valorNum = parseFloat(
+      valor.replace('R$', '').replace(/\./g, '').replace(',', '.')
+    );
+    if (isNaN(valorNum)) {
+      alert('Valor inválido');
+      select.value = statusAnterior;
+      return;
+    }
+
+    if (!cargas[cIdx].valoresFaturados) cargas[cIdx].valoresFaturados = [];
+    cargas[cIdx].valoresFaturados[iIdx] = valorNum;
+  }
+
+  cargas[cIdx].itensStatus[iIdx] = novoStatus;
+
+  const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
+  select.style.backgroundColor = colors[novoStatus];
+
+  salvarCargasSeguro();
+  renderTV();
+}
+function atualizarData() {
+  const el = document.getElementById('dataAtual');
+  if (!el) return;
+
+  const hoje = new Date();
+  el.innerText = hoje.toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long'
+  });
+}
+function toggleDropdown(i){
+  if (event) event.stopPropagation();
+  const el = document.getElementById(`dropdown-${i}`);
+  const aberto = el && el.style.display === 'block';
+  document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
+  if (el) el.style.display = aberto ? 'none' : 'block';
+}
 function toggleMenuProducao(el){
   if (event) event.stopPropagation();
   const menu = el.nextElementSibling;
-  const estavaAberto = menu && menu.style.display === 'block';
+  const aberto = menu && menu.style.display === 'block';
   document.querySelectorAll('.item-menu').forEach(m => m.style.display='none');
-  if(menu) menu.style.display = estavaAberto ? 'none' : 'block';
+  if(menu) menu.style.display = aberto ? 'none' : 'block';
 }
-function fecharMenusItens(){
-  document.querySelectorAll('.item-menu').forEach(menu => menu.style.display = 'none');
-}
-
-function togglePrioridade(m, chaveItem){
-  const idx = encontrarIndiceItemProducao(m, chaveItem);
-  if (idx < 0) return;
-
+function togglePrioridade(m, idx){
+  if (!producaoData[m] || !producaoData[m][idx]) return;
   const item = producaoData[m][idx];
   item.prioridade = item.prioridade === 'alta' ? '' : 'alta';
-
-  fecharMenusItens();
   socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
-
-function excluirItemProducao(m, chaveItem){
-  const idx = encontrarIndiceItemProducao(m, chaveItem);
-  if (idx < 0) return;
+function excluirItemProducao(m, idx){
   if(!confirm('Excluir item?')) return;
-
-  const item = producaoData[m][idx];
-  const payload = chaveItemPayload(m, item);
-  producaoData[m].splice(idx, 1);
-
-  fecharMenusItens();
+  producaoData[m].splice(idx,1);
   socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
-
-function editarItemProducao(m, chaveItem){
-  const idx = encontrarIndiceItemProducao(m, chaveItem);
-  if (idx < 0) return;
-
+function editarItemProducao(m, idx){
   const i = producaoData[m][idx];
-  const payloadBusca = chaveItemPayload(m, i);
-
-  const item = prompt('Item:', i.item || '');
+  const item = prompt('Item:', i.item);
   if(item !== null) i.item = item;
 
-  const venda = prompt('Vendido:', i.venda || '');
+  const venda = prompt('Vendido:', i.venda);
   if(venda !== null) i.venda = venda;
 
-  const estoque = prompt('Estoque:', i.estoque || '');
+  const estoque = prompt('Estoque:', i.estoque);
   if(estoque !== null) i.estoque = estoque;
 
-  const produzir = prompt('Produzir:', i.produzir || '');
+  const produzir = prompt('Produzir:', i.produzir);
   if(produzir !== null) i.produzir = produzir;
 
-  fecharMenusItens();
   socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
+function trocarMaquina(m, idx){
+  const entrada = prompt(
+    'Nova maquina:\nUse: CV, CVR, D, 1–6, P, R'
+  );
 
-function trocarMaquina(m, chaveItem){
-  const idx = encontrarIndiceItemProducao(m, chaveItem);
-  if (idx < 0) return;
-
-  const entrada = prompt('Nova maquina:\nUse: CV, CVR, D, 1–6, P, R');
   const nova = normalizarMaquina(entrada);
-
   if(!nova){
     alert('Maquina inválida');
     return;
   }
 
-  if (!producaoData[nova]) producaoData[nova] = [];
+  // cria o card se não existir
+  if (!producaoData[nova]) {
+    producaoData[nova] = [];
+  }
 
-  const item = producaoData[m].splice(idx, 1)[0];
+  // remove da máquina antiga
+  const item = producaoData[m].splice(idx,1)[0];
+
+  // adiciona na nova máquina
   producaoData[nova].push(item);
 
-  fecharMenusItens();
   socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
 function togglePrioridadeAcabamento(idx){
   const item = producaoAnteriorData[idx];
-  if (!item) return;
   item.prioridade = item.prioridade === 'alta' ? '' : 'alta';
   socket.emit('atualizaAcabamento', producaoAnteriorData);
-  renderProducaoAnterior();
-  renderTV();
 }
 function excluirItemAcabamento(idx){
   if(!confirm('Excluir item do acabamento?')) return;
   producaoAnteriorData.splice(idx,1);
   socket.emit('atualizaAcabamento', producaoAnteriorData);
-  renderProducaoAnterior();
-  renderTV();
 }
 function editarItemAcabamento(idx){
   const i = producaoAnteriorData[idx];
@@ -620,8 +774,6 @@ function editarItemAcabamento(idx){
   if(produzir !== null) i.produzir = produzir;
 
   socket.emit('atualizaAcabamento', producaoAnteriorData);
-  renderProducaoAnterior();
-  renderTV();
 }
 function limparAcabamento(){
   if(!confirm('Limpar TODOS os dados de acabamento?')) return;
@@ -638,260 +790,17 @@ function limparProducao(){
   producaoData = {};
   socket.emit('limparProducao');
 
-  // Atualiza a tela na hora
   renderProducao();
   renderTV();
 }
 
 function limparCargas(){
   if(!confirm('Limpar TODAS as cargas?')) return;
-
   cargas = [];
   socket.emit('limparCargas');
   renderCargas();
   renderTV();
 }
-
-/* ===== CARGAS ===== */
-let cargas = [];
-
-function salvarCargasSeguro(){
-  if (!Array.isArray(cargas)) cargas = [];
-  socket.emit('atualizaCargas', cargas);
-}
-
-socket.on('initCargas', d => {
-  cargas = Array.isArray(d) ? d : [];
-  renderCargas();
-  renderTV();
-});
-
-socket.on('atualizaCargas', d => {
-  cargas = Array.isArray(d) ? d : [];
-  renderCargas();
-  renderTV();
-});
-
-function novaCarga(){
-  cargas.push({
-    titulo: `Carga ${cargas.length + 1}`,
-    status: 'Pendente',
-    itens: [],
-    itensStatus: [],
-    valoresFaturados: []
-  });
-  salvarCargasSeguro();
-  renderCargas();
-}
-
-function renderCargas(){
-  const div = document.getElementById('cargas');
-  if (!div) return;
-  div.innerHTML = '';
-
-  const editModeIdx = parseInt(div.getAttribute('data-edit-mode') || '-1', 10);
-
-  cargas.forEach((c, idx) => {
-    if (!Array.isArray(c.itens)) c.itens = [];
-    if (!Array.isArray(c.itensStatus)) c.itensStatus = [];
-    if (!Array.isArray(c.valoresFaturados)) c.valoresFaturados = [];
-    if (!c.titulo) c.titulo = `Carga ${idx + 1}`;
-    if (!c.status) c.status = 'Pendente';
-
-    const card = document.createElement('div');
-    card.className = 'card';
-
-    const cardTop = document.createElement('div');
-    cardTop.className = 'card-top';
-    cardTop.innerHTML = `
-      <div class="top-left menu-wrapper">
-        <span class="menu-carga" onclick="toggleDropdownCarga(${idx})">⋮</span>
-        <strong class="titulo-carga">${c.titulo}</strong>
-        <div class="dropdown" id="dropdown-carga-${idx}">
-          <button onclick="editarCarga(${idx})">Editar</button>
-          <button onclick="renomearCarga(${idx})">Renomear</button>
-          <button onclick="excluirCarga(${idx})" style="color:red">Excluir</button>
-        </div>
-      </div>
-      <div class="top-right">
-        <select class="select-carga ${String(c.status).toLowerCase()}" onchange="atualizaStatusCarga(${idx}, this)">
-          <option value="Pendente" ${c.status==='Pendente'?'selected':''}>Pendente</option>
-          <option value="Carregando" ${c.status==='Carregando'?'selected':''}>Carregando</option>
-          <option value="Pronto" ${c.status==='Pronto'?'selected':''}>Pronto</option>
-        </select>
-      </div>
-    `;
-    card.appendChild(cardTop);
-
-    const itensContainer = document.createElement('div');
-    itensContainer.className = 'card-itens';
-
-    c.itens.forEach((item, iidx) => {
-      if (!c.itensStatus[iidx]) c.itensStatus[iidx] = 'Pendente';
-      if (c.valoresFaturados[iidx] == null) c.valoresFaturados[iidx] = 0;
-      const status = c.itensStatus[iidx];
-      const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
-
-      const divItem = document.createElement('div');
-      divItem.className = 'card-item';
-      divItem.innerHTML = `
-        <span class="item-nome">${item}</span>
-        ${editModeIdx === idx ? `
-          <span class="item-actions">
-            <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
-            <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
-            <button class="editar-valor" onclick="editarValorFaturado(${idx}, ${iidx})">💰</button>
-          </span>
-        ` : ''}
-        <select class="item-status" style="float:right; background-color:${colors[status] || '#FF9800'};" onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
-          <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
-          <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
-        </select>
-      `;
-      itensContainer.appendChild(divItem);
-    });
-
-    card.appendChild(itensContainer);
-
-    const addBtn = document.createElement('button');
-    addBtn.className = 'btn-add-item';
-    addBtn.innerText = '+';
-    addBtn.onclick = () => adicionarItemCarga(idx);
-    card.appendChild(addBtn);
-
-    if (editModeIdx === idx) {
-      const okBtn = document.createElement('button');
-      okBtn.className = 'btn-ok-edicao';
-      okBtn.innerText = 'OK';
-      okBtn.onclick = () => {
-        div.setAttribute('data-edit-mode', '-1');
-        renderCargas();
-      };
-      card.appendChild(okBtn);
-    }
-
-    div.appendChild(card);
-  });
-}
-
-function toggleDropdownCarga(idx){
-  const el = document.getElementById(`dropdown-carga-${idx}`);
-  const aberto = el && el.style.display === 'block';
-  document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
-  if (el) el.style.display = aberto ? 'none' : 'block';
-}
-
-function editarCarga(idx){
-  const div = document.getElementById('cargas');
-  if (!div) return;
-  div.setAttribute('data-edit-mode', idx);
-  renderCargas();
-}
-
-function renomearCarga(idx){
-  const nome = prompt('Nome da carga:', cargas[idx]?.titulo || `Carga ${idx + 1}`);
-  if (nome === null || !nome.trim()) return;
-  cargas[idx].titulo = nome.trim();
-  salvarCargasSeguro();
-  renderCargas();
-}
-
-function adicionarItemCarga(cIdx){
-  const item = prompt('Nome do novo item:');
-  if (!item) return;
-  if (!Array.isArray(cargas[cIdx].itens)) cargas[cIdx].itens = [];
-  if (!Array.isArray(cargas[cIdx].itensStatus)) cargas[cIdx].itensStatus = [];
-  if (!Array.isArray(cargas[cIdx].valoresFaturados)) cargas[cIdx].valoresFaturados = [];
-  cargas[cIdx].itens.push(item);
-  cargas[cIdx].itensStatus.push('Pendente');
-  cargas[cIdx].valoresFaturados.push(0);
-  salvarCargasSeguro();
-  renderCargas();
-  renderTV();
-}
-
-function editarItemCarga(cIdx, iIdx){
-  const novo = prompt('Novo nome do item:', cargas[cIdx].itens[iIdx]);
-  if (novo !== null && novo.trim() !== '') {
-    cargas[cIdx].itens[iIdx] = novo.trim();
-    salvarCargasSeguro();
-    renderCargas();
-    renderTV();
-  }
-}
-
-function editarValorFaturado(cIdx, iIdx){
-  const valor = prompt('Informe o valor faturado:', cargas[cIdx].valoresFaturados?.[iIdx] || '');
-  if (valor === null) return;
-  const valorNum = parseFloat(String(valor).replace('R$', '').replace(/\./g, '').replace(',', '.'));
-  if (isNaN(valorNum)) return alert('Valor inválido');
-  cargas[cIdx].valoresFaturados[iIdx] = valorNum;
-  salvarCargasSeguro();
-  renderCargas();
-  renderTV();
-}
-
-function excluirCarga(idx){
-  if (!confirm('Excluir esta carga inteira?')) return;
-  cargas.splice(idx, 1);
-  cargas.forEach((c, i) => c.titulo = c.titulo || `Carga ${i + 1}`);
-  salvarCargasSeguro();
-  renderCargas();
-  renderTV();
-}
-
-function excluirItemCarga(cIdx, iIdx){
-  if (!confirm('Excluir este item?')) return;
-  cargas[cIdx].itens.splice(iIdx, 1);
-  cargas[cIdx].itensStatus.splice(iIdx, 1);
-  cargas[cIdx].valoresFaturados.splice(iIdx, 1);
-  salvarCargasSeguro();
-  renderCargas();
-  renderTV();
-}
-
-function atualizaStatusCarga(cIdx, select){
-  cargas[cIdx].status = select.value;
-  salvarCargasSeguro();
-  renderCargas();
-  renderTV();
-}
-
-function atualizaStatusItem(cIdx, iIdx, select){
-  if (!cargas[cIdx].itensStatus) cargas[cIdx].itensStatus = [];
-  const statusAnterior = cargas[cIdx].itensStatus[iIdx] || 'Pendente';
-  const novoStatus = select.value;
-
-  if (novoStatus === 'Faturado' && statusAnterior !== 'Faturado') {
-    const valor = prompt('Informe o valor faturado:');
-    if (!valor) {
-      select.value = statusAnterior;
-      return;
-    }
-    const valorNum = parseFloat(String(valor).replace('R$', '').replace(/\./g, '').replace(',', '.'));
-    if (isNaN(valorNum)) {
-      alert('Valor inválido');
-      select.value = statusAnterior;
-      return;
-    }
-    if (!cargas[cIdx].valoresFaturados) cargas[cIdx].valoresFaturados = [];
-    cargas[cIdx].valoresFaturados[iIdx] = valorNum;
-  }
-
-  cargas[cIdx].itensStatus[iIdx] = novoStatus;
-  salvarCargasSeguro();
-  renderCargas();
-  renderTV();
-}
-
-function atualizarData(){
-  const el = document.getElementById('dataAtual');
-  if (!el) return;
-  const hoje = new Date();
-  el.innerText = hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
-}
-atualizarData();
-
 document.addEventListener('click', e => {
   if (!e.target.closest('.menu-wrapper')) {
     document.querySelectorAll('.dropdown').forEach(d => {
@@ -900,7 +809,6 @@ document.addEventListener('click', e => {
   }
 });
 function renderTV() {
-  garantirIdsProducao();
   const dashboard = document.getElementById('tv-dashboard');
   const abaTV = document.getElementById('tab-tv');
 
@@ -927,9 +835,7 @@ function renderTV() {
 
         const linha = document.createElement('div');
         linha.className = `tv-linha status-${item.status || ''} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
-        linha.innerHTML = `
-          <div class="tv-item status-${item.status || ''}">${item.item}</div>
-        `;
+        linha.innerHTML = `<div class="tv-item">${item.item}</div>`;
         content.appendChild(linha);
       });
     });
@@ -1008,10 +914,8 @@ function renderTV() {
         if (!item.item) return;
         if (['producao_ok','acabamento'].includes(item.status)) {
           const linha = document.createElement('div');
-          linha.className = `tv-linha status-${item.status} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
-          linha.innerHTML = `
-            <div class="tv-item status-${item.status || ''}">${item.item}</div>
-          `;
+          linha.className = `tv-linha status-${item.status || ''} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
+          linha.innerHTML = `<div class="tv-item">${item.item}</div>`;
           cardAcabamento.appendChild(linha);
         }
       });
@@ -1024,9 +928,7 @@ function renderTV() {
 
         const linha = document.createElement('div');
         linha.className = `tv-linha status-${item.status || ''} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
-        linha.innerHTML = `
-          <div class="tv-item status-${item.status || ''}">${item.item}</div>
-        `;
+        linha.innerHTML = `<div class="tv-item">${item.item}</div>`;
         cardAcabamento.appendChild(linha);
       });
     }
@@ -1059,7 +961,7 @@ const mapaTV = {
   "FATURAMENTO": ["FATURAMENTO"] // idem
 };
 function limparBanco() {
-  if (!confirm('Deseja realmente limpar TODO o banco de produção e acabamento? Esta ação não pode ser desfeita.')) return;
+  if (!confirm('Deseja realmente limpar TODO o banco de produção? Esta ação não pode ser desfeita.')) return;
 
   producaoData = {};
   producaoAnteriorData = [];
