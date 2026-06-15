@@ -1,224 +1,146 @@
 const socket = io();
 
-let producaoData = {};
-let producaoAnteriorData = [];
-let cargas = [];
-let filtroAtual = 'todos';
-
-const STATUS_LABELS = {
-  '-': '-',
-  producao: 'Produção',
-  producao_ok: 'Produção OK',
-  acabamento: 'Acabamento',
-  acabamento_ok: 'Acabamento OK',
-  estoque: 'Estoque'
-};
-
-const mapaTV = {
-  'IMPRESSORA 01': ['MAQUINA 01'],
-  'IMPRESSORA 02': ['MAQUINA 02'],
-  'IMPRESSORA 03': ['MAQUINA 03'],
-  'IMPRESSORA 04': ['MAQUINA 04'],
-  'IMPRESSORA 05': ['MAQUINA 05'],
-  'IMPRESSORA 06': ['MAQUINA 06'],
-  'CORTE E VINCO PLANA': ['C.V. PLANA'],
-  'CORTE E VINCO ROTATIVA': ['C.V. ROTATIVA'],
-  'RISCADOR': ['RISCADOR'],
-  'ACABAMENTO': ['ACABAMENTO'],
-  'EXPEDIÇÃO': ['EXPEDIÇÃO'],
-  'FATURAMENTO': ['FATURAMENTO']
-};
-
-function gerarId(prefixo = 'item') {
-  return `${prefixo}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function escaparHtml(valor) {
-  return String(valor ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-function jsArg(valor) {
-  return JSON.stringify(String(valor ?? ''));
-}
-
-function normalizarMaquina(valor) {
-  const raw = String(valor ?? '').trim().toUpperCase();
-  if (!raw) return '';
-  const limpo = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const compact = limpo.replace(/[\.\-_/ ]+/g, '');
-
-  const numeros = {
-    '1': 'MAQUINA 01', '01': 'MAQUINA 01', 'MAQ1': 'MAQUINA 01', 'MAQ01': 'MAQUINA 01', 'MAQUINA1': 'MAQUINA 01', 'MAQUINA01': 'MAQUINA 01',
-    '2': 'MAQUINA 02', '02': 'MAQUINA 02', 'MAQ2': 'MAQUINA 02', 'MAQ02': 'MAQUINA 02', 'MAQUINA2': 'MAQUINA 02', 'MAQUINA02': 'MAQUINA 02',
-    '3': 'MAQUINA 03', '03': 'MAQUINA 03', 'MAQ3': 'MAQUINA 03', 'MAQ03': 'MAQUINA 03', 'MAQUINA3': 'MAQUINA 03', 'MAQUINA03': 'MAQUINA 03',
-    '4': 'MAQUINA 04', '04': 'MAQUINA 04', 'MAQ4': 'MAQUINA 04', 'MAQ04': 'MAQUINA 04', 'MAQUINA4': 'MAQUINA 04', 'MAQUINA04': 'MAQUINA 04',
-    '5': 'MAQUINA 05', '05': 'MAQUINA 05', 'MAQ5': 'MAQUINA 05', 'MAQ05': 'MAQUINA 05', 'MAQUINA5': 'MAQUINA 05', 'MAQUINA05': 'MAQUINA 05',
-    '6': 'MAQUINA 06', '06': 'MAQUINA 06', 'MAQ6': 'MAQUINA 06', 'MAQ06': 'MAQUINA 06', 'MAQUINA6': 'MAQUINA 06', 'MAQUINA06': 'MAQUINA 06'
-  };
-  if (numeros[compact]) return numeros[compact];
-  if (['CV', 'CVPLANA', 'CORTEVINCOPLANA', 'CORTVINCOPLANA'].includes(compact)) return 'C.V. PLANA';
-  if (['CVR', 'CVROTATIVA', 'CORTEVINCOROTATIVA', 'CORTVINCOROTATIVA'].includes(compact)) return 'C.V. ROTATIVA';
-  if (['R', 'RISCADOR'].includes(compact)) return 'RISCADOR';
-  if (['ACABAMENTO', 'ACAB'].includes(compact)) return 'ACABAMENTO';
-  return raw;
-}
-
-function garantirIdsProducao() {
-  Object.keys(producaoData || {}).forEach(maquina => {
-    if (!Array.isArray(producaoData[maquina])) producaoData[maquina] = [];
-    producaoData[maquina].forEach(item => {
-      if (!item.id) item.id = gerarId('prod');
-      if (!item.status) item.status = '-';
-      if (!item.prioridade) item.prioridade = '';
-    });
-  });
-}
-
-function garantirIdsCargas() {
-  if (!Array.isArray(cargas)) cargas = [];
-  cargas.forEach((carga, idx) => {
-    if (!carga.id) carga.id = gerarId('carga');
-    if (!carga.titulo) carga.titulo = `Carga ${idx + 1}`;
-    if (!carga.status) carga.status = 'Em andamento';
-    if (!Array.isArray(carga.itens)) carga.itens = [];
-    if (!Array.isArray(carga.itensStatus)) carga.itensStatus = [];
-    if (!Array.isArray(carga.valoresFaturados)) carga.valoresFaturados = [];
-    carga.itens.forEach((item, i) => {
-      if (!carga.itensStatus[i]) carga.itensStatus[i] = 'Pendente';
-      if (carga.valoresFaturados[i] === undefined) carga.valoresFaturados[i] = 0;
-    });
-  });
-}
-
-function itemPayload(maquina, item) {
-  return {
-    maquina: String(maquina),
-    itemId: String(item.id || ''),
-    item: String(item.item || ''),
-    venda: String(item.venda || ''),
-    estoque: String(item.estoque || ''),
-    produzir: String(item.produzir || '')
-  };
-}
-
-function encontrarItem(maquina, itemId) {
-  const lista = producaoData[maquina];
-  if (!Array.isArray(lista)) return { idx: -1, item: null };
-  const idx = lista.findIndex(i => String(i.id || '') === String(itemId || ''));
-  return { idx, item: idx >= 0 ? lista[idx] : null };
-}
-
 /* ===== TABS ===== */
 function openTab(index) {
+  // esconder todas as abas
   document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.remove('active');
     tab.style.display = 'none';
   });
-  document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
 
+  // desativar botões
+  document.querySelectorAll('.tabs button').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  // ativar aba clicada
   const tabs = document.querySelectorAll('.tab');
-  if (!tabs[index]) return;
   tabs[index].classList.add('active');
   tabs[index].style.display = 'block';
-  const botoes = document.querySelectorAll('.tabs button');
-  if (botoes[index]) botoes[index].classList.add('active');
 
+  // ativar botão
+  document.querySelectorAll('.tabs button')[index].classList.add('active');
+
+  // mostra/esconde botões do topo por aba
   atualizarAcoesDoTopo(index);
-  fecharTodosMenus();
 
+  // render correto por aba
   if (index === 0) renderProducao();
   if (index === 1) renderCargas();
-  if (index === 2) renderTV();
+  if (index === 2) renderTV(); // 🔥 TV / Expedição / Faturamento
 }
 
 function atualizarAcoesDoTopo(index) {
   const acoesProducao = document.getElementById('header-actions-producao');
   const acoesCargas = document.getElementById('header-actions-cargas');
+
   if (acoesProducao) acoesProducao.style.display = index === 0 ? 'flex' : 'none';
   if (acoesCargas) acoesCargas.style.display = index === 1 ? 'flex' : 'none';
 }
 
-function toggleDropdown(nome) {
-  const menu = document.getElementById(`dropdown-${nome}`);
-  if (!menu) return;
-  const aberto = menu.style.display === 'block';
-  fecharTodosMenus();
-  menu.style.display = aberto ? 'none' : 'block';
-}
-
-function fecharTodosMenus() {
-  document.querySelectorAll('.dropdown, .dropdown-carga, .item-menu').forEach(d => d.style.display = 'none');
-}
-
-document.addEventListener('click', e => {
-  if (!e.target.closest('.menu-wrapper') && !e.target.closest('.menu-carga')) fecharTodosMenus();
-});
-
-/* ===== XLS PRODUÇÃO ===== */
-document.addEventListener('DOMContentLoaded', () => {
-  const dataAtual = document.getElementById('dataAtual');
-  if (dataAtual) dataAtual.textContent = new Date().toLocaleDateString('pt-BR');
-
-  const xls = document.getElementById('xls');
-  if (xls) xls.addEventListener('change', importarProducao);
-
-  const xlsAcabamento = document.getElementById('xlsAcabamento');
-  if (xlsAcabamento) xlsAcabamento.addEventListener('change', importarAcabamento);
-
-  atualizarAcoesDoTopo(0);
-});
-
-function importarProducao(e) {
+/* ================= PRODUÇÃO ================= */
+let producaoData = {};
+let filtroAtual = 'todos';
+let producaoAnteriorData = []; // dados globais da produção anterior
+/* ===== XLS DE PRODUÇÃO ===== */
+document.getElementById('xls').addEventListener('change', e => {
   const file = e.target.files[0];
-  if (!file) return;
+  if(!file) return;
+
   const reader = new FileReader();
   reader.onload = evt => {
-    const wb = XLSX.read(evt.target.result, { type: 'array' });
+    const wb = XLSX.read(evt.target.result, { type:'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
-    const linhas = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }).slice(5);
-    const maquinas = {};
+    const data = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' }).slice(5);
 
-    linhas.forEach(l => {
-      const item = String(l[2] || '').trim();       // C descrição
-      const maquina = normalizarMaquina(l[7]);     // H máquina
-      if (!item || !maquina) return;
-      if (!maquinas[maquina]) maquinas[maquina] = [];
+    let maquinas = {};
+    data.forEach(l => {
+      // Colunas do XLS:
+      // C = descrição | G = prioridade | H = máquina | K = vendido | M = estoque | Q = qtd em produção
+      const item = l[2];
+      const maquina = l[7];
+      if(!item || !maquina) return;
+
+      if(!maquinas[maquina]) maquinas[maquina] = [];
       maquinas[maquina].push({
-        id: gerarId('prod'),
+        id: gerarIdItemProducao(),
         item,
-        venda: l[10] || '0',       // K vendido
-        estoque: l[12] || '0',     // M estoque
-        produzir: l[16] || '0',    // Q qtd em produção
-        prioridade: l[6] ? 'alta' : '', // G prioridade
+        venda: l[10],
+        estoque: l[12],
+        produzir: l[16],
+        prioridade: l[6] ? 'alta' : '',
         status: '-'
       });
     });
-
-    producaoData = maquinas;
     filtroAtual = 'todos';
-    socket.emit('uploadProducao', producaoData);
-    renderProducao();
-    renderTV();
-    e.target.value = '';
+    socket.emit('uploadProducao', maquinas);
   };
   reader.readAsArrayBuffer(file);
-}
+});
+function gerarRelatorioAcabamento() {
+  let itens = [];
 
-function importarAcabamento(e) {
+  /* ===== PRODUÇÃO ===== */
+  Object.keys(producaoData).forEach(maquina => {
+    producaoData[maquina].forEach(i => {
+      if (
+        i.status === 'producao' ||
+        i.status === 'producao_ok' ||
+        i.status === 'acabamento'
+      ) {
+        itens.push({
+          origem: 'Produção',
+          maquina,
+          item: i.item || '',
+          venda: i.venda || '0',
+          estoque: i.estoque || '0',
+          produzir: i.produzir || '0',
+          status: i.status || '',
+          prioridade: i.prioridade || ''
+        });
+      }
+    });
+  });
+
+  /* ===== ACABAMENTO ===== */
+  producaoAnteriorData.forEach(i => {
+    if (i.status !== 'acabamento_ok') {
+      itens.push({
+        origem: 'Acabamento',
+        maquina: i.maquina || '',
+        item: i.item || '',
+        venda: i.venda || '0',
+        estoque: i.estoque || '0',
+        produzir: i.produzir || '0',
+        status: i.status || '',
+        prioridade: i.prioridade || ''
+      });
+    }
+  });
+
+  if (!itens.length) {
+    alert('Nenhum item pendente para exportar.');
+    return;
+  }
+
+  const ws = XLSX.utils.json_to_sheet(itens);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Acabamento');
+
+  const data = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+  XLSX.writeFile(wb, `acabamento_${data}.xlsx`);
+}
+document.getElementById('xlsAcabamento').addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
+
   const reader = new FileReader();
   reader.onload = evt => {
     const wb = XLSX.read(evt.target.result, { type: 'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
     producaoAnteriorData = data.map(i => ({
-      id: i.id || gerarId('acab'),
       maquina: i.maquina || '',
       item: i.item || '',
       venda: i.venda || '0',
@@ -227,586 +149,921 @@ function importarAcabamento(e) {
       status: i.status || '-',
       prioridade: i.prioridade || ''
     }));
+
     socket.emit('atualizaAcabamento', producaoAnteriorData);
-    renderProducao();
-    renderTV();
-    e.target.value = '';
   };
+
   reader.readAsArrayBuffer(file);
+});
+/* ===== SOCKETS ===== */
+socket.on('initProducao', data => { producaoData = data || {}; garantirIdsProducao(); renderProducao(); renderTV(); });
+socket.on('atualizaProducao', data => { producaoData = data || {}; garantirIdsProducao(); renderProducao(); renderTV(); });
+socket.on('initAcabamento', data => { producaoAnteriorData = data; renderProducaoAnterior(); });
+socket.on('atualizaAcabamento', data => { producaoAnteriorData = data; renderProducaoAnterior(); });
+/* ===== RENDER PRODUÇÃO ===== */
+function jsArg(valor) {
+  return JSON.stringify(String(valor));
 }
 
-/* ===== SOCKETS ===== */
-socket.on('initProducao', data => {
-  producaoData = data || {};
-  garantirIdsProducao();
-  renderProducao();
-  renderTV();
-});
+function chaveItemPayload(m, item) {
+  return {
+    maquina: String(m),
+    itemId: item && item.id ? String(item.id) : '',
+    item: item && item.item ? String(item.item) : '',
+    venda: item && item.venda ? String(item.venda) : '',
+    estoque: item && item.estoque ? String(item.estoque) : '',
+    produzir: item && item.produzir ? String(item.produzir) : ''
+  };
+}
 
-socket.on('atualizaProducao', data => {
-  producaoData = data || {};
-  garantirIdsProducao();
-  renderProducao();
-  renderTV();
-});
+function gerarIdItemProducao() {
+  return `item_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
 
-socket.on('initAcabamento', data => {
-  producaoAnteriorData = Array.isArray(data) ? data : [];
-  renderProducao();
-  renderTV();
-});
+function garantirIdsProducao() {
+  Object.keys(producaoData || {}).forEach(maquina => {
+    if (!Array.isArray(producaoData[maquina])) producaoData[maquina] = [];
+    producaoData[maquina].forEach(item => {
+      if (!item.id) item.id = gerarIdItemProducao();
+      if (!item.status) item.status = '-';
+      if (!item.prioridade) item.prioridade = '';
+    });
+  });
+}
 
-socket.on('atualizaAcabamento', data => {
-  producaoAnteriorData = Array.isArray(data) ? data : [];
-  renderProducao();
-  renderTV();
-});
+function encontrarIndiceItemProducao(maquina, chave) {
+  if (!producaoData[maquina]) return -1;
 
-socket.on('initCargas', data => {
-  cargas = Array.isArray(data) ? data : [];
-  garantirIdsCargas();
-  renderCargas();
-  renderTV();
-});
+  const porId = producaoData[maquina].findIndex(item => item && item.id === chave);
+  if (porId >= 0) return porId;
 
-socket.on('atualizaCargas', data => {
-  cargas = Array.isArray(data) ? data : [];
-  garantirIdsCargas();
-  renderCargas();
-  renderTV();
-});
+  const porIndice = Number(chave);
+  if (!Number.isNaN(porIndice) && producaoData[maquina][porIndice]) return porIndice;
 
-socket.on('erroServidor', msg => alert(msg || 'Erro no servidor'));
-
-/* ===== PRODUÇÃO ===== */
-function aplicarFiltroProducao() {
-  const filtro = document.getElementById('filtroMaquina');
-  filtroAtual = filtro ? filtro.value : 'todos';
-  renderProducao();
+  return -1;
 }
 
 function renderProducao() {
   garantirIdsProducao();
-  const tab = document.getElementById('tab-producao');
-  if (!tab || !tab.classList.contains('active')) return;
+  const abaAtiva = document.getElementById('tab-producao');
+  if (!abaAtiva.classList.contains('active')) return;
 
   const container = document.getElementById('producao');
   const containerAcabamento = document.getElementById('producao-anterior-container');
   const filtro = document.getElementById('filtroMaquina');
-  if (!container || !containerAcabamento || !filtro) return;
 
   container.innerHTML = '';
   containerAcabamento.innerHTML = '';
 
-  const maquinas = Object.keys(producaoData).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  filtro.innerHTML = `<option value="todos" ${filtroAtual === 'todos' ? 'selected' : ''}>Todas</option><option value="acabamento" ${filtroAtual === 'acabamento' ? 'selected' : ''}>Acabamento</option>`;
-  maquinas.forEach(m => {
-    filtro.innerHTML += `<option value="${escaparHtml(m)}" ${filtroAtual === m ? 'selected' : ''}>${escaparHtml(m)}</option>`;
-  });
+  /* ===== FILTRO ===== */
+  filtro.innerHTML = `
+    <option value="todos">Todas</option>
+    <option value="acabamento" ${filtroAtual === 'acabamento' ? 'selected' : ''}>
+      Acabamento
+    </option>
+  `;
 
-  maquinas.forEach(m => {
-    if (filtroAtual !== 'todos' && filtroAtual !== m) return;
-    const itens = producaoData[m] || [];
-    if (!itens.length) return;
+  Object.keys(producaoData)
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+    .forEach(m => {
 
-    itens.sort((a, b) => String(a.item || '').localeCompare(String(b.item || ''), 'pt-BR'));
+      // ordena os itens da máquina
+      producaoData[m].sort((a, b) =>
+        a.item.localeCompare(b.item, 'pt-BR')
+      );
+
+      filtro.innerHTML += `
+        <option value="${m}" ${filtroAtual === m ? 'selected' : ''}>
+          ${m}
+        </option>
+      `;
+    });
+
+
+  /* ===== CARDS DE PRODUÇÃO ===== */
+  Object.keys(producaoData).forEach(m => {
+
+    // não renderiza card vazio
+    if (!producaoData[m] || producaoData[m].length === 0) return;
+
+    // 🔥 ACABAMENTO só aparece em "todos" ou "acabamento"
+    if (
+      m === 'acabamento' &&
+      filtroAtual !== 'todos' &&
+      filtroAtual !== 'acabamento'
+    ) {
+      return;
+    }
+
+    // filtro padrão das máquinas
+    if (
+      filtroAtual !== 'todos' &&
+      filtroAtual !== m
+    ) {
+      return;
+    }
 
     const card = document.createElement('div');
     card.className = 'card';
-    card.innerHTML = `<h3>${escaparHtml(m)}</h3>`;
+    card.innerHTML = `<h3>${m}</h3>`;
+    container.appendChild(card);
 
-    itens.forEach(i => {
+    producaoData[m].forEach((i, idx) => {
+      if (!i.id) i.id = gerarIdItemProducao();
       const itemId = i.id;
-      const status = i.status || '-';
       const row = document.createElement('div');
       row.className = 'desktop-row';
+
       row.innerHTML = `
         <div class="card-producao desktop ${i.prioridade === 'alta' ? 'prioridade' : ''}">
-          <div class="item-area">${escaparHtml(i.item)}</div>
+          <div class="item-area">${i.item || ''}</div>
+
           <div class="status-area">
             <div class="valores">
-              <span>V:${escaparHtml(i.venda || '0')}</span>
-              <span>E:${escaparHtml(i.estoque || '0')}</span>
-              <span>P:${escaparHtml(i.produzir || '0')}</span>
+              <span>V:${i.venda || '000'}</span>
+              <span>E:${i.estoque || '000'}</span>
+              <span>P:${i.produzir || '000'}</span>
             </div>
+
             <div class="status-wrapper">
-              <select class="status-producao ${status}" onchange="atualizaStatusProducao(${jsArg(m)}, ${jsArg(itemId)}, this)">
-                ${Object.keys(STATUS_LABELS).map(st => `<option value="${st}" ${status === st ? 'selected' : ''}>${STATUS_LABELS[st]}</option>`).join('')}
+              <select class="status-producao ${i.status}"
+                onchange="atualizaStatusProducao(${jsArg(m)}, ${jsArg(itemId)}, this)">
+                <option value="-" ${i.status === '-' ? 'selected' : ''}>-</option>
+                <option value="producao" ${i.status === 'producao' ? 'selected' : ''}>Produção</option>
+                <option value="producao_ok" ${i.status === 'producao_ok' ? 'selected' : ''}>Produção OK</option>
+                <option value="acabamento" ${i.status === 'acabamento' ? 'selected' : ''}>Acabamento</option>
+                <option value="acabamento_ok" ${i.status === 'acabamento_ok' ? 'selected' : ''}>Acabamento OK</option>
+                <option value="estoque" ${i.status === 'estoque' ? 'selected' : ''}>Estoque</option>
               </select>
             </div>
+
             <div class="menu-wrapper only-desktop">
-              <span class="menu-btn" onclick="event.stopPropagation(); toggleMenuProducao(this)">⋮</span>
+              <span class="menu-btn" onclick="toggleMenuProducao(this)">⋮</span>
               <div class="dropdown item-menu">
-                <button onclick="event.stopPropagation(); togglePrioridade(${jsArg(m)}, ${jsArg(itemId)})">Prioridade</button>
-                <button onclick="event.stopPropagation(); editarItemProducao(${jsArg(m)}, ${jsArg(itemId)})">Editar item</button>
-                <button onclick="event.stopPropagation(); trocarMaquina(${jsArg(m)}, ${jsArg(itemId)})">Trocar de máquina</button>
-                <button onclick="event.stopPropagation(); excluirItemProducao(${jsArg(m)}, ${jsArg(itemId)})" style="color:red">Excluir item</button>
+                <button onclick="event.stopPropagation(); togglePrioridade(${jsArg(m)}, ${jsArg(itemId)})">
+                  Prioridade
+                </button>
+                <button onclick="event.stopPropagation(); editarItemProducao(${jsArg(m)}, ${jsArg(itemId)})">
+                  Editar item
+                </button>
+                <button onclick="event.stopPropagation(); trocarMaquina(${jsArg(m)}, ${jsArg(itemId)})">
+                  Trocar de máquina
+                </button>
+                <button onclick="event.stopPropagation(); excluirItemProducao(${jsArg(m)}, ${jsArg(itemId)})" style="color:red">
+                  Excluir item
+                </button>
               </div>
             </div>
+
           </div>
-        </div>`;
+        </div>
+      `;
+
       card.appendChild(row);
     });
-    container.appendChild(card);
   });
 
+  /* ===== ACABAMENTO (PRODUÇÃO ANTERIOR) ===== */
   renderProducaoAnterior();
 }
+/* ===== RENDER PRODUÇÃO ANTERIOR (ACABAMENTO) ===== */
+function renderProducaoAnterior(){
+  if (filtroAtual !== 'todos' && filtroAtual !== 'acabamento') return;
+  if (!producaoAnteriorData.length) return;
 
-function renderProducaoAnterior() {
   const container = document.getElementById('producao-anterior-container');
-  if (!container || (filtroAtual !== 'todos' && filtroAtual !== 'acabamento')) return;
-  if (!Array.isArray(producaoAnteriorData) || !producaoAnteriorData.length) return;
+  container.innerHTML = '';
 
   const card = document.createElement('div');
   card.className = 'card';
-  card.innerHTML = '<h3>Acabamento</h3>';
+  card.innerHTML = `<h3>Acabamento</h3>`;
 
   producaoAnteriorData.forEach((i, idx) => {
-    const status = i.status || '-';
     const row = document.createElement('div');
     row.className = 'desktop-row';
+
     row.innerHTML = `
       <div class="card-producao desktop ${i.prioridade === 'alta' ? 'prioridade' : ''}">
-        <div class="item-area">${escaparHtml(i.item)}</div>
+        <div class="item-area">${i.item || ''}</div>
+
         <div class="status-area">
           <div class="valores">
-            <span>V:${escaparHtml(i.venda || '0')}</span>
-            <span>E:${escaparHtml(i.estoque || '0')}</span>
-            <span>P:${escaparHtml(i.produzir || '0')}</span>
+            <span>V:${i.venda || '000'}</span>
+            <span>E:${i.estoque || '000'}</span>
+            <span>P:${i.produzir || '000'}</span>
           </div>
+
           <div class="status-wrapper">
-            <select class="status-producao ${status}" onchange="atualizaStatusProducaoAnterior(${idx}, this)">
-              ${Object.keys(STATUS_LABELS).map(st => `<option value="${st}" ${status === st ? 'selected' : ''}>${STATUS_LABELS[st]}</option>`).join('')}
+            <select class="status-producao ${i.status}"
+              onchange="atualizaStatusProducaoAnterior(${idx}, this)">
+              <option value="-" ${i.status==='-'?'selected':''}>-</option>
+              <option value="producao" ${i.status==='producao'?'selected':''}>Produção</option>
+              <option value="producao_ok" ${i.status==='producao_ok'?'selected':''}>Produção OK</option>
+              <option value="acabamento" ${i.status==='acabamento'?'selected':''}>Acabamento</option>
+              <option value="acabamento_ok" ${i.status==='acabamento_ok'?'selected':''}>Acabamento OK</option>
+              <option value="estoque" ${i.status==='estoque'?'selected':''}>Estoque</option>
             </select>
           </div>
+
+          <!-- MENU 3 PONTOS (APENAS PRIORIDADE E EXCLUIR) -->
           <div class="menu-wrapper only-desktop">
-            <span class="menu-btn" onclick="event.stopPropagation(); toggleMenuProducao(this)">⋮</span>
+            <span class="menu-btn" onclick="toggleMenuProducao(this)">⋮</span>
             <div class="dropdown item-menu">
-              <button onclick="event.stopPropagation(); togglePrioridadeAcabamento(${idx})">Prioridade</button>
-              <button onclick="event.stopPropagation(); editarItemAcabamento(${idx})">Editar item</button>
-              <button onclick="event.stopPropagation(); excluirItemAcabamento(${idx})" style="color:red">Excluir</button>
+              <button onclick="event.stopPropagation(); togglePrioridadeAcabamento(${idx})">
+                Prioridade
+              </button>
+              <button onclick="event.stopPropagation(); excluirItemAcabamento(${idx})" style="color:red">
+                Excluir
+              </button>
             </div>
           </div>
+
         </div>
-      </div>`;
+      </div>
+    `;
     card.appendChild(row);
   });
+
   container.appendChild(card);
 }
+/* ===== FILTRO ===== */
+function aplicarFiltroProducao(){ filtroAtual = document.getElementById('filtroMaquina').value; renderProducao(); }
+/* ===== ATUALIZA STATUS ===== */
+function atualizaStatusProducao(m, chaveItem, sel){
+  const idx = encontrarIndiceItemProducao(m, chaveItem);
+  if (idx < 0) return;
 
-function atualizaStatusProducao(maquina, itemId, sel) {
-  const achado = encontrarItem(maquina, itemId);
-  if (achado.idx < 0 || !achado.item) return;
   const novoStatus = sel.value || '-';
-  achado.item.status = novoStatus;
-  sel.className = `status-producao ${novoStatus}`;
-  socket.emit('alterarStatusProducao', { ...itemPayload(maquina, achado.item), status: novoStatus });
+  const item = producaoData[m][idx];
+
+  item.status = novoStatus;
+
+  sel.className = 'status-producao';
+  if (novoStatus !== '-') sel.classList.add(novoStatus);
+
+  socket.emit('atualizaProducao', producaoData);
+
   renderTV();
 }
-
-function atualizaStatusProducaoAnterior(idx, sel) {
+function atualizaStatusProducaoAnterior(idx, sel){
   if (!producaoAnteriorData[idx]) return;
+
   const novoStatus = sel.value || '-';
   producaoAnteriorData[idx].status = novoStatus;
-  sel.className = `status-producao ${novoStatus}`;
+
+  sel.className = 'status-producao';
+  if (novoStatus !== '-') sel.classList.add(novoStatus);
   socket.emit('atualizaAcabamento', producaoAnteriorData);
-  renderTV();
+}
+/* ===== ADICIONAR ITEM PRODUÇÃO ===== */
+function adicionarItem(){
+  const maquina = normalizarMaquina(prompt('Máquina:\nUse: CV, CVR, D, 1–6, P, R'));
+  if(!maquina){ alert('Máquina inválida'); return; }
+
+  const item = prompt('Nome do item:');
+  if(!item) return;
+
+  const venda = prompt('Vendido:', '000') || '000';
+  const estoque = prompt('Estoque:', '000') || '000';
+  const produzir = prompt('Produzir:', '000') || '000';
+
+  if (!producaoData[maquina]) {
+    producaoData[maquina] = [];
+  }
+
+  producaoData[maquina].push({
+    id: gerarIdItemProducao(),
+    item,
+    venda,
+    estoque,
+    produzir,
+    prioridade: '',
+    status: '-'
+  });
+
+  socket.emit('atualizaProducao', producaoData);
 }
 
-function adicionarItemGlobal() { adicionarItem(); }
+function adicionarItemGlobal(){
+  adicionarItem();
+}
 
-function adicionarItem() {
-  const maquina = normalizarMaquina(prompt('Máquina:\nUse: CV, CVR, 1 a 6, R'));
-  if (!maquina) return alert('Máquina inválida.');
-  const item = prompt('Nome do item:');
-  if (!item) return;
-  const venda = prompt('Vendido:', '0') || '0';
-  const estoque = prompt('Estoque:', '0') || '0';
-  const produzir = prompt('Produzir:', '0') || '0';
-  if (!producaoData[maquina]) producaoData[maquina] = [];
-  producaoData[maquina].push({ id: gerarId('prod'), item, venda, estoque, produzir, prioridade: '', status: '-' });
+function normalizarMaquina(valor){
+  if (!valor) return null;
+  const v = valor.toString().trim().toUpperCase();
+  const mapa = {
+    'CV': 'C.V. PLANA',
+    'C.V': 'C.V. PLANA',
+    'C.V.': 'C.V. PLANA',
+    'C.V. PLANA': 'C.V. PLANA',
+    'CVR': 'C.V. ROTATIVA',
+    'C.V.R': 'C.V. ROTATIVA',
+    'C.V.R.': 'C.V. ROTATIVA',
+    'C.V. ROTATIVA': 'C.V. ROTATIVA',
+    'D': 'DIGITAL',
+    'DIGITAL': 'DIGITAL',
+    '1': 'MAQUINA 01',
+    '01': 'MAQUINA 01',
+    'MAQUINA 01': 'MAQUINA 01',
+    'MÁQUINA 01': 'MAQUINA 01',
+    '2': 'MAQUINA 02',
+    '02': 'MAQUINA 02',
+    'MAQUINA 02': 'MAQUINA 02',
+    'MÁQUINA 02': 'MAQUINA 02',
+    '3': 'MAQUINA 03',
+    '03': 'MAQUINA 03',
+    'MAQUINA 03': 'MAQUINA 03',
+    'MÁQUINA 03': 'MAQUINA 03',
+    '4': 'MAQUINA 04',
+    '04': 'MAQUINA 04',
+    'MAQUINA 04': 'MAQUINA 04',
+    'MÁQUINA 04': 'MAQUINA 04',
+    '5': 'MAQUINA 05',
+    '05': 'MAQUINA 05',
+    'MAQUINA 05': 'MAQUINA 05',
+    'MÁQUINA 05': 'MAQUINA 05',
+    '6': 'MAQUINA 06',
+    '06': 'MAQUINA 06',
+    'MAQUINA 06': 'MAQUINA 06',
+    'MÁQUINA 06': 'MAQUINA 06',
+    'P': 'PLOTER',
+    'PLOTER': 'PLOTER',
+    'R': 'RISCADOR',
+    'RISCADOR': 'RISCADOR'
+  };
+  return mapa[v] || v;
+}
+
+function toggleDropdown(nome){
+  const id = `dropdown-${nome}`;
+  const el = document.getElementById(id);
+  if (!el) return;
+  const aberto = el.style.display === 'block';
+  document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
+  el.style.display = aberto ? 'none' : 'block';
+}
+
+function toggleMenuProducao(el){
+  if (event) event.stopPropagation();
+  const menu = el.nextElementSibling;
+  const estavaAberto = menu && menu.style.display === 'block';
+  document.querySelectorAll('.item-menu').forEach(m => m.style.display='none');
+  if(menu) menu.style.display = estavaAberto ? 'none' : 'block';
+}
+function fecharMenusItens(){
+  document.querySelectorAll('.item-menu').forEach(menu => menu.style.display = 'none');
+}
+
+function togglePrioridade(m, chaveItem){
+  const idx = encontrarIndiceItemProducao(m, chaveItem);
+  if (idx < 0) return;
+
+  const item = producaoData[m][idx];
+  item.prioridade = item.prioridade === 'alta' ? '' : 'alta';
+
+  fecharMenusItens();
   socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
 
-function toggleMenuProducao(el) {
-  const menu = el.nextElementSibling;
-  const aberto = menu && menu.style.display === 'block';
-  fecharTodosMenus();
-  if (menu) menu.style.display = aberto ? 'none' : 'block';
-}
+function excluirItemProducao(m, chaveItem){
+  const idx = encontrarIndiceItemProducao(m, chaveItem);
+  if (idx < 0) return;
+  if(!confirm('Excluir item?')) return;
 
-function togglePrioridade(maquina, itemId) {
-  const achado = encontrarItem(maquina, itemId);
-  if (achado.idx < 0 || !achado.item) return;
-  achado.item.prioridade = achado.item.prioridade === 'alta' ? '' : 'alta';
-  socket.emit('alterarPrioridadeProducao', itemPayload(maquina, achado.item));
-  fecharTodosMenus();
+  const item = producaoData[m][idx];
+  const payload = chaveItemPayload(m, item);
+  producaoData[m].splice(idx, 1);
+
+  fecharMenusItens();
+  socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
 
-function editarItemProducao(maquina, itemId) {
-  const achado = encontrarItem(maquina, itemId);
-  if (achado.idx < 0 || !achado.item) return;
-  const i = achado.item;
-  const payloadBusca = itemPayload(maquina, i);
+function editarItemProducao(m, chaveItem){
+  const idx = encontrarIndiceItemProducao(m, chaveItem);
+  if (idx < 0) return;
+
+  const i = producaoData[m][idx];
+  const payloadBusca = chaveItemPayload(m, i);
+
   const item = prompt('Item:', i.item || '');
-  if (item === null) return;
-  const venda = prompt('Vendido:', i.venda || '0');
-  if (venda === null) return;
-  const estoque = prompt('Estoque:', i.estoque || '0');
-  if (estoque === null) return;
-  const produzir = prompt('Produzir:', i.produzir || '0');
-  if (produzir === null) return;
+  if(item !== null) i.item = item;
 
-  Object.assign(i, { item, venda, estoque, produzir });
-  socket.emit('editarItemProducao', {
-    ...payloadBusca,
-    novoItem: { id: i.id, item: i.item, venda: i.venda, estoque: i.estoque, produzir: i.produzir, prioridade: i.prioridade || '', status: i.status || '-' }
-  });
-  fecharTodosMenus();
+  const venda = prompt('Vendido:', i.venda || '');
+  if(venda !== null) i.venda = venda;
+
+  const estoque = prompt('Estoque:', i.estoque || '');
+  if(estoque !== null) i.estoque = estoque;
+
+  const produzir = prompt('Produzir:', i.produzir || '');
+  if(produzir !== null) i.produzir = produzir;
+
+  fecharMenusItens();
+  socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
 
-function trocarMaquina(maquina, itemId) {
-  const achado = encontrarItem(maquina, itemId);
-  if (achado.idx < 0 || !achado.item) return;
-  const novaMaquina = normalizarMaquina(prompt('Nova máquina:\nUse: CV, CVR, 1 a 6, R'));
-  if (!novaMaquina) return alert('Máquina inválida.');
-  const item = achado.item;
-  const payload = itemPayload(maquina, item);
-  producaoData[maquina].splice(achado.idx, 1);
-  if (!producaoData[novaMaquina]) producaoData[novaMaquina] = [];
-  producaoData[novaMaquina].push(item);
-  socket.emit('trocarMaquinaProducao', { ...payload, novaMaquina });
-  fecharTodosMenus();
+function trocarMaquina(m, chaveItem){
+  const idx = encontrarIndiceItemProducao(m, chaveItem);
+  if (idx < 0) return;
+
+  const entrada = prompt('Nova maquina:\nUse: CV, CVR, D, 1–6, P, R');
+  const nova = normalizarMaquina(entrada);
+
+  if(!nova){
+    alert('Maquina inválida');
+    return;
+  }
+
+  if (!producaoData[nova]) producaoData[nova] = [];
+
+  const item = producaoData[m].splice(idx, 1)[0];
+  producaoData[nova].push(item);
+
+  fecharMenusItens();
+  socket.emit('atualizaProducao', producaoData);
   renderProducao();
   renderTV();
 }
-
-function excluirItemProducao(maquina, itemId) {
-  const achado = encontrarItem(maquina, itemId);
-  if (achado.idx < 0 || !achado.item) return;
-  if (!confirm('Excluir item?')) return;
-  const payload = itemPayload(maquina, achado.item);
-  producaoData[maquina].splice(achado.idx, 1);
-  socket.emit('excluirItemProducao', payload);
-  fecharTodosMenus();
-  renderProducao();
-  renderTV();
-}
-
-function togglePrioridadeAcabamento(idx) {
+function togglePrioridadeAcabamento(idx){
   const item = producaoAnteriorData[idx];
   if (!item) return;
   item.prioridade = item.prioridade === 'alta' ? '' : 'alta';
   socket.emit('atualizaAcabamento', producaoAnteriorData);
-  fecharTodosMenus();
-  renderProducao();
+  renderProducaoAnterior();
   renderTV();
 }
-
-function editarItemAcabamento(idx) {
+function excluirItemAcabamento(idx){
+  if(!confirm('Excluir item do acabamento?')) return;
+  producaoAnteriorData.splice(idx,1);
+  socket.emit('atualizaAcabamento', producaoAnteriorData);
+  renderProducaoAnterior();
+  renderTV();
+}
+function editarItemAcabamento(idx){
   const i = producaoAnteriorData[idx];
-  if (!i) return;
-  const item = prompt('Item:', i.item || '');
-  if (item === null) return;
-  const venda = prompt('Vendido:', i.venda || '0');
-  if (venda === null) return;
-  const estoque = prompt('Estoque:', i.estoque || '0');
-  if (estoque === null) return;
-  const produzir = prompt('Produzir:', i.produzir || '0');
-  if (produzir === null) return;
-  Object.assign(i, { item, venda, estoque, produzir });
+
+  const item = prompt('Item:', i.item);
+  if(item !== null) i.item = item;
+
+  const venda = prompt('Vendido:', i.venda);
+  if(venda !== null) i.venda = venda;
+
+  const estoque = prompt('Estoque:', i.estoque);
+  if(estoque !== null) i.estoque = estoque;
+
+  const produzir = prompt('Produzir:', i.produzir);
+  if(produzir !== null) i.produzir = produzir;
+
   socket.emit('atualizaAcabamento', producaoAnteriorData);
-  fecharTodosMenus();
-  renderProducao();
+  renderProducaoAnterior();
   renderTV();
 }
+function limparAcabamento(){
+  if(!confirm('Limpar TODOS os dados de acabamento?')) return;
 
-function excluirItemAcabamento(idx) {
-  if (!confirm('Excluir item do acabamento?')) return;
-  producaoAnteriorData.splice(idx, 1);
-  socket.emit('atualizaAcabamento', producaoAnteriorData);
-  fecharTodosMenus();
-  renderProducao();
-  renderTV();
-}
-
-function limparAcabamento() {
-  if (!confirm('Limpar TODOS os dados de acabamento?')) return;
   producaoAnteriorData = [];
   socket.emit('atualizaAcabamento', []);
-  renderProducao();
-  renderTV();
-}
 
-function limparProducao() {
-  if (!confirm('Limpar TODOS os dados de produção?')) return;
+  // 🔥 ATUALIZA A TELA NA HORA
+  renderProducaoAnterior();
+}
+function limparProducao(){
+  if(!confirm('Limpar TODOS os dados de produção?')) return;
+
   producaoData = {};
   socket.emit('limparProducao');
+
+  // Atualiza a tela na hora
   renderProducao();
   renderTV();
 }
 
-function limparBanco() {
-  if (!confirm('Deseja realmente limpar TODO o banco de produção e acabamento?')) return;
-  producaoData = {};
-  producaoAnteriorData = [];
-  socket.emit('limparBancoProducao');
-  renderProducao();
-  renderTV();
-}
+function limparCargas(){
+  if(!confirm('Limpar TODAS as cargas?')) return;
 
-function gerarRelatorioAcabamento() {
-  const itens = [];
-  Object.keys(producaoData).forEach(maquina => {
-    producaoData[maquina].forEach(i => {
-      if (['producao', 'producao_ok', 'acabamento'].includes(i.status)) {
-        itens.push({ origem: 'Produção', maquina, item: i.item || '', venda: i.venda || '0', estoque: i.estoque || '0', produzir: i.produzir || '0', status: i.status || '', prioridade: i.prioridade || '' });
-      }
-    });
-  });
-  producaoAnteriorData.forEach(i => {
-    if (i.status !== 'acabamento_ok') {
-      itens.push({ origem: 'Acabamento', maquina: i.maquina || '', item: i.item || '', venda: i.venda || '0', estoque: i.estoque || '0', produzir: i.produzir || '0', status: i.status || '', prioridade: i.prioridade || '' });
-    }
-  });
-  if (!itens.length) return alert('Nenhum item pendente para exportar.');
-  const ws = XLSX.utils.json_to_sheet(itens);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Acabamento');
-  const data = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-  XLSX.writeFile(wb, `acabamento_${data}.xlsx`);
-}
-
-/* ===== CARGAS ===== */
-function salvarCargas() {
-  garantirIdsCargas();
-  socket.emit('atualizaCargas', cargas);
-  renderTV();
-}
-
-function novaCarga() {
-  const titulo = prompt('Nome da carga:', `Carga ${cargas.length + 1}`);
-  if (!titulo) return;
-  cargas.push({ id: gerarId('carga'), titulo, status: 'Em andamento', itens: [], itensStatus: [], valoresFaturados: [] });
-  salvarCargas();
-  renderCargas();
-}
-
-function renderCargas() {
-  garantirIdsCargas();
-  const tab = document.getElementById('tab-cargas');
-  if (!tab || !tab.classList.contains('active')) return;
-  const container = document.getElementById('cargas');
-  if (!container) return;
-  container.innerHTML = '';
-
-  cargas.forEach((carga, idx) => {
-    const card = document.createElement('div');
-    card.className = 'card-carga';
-    card.innerHTML = `
-      <div class="card-top">
-        <strong class="titulo-carga">${escaparHtml(carga.titulo)}</strong>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <select class="select-carga" onchange="alterarStatusCarga(${idx}, this.value)">
-            ${['Em andamento','Aguardando','Pronta','Faturada'].map(st => `<option value="${st}" ${carga.status === st ? 'selected' : ''}>${st}</option>`).join('')}
-          </select>
-          <span class="menu-carga" onclick="event.stopPropagation(); toggleMenuCarga(${idx})">⋮</span>
-          <div class="dropdown-carga" id="dropdown-carga-${idx}">
-            <button onclick="event.stopPropagation(); editarCarga(${idx})">Editar carga</button>
-            <button onclick="event.stopPropagation(); excluirCarga(${idx})" style="color:red">Excluir carga</button>
-          </div>
-        </div>
-      </div>
-      <div class="card-itens-carga" id="itens-carga-${idx}"></div>
-      <div class="add-item-wrapper-carga"><button class="btn-add-carga" onclick="adicionarItemCarga(${idx})">+</button></div>
-    `;
-    container.appendChild(card);
-
-    const lista = card.querySelector(`#itens-carga-${idx}`);
-    carga.itens.forEach((item, itemIdx) => {
-      const linha = document.createElement('div');
-      linha.className = 'item-carga';
-      linha.innerHTML = `
-        <span class="nome-item">${escaparHtml(item)}</span>
-        <span style="display:flex;align-items:center;gap:5px;">
-          <select onchange="alterarStatusItemCarga(${idx}, ${itemIdx}, this.value)">
-            ${['Pendente','Separado','Faturado'].map(st => `<option value="${st}" ${carga.itensStatus[itemIdx] === st ? 'selected' : ''}>${st}</option>`).join('')}
-          </select>
-          <input type="number" min="0" step="0.01" value="${escaparHtml(carga.valoresFaturados[itemIdx] || 0)}" onchange="alterarValorItemCarga(${idx}, ${itemIdx}, this.value)" style="width:90px;">
-          <button class="btn-editar-item" onclick="editarItemCarga(${idx}, ${itemIdx})">✎</button>
-          <button class="btn-excluir-item" onclick="excluirItemCarga(${idx}, ${itemIdx})">×</button>
-        </span>`;
-      lista.appendChild(linha);
-    });
-  });
-}
-
-function toggleMenuCarga(idx) {
-  const menu = document.getElementById(`dropdown-carga-${idx}`);
-  const aberto = menu && menu.style.display === 'block';
-  fecharTodosMenus();
-  if (menu) menu.style.display = aberto ? 'none' : 'block';
-}
-
-function editarCarga(idx) {
-  const novo = prompt('Nome da carga:', cargas[idx]?.titulo || '');
-  if (!novo) return;
-  cargas[idx].titulo = novo;
-  salvarCargas();
-  fecharTodosMenus();
-  renderCargas();
-}
-
-function excluirCarga(idx) {
-  if (!confirm('Excluir esta carga?')) return;
-  cargas.splice(idx, 1);
-  salvarCargas();
-  fecharTodosMenus();
-  renderCargas();
-}
-
-function alterarStatusCarga(idx, status) {
-  if (!cargas[idx]) return;
-  cargas[idx].status = status;
-  salvarCargas();
-}
-
-function adicionarItemCarga(idx) {
-  if (!cargas[idx]) return;
-  const nome = prompt('Nome do item:');
-  if (!nome) return;
-  cargas[idx].itens.push(nome);
-  cargas[idx].itensStatus.push('Pendente');
-  cargas[idx].valoresFaturados.push(0);
-  salvarCargas();
-  renderCargas();
-}
-
-function editarItemCarga(idx, itemIdx) {
-  const atual = cargas[idx]?.itens?.[itemIdx];
-  if (atual === undefined) return;
-  const novo = prompt('Nome do item:', atual);
-  if (!novo) return;
-  cargas[idx].itens[itemIdx] = novo;
-  salvarCargas();
-  renderCargas();
-}
-
-function excluirItemCarga(idx, itemIdx) {
-  if (!confirm('Excluir item da carga?')) return;
-  cargas[idx].itens.splice(itemIdx, 1);
-  cargas[idx].itensStatus.splice(itemIdx, 1);
-  cargas[idx].valoresFaturados.splice(itemIdx, 1);
-  salvarCargas();
-  renderCargas();
-}
-
-function alterarStatusItemCarga(idx, itemIdx, status) {
-  if (!cargas[idx]) return;
-  cargas[idx].itensStatus[itemIdx] = status;
-  salvarCargas();
-}
-
-function alterarValorItemCarga(idx, itemIdx, valor) {
-  if (!cargas[idx]) return;
-  cargas[idx].valoresFaturados[itemIdx] = Number(valor || 0);
-  salvarCargas();
-}
-
-function limparCargas() {
-  if (!confirm('Limpar TODAS as cargas?')) return;
   cargas = [];
   socket.emit('limparCargas');
   renderCargas();
   renderTV();
 }
 
-/* ===== TV ===== */
+/* ===== CARGAS ===== */
+let cargas = [];
+
+function salvarCargasSeguro(){
+  if (!Array.isArray(cargas)) cargas = [];
+  socket.emit('atualizaCargas', cargas);
+}
+
+socket.on('initCargas', d => {
+  cargas = Array.isArray(d) ? d : [];
+  renderCargas();
+  renderTV();
+});
+
+socket.on('atualizaCargas', d => {
+  cargas = Array.isArray(d) ? d : [];
+  renderCargas();
+  renderTV();
+});
+
+function novaCarga(){
+  cargas.push({
+    titulo: `Carga ${cargas.length + 1}`,
+    status: 'Pendente',
+    itens: [],
+    itensStatus: [],
+    valoresFaturados: []
+  });
+  salvarCargasSeguro();
+  renderCargas();
+}
+
+function renderCargas(){
+  const div = document.getElementById('cargas');
+  if (!div) return;
+  div.innerHTML = '';
+
+  const editModeIdx = parseInt(div.getAttribute('data-edit-mode') || '-1', 10);
+
+  cargas.forEach((c, idx) => {
+    if (!Array.isArray(c.itens)) c.itens = [];
+    if (!Array.isArray(c.itensStatus)) c.itensStatus = [];
+    if (!Array.isArray(c.valoresFaturados)) c.valoresFaturados = [];
+    if (!c.titulo) c.titulo = `Carga ${idx + 1}`;
+    if (!c.status) c.status = 'Pendente';
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const cardTop = document.createElement('div');
+    cardTop.className = 'card-top';
+    cardTop.innerHTML = `
+      <div class="top-left menu-wrapper">
+        <span class="menu-carga" onclick="toggleDropdownCarga(${idx})">⋮</span>
+        <strong class="titulo-carga">${c.titulo}</strong>
+        <div class="dropdown" id="dropdown-carga-${idx}">
+          <button onclick="editarCarga(${idx})">Editar</button>
+          <button onclick="renomearCarga(${idx})">Renomear</button>
+          <button onclick="excluirCarga(${idx})" style="color:red">Excluir</button>
+        </div>
+      </div>
+      <div class="top-right">
+        <select class="select-carga ${String(c.status).toLowerCase()}" onchange="atualizaStatusCarga(${idx}, this)">
+          <option value="Pendente" ${c.status==='Pendente'?'selected':''}>Pendente</option>
+          <option value="Carregando" ${c.status==='Carregando'?'selected':''}>Carregando</option>
+          <option value="Pronto" ${c.status==='Pronto'?'selected':''}>Pronto</option>
+        </select>
+      </div>
+    `;
+    card.appendChild(cardTop);
+
+    const itensContainer = document.createElement('div');
+    itensContainer.className = 'card-itens';
+
+    c.itens.forEach((item, iidx) => {
+      if (!c.itensStatus[iidx]) c.itensStatus[iidx] = 'Pendente';
+      if (c.valoresFaturados[iidx] == null) c.valoresFaturados[iidx] = 0;
+      const status = c.itensStatus[iidx];
+      const colors = { 'Pendente':'#FF9800', 'Faturado':'#66BB6A' };
+
+      const divItem = document.createElement('div');
+      divItem.className = 'card-item';
+      divItem.innerHTML = `
+        <span class="item-nome">${item}</span>
+        ${editModeIdx === idx ? `
+          <span class="item-actions">
+            <button class="editar-item" onclick="editarItemCarga(${idx}, ${iidx})">✏️</button>
+            <button class="excluir-item" onclick="excluirItemCarga(${idx}, ${iidx})">🗑️</button>
+            <button class="editar-valor" onclick="editarValorFaturado(${idx}, ${iidx})">💰</button>
+          </span>
+        ` : ''}
+        <select class="item-status" style="float:right; background-color:${colors[status] || '#FF9800'};" onchange="atualizaStatusItem(${idx}, ${iidx}, this)">
+          <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
+          <option value="Faturado" ${status==='Faturado'?'selected':''}>Faturado</option>
+        </select>
+      `;
+      itensContainer.appendChild(divItem);
+    });
+
+    card.appendChild(itensContainer);
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn-add-item';
+    addBtn.innerText = '+';
+    addBtn.onclick = () => adicionarItemCarga(idx);
+    card.appendChild(addBtn);
+
+    if (editModeIdx === idx) {
+      const okBtn = document.createElement('button');
+      okBtn.className = 'btn-ok-edicao';
+      okBtn.innerText = 'OK';
+      okBtn.onclick = () => {
+        div.setAttribute('data-edit-mode', '-1');
+        renderCargas();
+      };
+      card.appendChild(okBtn);
+    }
+
+    div.appendChild(card);
+  });
+}
+
+function toggleDropdownCarga(idx){
+  const el = document.getElementById(`dropdown-carga-${idx}`);
+  const aberto = el && el.style.display === 'block';
+  document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
+  if (el) el.style.display = aberto ? 'none' : 'block';
+}
+
+function editarCarga(idx){
+  const div = document.getElementById('cargas');
+  if (!div) return;
+  div.setAttribute('data-edit-mode', idx);
+  renderCargas();
+}
+
+function renomearCarga(idx){
+  const nome = prompt('Nome da carga:', cargas[idx]?.titulo || `Carga ${idx + 1}`);
+  if (nome === null || !nome.trim()) return;
+  cargas[idx].titulo = nome.trim();
+  salvarCargasSeguro();
+  renderCargas();
+}
+
+function adicionarItemCarga(cIdx){
+  const item = prompt('Nome do novo item:');
+  if (!item) return;
+  if (!Array.isArray(cargas[cIdx].itens)) cargas[cIdx].itens = [];
+  if (!Array.isArray(cargas[cIdx].itensStatus)) cargas[cIdx].itensStatus = [];
+  if (!Array.isArray(cargas[cIdx].valoresFaturados)) cargas[cIdx].valoresFaturados = [];
+  cargas[cIdx].itens.push(item);
+  cargas[cIdx].itensStatus.push('Pendente');
+  cargas[cIdx].valoresFaturados.push(0);
+  salvarCargasSeguro();
+  renderCargas();
+  renderTV();
+}
+
+function editarItemCarga(cIdx, iIdx){
+  const novo = prompt('Novo nome do item:', cargas[cIdx].itens[iIdx]);
+  if (novo !== null && novo.trim() !== '') {
+    cargas[cIdx].itens[iIdx] = novo.trim();
+    salvarCargasSeguro();
+    renderCargas();
+    renderTV();
+  }
+}
+
+function editarValorFaturado(cIdx, iIdx){
+  const valor = prompt('Informe o valor faturado:', cargas[cIdx].valoresFaturados?.[iIdx] || '');
+  if (valor === null) return;
+  const valorNum = parseFloat(String(valor).replace('R$', '').replace(/\./g, '').replace(',', '.'));
+  if (isNaN(valorNum)) return alert('Valor inválido');
+  cargas[cIdx].valoresFaturados[iIdx] = valorNum;
+  salvarCargasSeguro();
+  renderCargas();
+  renderTV();
+}
+
+function excluirCarga(idx){
+  if (!confirm('Excluir esta carga inteira?')) return;
+  cargas.splice(idx, 1);
+  cargas.forEach((c, i) => c.titulo = c.titulo || `Carga ${i + 1}`);
+  salvarCargasSeguro();
+  renderCargas();
+  renderTV();
+}
+
+function excluirItemCarga(cIdx, iIdx){
+  if (!confirm('Excluir este item?')) return;
+  cargas[cIdx].itens.splice(iIdx, 1);
+  cargas[cIdx].itensStatus.splice(iIdx, 1);
+  cargas[cIdx].valoresFaturados.splice(iIdx, 1);
+  salvarCargasSeguro();
+  renderCargas();
+  renderTV();
+}
+
+function atualizaStatusCarga(cIdx, select){
+  cargas[cIdx].status = select.value;
+  salvarCargasSeguro();
+  renderCargas();
+  renderTV();
+}
+
+function atualizaStatusItem(cIdx, iIdx, select){
+  if (!cargas[cIdx].itensStatus) cargas[cIdx].itensStatus = [];
+  const statusAnterior = cargas[cIdx].itensStatus[iIdx] || 'Pendente';
+  const novoStatus = select.value;
+
+  if (novoStatus === 'Faturado' && statusAnterior !== 'Faturado') {
+    const valor = prompt('Informe o valor faturado:');
+    if (!valor) {
+      select.value = statusAnterior;
+      return;
+    }
+    const valorNum = parseFloat(String(valor).replace('R$', '').replace(/\./g, '').replace(',', '.'));
+    if (isNaN(valorNum)) {
+      alert('Valor inválido');
+      select.value = statusAnterior;
+      return;
+    }
+    if (!cargas[cIdx].valoresFaturados) cargas[cIdx].valoresFaturados = [];
+    cargas[cIdx].valoresFaturados[iIdx] = valorNum;
+  }
+
+  cargas[cIdx].itensStatus[iIdx] = novoStatus;
+  salvarCargasSeguro();
+  renderCargas();
+  renderTV();
+}
+
+function atualizarData(){
+  const el = document.getElementById('dataAtual');
+  if (!el) return;
+  const hoje = new Date();
+  el.innerText = hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+}
+atualizarData();
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.menu-wrapper')) {
+    document.querySelectorAll('.dropdown').forEach(d => {
+      d.style.display = 'none';
+    });
+  }
+});
 function renderTV() {
   garantirIdsProducao();
-  garantirIdsCargas();
+  const dashboard = document.getElementById('tv-dashboard');
   const abaTV = document.getElementById('tab-tv');
-  if (!abaTV || !abaTV.classList.contains('active')) return;
 
+  if (!dashboard || !abaTV || !abaTV.classList.contains('active')) return;
+
+  /* =========================
+     PRODUÇÃO (IMPRESSORAS ETC)
+  ========================= */
   document.querySelectorAll('.tv-card').forEach(card => {
     const nomeTV = card.dataset.tv;
     const content = card.querySelector('.tv-content');
-    if (!content) return;
     content.innerHTML = '';
-    if (['ACABAMENTO', 'EXPEDIÇÃO', 'FATURAMENTO'].includes(nomeTV)) return;
 
-    (mapaTV[nomeTV] || []).forEach(maquina => {
-      (producaoData[maquina] || []).forEach(item => {
+    // ignora cartões especiais
+    if (nomeTV === 'ACABAMENTO' || nomeTV === 'EXPEDIÇÃO' || nomeTV === 'FATURAMENTO') return;
+
+    const maquinasRelacionadas = mapaTV[nomeTV] || [];
+
+    maquinasRelacionadas.forEach(maquina => {
+      if (!producaoData[maquina]) return;
+
+      producaoData[maquina].forEach(item => {
         if (!item.item) return;
-        content.appendChild(criarLinhaTV(item));
+
+        const linha = document.createElement('div');
+        linha.className = `tv-linha status-${item.status || ''} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
+        linha.innerHTML = `
+          <div class="tv-item status-${item.status || ''}">${item.item}</div>
+        `;
+        content.appendChild(linha);
       });
     });
   });
 
-  const cardAcabamento = document.querySelector('.tv-card[data-tv="ACABAMENTO"] .tv-content');
-  if (cardAcabamento) {
-    cardAcabamento.innerHTML = '';
-    Object.keys(producaoData).forEach(maquina => {
-      (producaoData[maquina] || []).forEach(item => {
-        if (!item.item) return;
-        if (['producao_ok', 'acabamento'].includes(item.status)) cardAcabamento.appendChild(criarLinhaTV(item));
-      });
-    });
-    producaoAnteriorData.forEach(item => {
-      if (!item.item || item.status === 'acabamento_ok') return;
-      cardAcabamento.appendChild(criarLinhaTV(item));
-    });
-  }
-
+  /* =========================
+     EXPEDIÇÃO
+  ========================= */
   const cardExpedicao = document.querySelector('.tv-card[data-tv="EXPEDIÇÃO"] .tv-content');
   let totalFaturamentoGeral = 0;
+
   if (cardExpedicao) {
     cardExpedicao.innerHTML = '';
-    cargas.forEach(carga => {
-      const total = carga.itens.length;
+
+    cargas.forEach((carga) => {
+      const total = carga.itens?.length || 0;
       if (!total) return;
+
+      const statusItens = carga.itensStatus || [];
+      const valores = carga.valoresFaturados || [];
+
       let faturados = 0;
       let valorCarga = 0;
-      carga.itensStatus.forEach((st, i) => {
+
+      statusItens.forEach((st, i) => {
         if (st === 'Faturado') {
           faturados++;
-          valorCarga += Number(carga.valoresFaturados[i] || 0);
+          valorCarga += Number(valores[i] || 0);
         }
       });
+
       totalFaturamentoGeral += valorCarga;
-      const percentual = total ? Math.round((faturados / total) * 100) : 0;
+
+      const percentual = Math.round((faturados / total) * 100);
+
       const linha = document.createElement('div');
       linha.className = 'tv-carga';
       linha.innerHTML = `
-        <div class="tv-carga-topo"><span class="tv-carga-titulo">${escaparHtml(carga.titulo)}</span><span class="tv-carga-status">${escaparHtml(carga.status)}</span></div>
-        <div class="tv-barra"><div class="tv-barra-preenchimento" style="width:${percentual}%"></div></div>
-        <div class="tv-carga-info">${faturados} de ${total} faturados — R$ ${valorCarga.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>`;
+        <div class="tv-carga-topo">
+          <span class="tv-carga-titulo">${carga.titulo}</span>
+          <span class="tv-carga-status">${carga.status}</span>
+        </div>
+        <div class="tv-barra">
+          <div class="tv-barra-preenchimento" style="width:${percentual}%"></div>
+        </div>
+        <div class="tv-carga-info">
+          ${faturados} de ${total} faturados — R$ ${valorCarga.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+        </div>
+      `;
       cardExpedicao.appendChild(linha);
     });
   }
 
+  /* =========================
+     FATURAMENTO TOTAL
+  ========================= */
   const cardFaturamento = document.querySelector('.tv-card[data-tv="FATURAMENTO"] .tv-content');
   if (cardFaturamento) {
-    cardFaturamento.innerHTML = `<div class="tv-faturamento-total">R$ ${totalFaturamentoGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>`;
+    cardFaturamento.innerHTML = `
+      <div class="tv-faturamento-total">
+        R$ ${totalFaturamentoGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+      </div>
+    `;
+  }
+
+  /* =========================
+     ACABAMENTO
+  ========================= */
+  const cardAcabamento = document.querySelector('.tv-card[data-tv="ACABAMENTO"] .tv-content');
+  if (cardAcabamento) {
+    cardAcabamento.innerHTML = '';
+
+    // Itens da produção
+    Object.keys(producaoData).forEach(maquina => {
+      producaoData[maquina].forEach(item => {
+        if (!item.item) return;
+        if (['producao_ok','acabamento'].includes(item.status)) {
+          const linha = document.createElement('div');
+          linha.className = `tv-linha status-${item.status} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
+          linha.innerHTML = `
+            <div class="tv-item status-${item.status || ''}">${item.item}</div>
+          `;
+          cardAcabamento.appendChild(linha);
+        }
+      });
+    });
+
+    // Itens do acabamento antigo (XLS ou produção anterior)
+    if (Array.isArray(producaoAnteriorData)) {
+      producaoAnteriorData.forEach(item => {
+        if (!item.item || item.status === 'acabamento_ok') return;
+
+        const linha = document.createElement('div');
+        linha.className = `tv-linha status-${item.status || ''} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
+        linha.innerHTML = `
+          <div class="tv-item status-${item.status || ''}">${item.item}</div>
+        `;
+        cardAcabamento.appendChild(linha);
+      });
+    }
   }
 }
-
-function criarLinhaTV(item) {
-  const status = item.status || '-';
-  const linha = document.createElement('div');
-  linha.className = `tv-linha status-${status} ${item.prioridade === 'alta' ? 'prioridade' : ''}`;
-  linha.innerHTML = `<div class="tv-item">${escaparHtml(item.item)}</div>`;
-  return linha;
-}
-
+// ==============================
+// AUTO-REFRESH TV
+// ==============================
 setInterval(() => {
   const abaTV = document.getElementById('tab-tv');
-  if (abaTV && abaTV.classList.contains('active')) renderTV();
+  if (abaTV && abaTV.classList.contains('active')) {
+    renderTV();
+  }
 }, 5000);
+const mapaTV = {
+  "IMPRESSORA 01": ["MAQUINA 01"],
+  "IMPRESSORA 02": ["MAQUINA 02"],
+  "IMPRESSORA 03": ["MAQUINA 03"],
+  "IMPRESSORA 04": ["MAQUINA 04"],
+  "IMPRESSORA 05": ["MAQUINA 05"],
+  "IMPRESSORA 06": ["MAQUINA 06"],
+
+  "CORTE E VINCO PLANA": ["C.V. PLANA"],
+  "CORTE E VINCO ROTATIVA": ["C.V. ROTATIVA"],
+
+  "RISCADOR": ["RISCADOR"],
+  "ACABAMENTO": ["ACABAMENTO"],
+
+  "EXPEDIÇÃO": ["EXPEDIÇÃO"], // hoje vazio, mas já preparado
+  "FATURAMENTO": ["FATURAMENTO"] // idem
+};
+function limparBanco() {
+  if (!confirm('Deseja realmente limpar TODO o banco de produção e acabamento? Esta ação não pode ser desfeita.')) return;
+
+  producaoData = {};
+  producaoAnteriorData = [];
+  socket.emit('limparBancoProducao');
+  renderProducao();
+  renderTV();
+}
