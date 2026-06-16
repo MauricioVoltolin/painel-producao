@@ -565,26 +565,35 @@ select.status-producao.estoque {
   white-space: nowrap;
 }
 
-/* Cores da aba TV */
-.tv-item.status-producao {
-  background: #4da3ff;
-  color: #fff;
+/* Cores da aba TV - mesmas cores do status da Producao */
+.tv-item.status-producao,
+.tv-linha.status-producao .tv-item {
+  background: #cfe8ff !important;
+  color: #111 !important;
 }
 
-.tv-item.status-producao_ok {
-  background: #8fd19e;
+.tv-item.status-producao_ok,
+.tv-linha.status-producao_ok .tv-item {
+  background: #4da3ff !important;
+  color: #fff !important;
 }
 
-.tv-item.status-acabamento {
-  background: #fff4bf;
+.tv-item.status-acabamento,
+.tv-linha.status-acabamento .tv-item {
+  background: #fff4bf !important;
+  color: #111 !important;
 }
 
-.tv-item.status-acabamento_ok {
-  background: #8fd19e;
+.tv-item.status-acabamento_ok,
+.tv-linha.status-acabamento_ok .tv-item {
+  background: #ffd966 !important;
+  color: #111 !important;
 }
 
-.tv-item.status-estoque {
-  background: #8fd19e;
+.tv-item.status-estoque,
+.tv-linha.status-estoque .tv-item {
+  background: #8fd19e !important;
+  color: #111 !important;
 }
 
 .tv-linha.prioridade .tv-item {

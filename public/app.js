@@ -155,8 +155,17 @@ function normalizarMaquina(valor) {
 
 function ordemMaquina(maquina) {
   const ordem = [
-    'MAQUINA 01', 'MAQUINA 02', 'MAQUINA 03', 'MAQUINA 04', 'MAQUINA 05', 'MAQUINA 06',
-    'C.V. PLANA', 'C.V. ROTATIVA', 'DIGITAL', 'PLOTER', 'RISCADOR'
+    'C.V. PLANA',
+    'C.V. ROTATIVA',
+    'DIGITAL',
+    'MAQUINA 01',
+    'MAQUINA 02',
+    'MAQUINA 03',
+    'MAQUINA 04',
+    'MAQUINA 05',
+    'MAQUINA 06',
+    'PLOTER',
+    'RISCADOR'
   ];
   const idx = ordem.indexOf(maquina);
   return idx >= 0 ? idx : 999;
