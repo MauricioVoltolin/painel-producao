@@ -85,6 +85,26 @@ button {
   text-transform: capitalize;
 }
 
+.data-atual.tv-faturamento-topo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  color: #2e7d32;
+  font-size: 12px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.data-atual.tv-faturamento-topo strong {
+  display: block;
+  color: #2e7d32;
+  font-size: 20px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
 .header-actions {
   display: none;
   justify-content: flex-end;

@@ -266,6 +266,7 @@ function openTab(index) {
   });
 
   atualizarAcoesDoTopo(index);
+  atualizarData();
 
   if (index === 0) renderProducao();
   if (index === 1) renderCargas();
@@ -1212,6 +1213,7 @@ const mapaTV = {
   'IMPRESSORA 06': ['MAQUINA 06'],
   'CORTE E VINCO PLANA': ['C.V. PLANA'],
   'CORTE E VINCO ROTATIVA': ['C.V. ROTATIVA'],
+  'DIGITAL': ['DIGITAL'],
   'RISCADOR': ['RISCADOR'],
 };
 
@@ -1278,10 +1280,26 @@ function renderTVAcabamento() {
   }
 }
 
+function calcularTotalFaturamento() {
+  let total = 0;
+
+  cargas.forEach(carga => {
+    const statusItens = Array.isArray(carga.itensStatus) ? carga.itensStatus : [];
+    const valores = Array.isArray(carga.valoresFaturados) ? carga.valoresFaturados : [];
+
+    statusItens.forEach((status, idx) => {
+      if (status === 'Faturado') {
+        total += Number(valores[idx] || 0);
+      }
+    });
+  });
+
+  return total;
+}
+
 function renderTVExpedicaoEFaturamento() {
   const cardExpedicao = document.querySelector('.tv-card[data-tv="EXPEDIÇÃO"] .tv-content');
-  const cardFaturamento = document.querySelector('.tv-card[data-tv="FATURAMENTO"] .tv-content');
-  let totalFaturamentoGeral = 0;
+  const totalFaturamentoGeral = calcularTotalFaturamento();
 
   if (cardExpedicao) {
     cargas.forEach(carga => {
@@ -1298,7 +1316,6 @@ function renderTVExpedicaoEFaturamento() {
         }
       });
 
-      totalFaturamentoGeral += valorCarga;
       const percentual = total ? Math.round((faturados / total) * 100) : 0;
 
       const linha = document.createElement('div');
@@ -1319,19 +1336,27 @@ function renderTVExpedicaoEFaturamento() {
     });
   }
 
-  if (cardFaturamento) {
-    cardFaturamento.innerHTML = `
-      <div class="tv-faturamento-total">
-        R$ ${totalFaturamentoGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-      </div>
-    `;
-  }
+  atualizarData(totalFaturamentoGeral);
 }
 
-function atualizarData() {
+function atualizarData(totalFaturamentoInformado) {
   const dataAtual = el('dataAtual');
   if (!dataAtual) return;
 
+  if (abaAtual === 2) {
+    const total = typeof totalFaturamentoInformado === 'number'
+      ? totalFaturamentoInformado
+      : calcularTotalFaturamento();
+
+    dataAtual.classList.add('tv-faturamento-topo');
+    dataAtual.innerHTML = `
+      <span>FATURAMENTO</span>
+      <strong>R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+    `;
+    return;
+  }
+
+  dataAtual.classList.remove('tv-faturamento-topo');
   const hoje = new Date();
   dataAtual.textContent = hoje.toLocaleDateString('pt-BR', {
     weekday: 'long',
